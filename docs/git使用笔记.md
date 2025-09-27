@@ -153,15 +153,19 @@ git push -u origin main # 	设置跟踪关系（下次可以直接用 git push�
 
 执行`git pull`**确保当前是最新的代码**
 
-
+![image-20250927110956670](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927110956670.png)
 
 然后进行`git merge`合并
+
+![image-20250927111017020](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927111017020.png)
+
+这里**合并会默认创建一次提交**，不用管直接`:wq`退出即可（`:wq`是`vim`等编辑器的特色，不懂的可以了解一下）
 
 
 
 最后`git pull` `git push`一下（这里的`git pull`也是为了确保是最新的代码）
 
-
+![image-20250927111215760](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927111215760.png)
 
 
 
