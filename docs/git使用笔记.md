@@ -139,27 +139,41 @@ git push -u origin main # 	设置跟踪关系（下次可以直接用 git push�
 
 ![image-20250927105515634](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927105515634.png)
 
+
+
 然后`git commit`在**本地**（远程`github`是不会改变的）提交更改，`-m` 对更改进行说明
 
 ![image-20250927105710161](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927105710161.png)
+
+
 
 然后git push在**当前分支**推送更改，这里`github`就会有变化了，但是仅限于当前的分支
 
 ![image-20250927105858226](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927105858226.png)
 
+
+
 之后切换到`develop`分支
 
 ![image-20250927110532421](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927110532421.png)
+
+
 
 执行`git pull`**确保当前是最新的代码**
 
 ![image-20250927110956670](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927110956670.png)
 
+
+
 然后进行`git merge`合并
 
 ![image-20250927111017020](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927111017020.png)
 
+
+
 这里**合并会默认创建一次提交**，不用管直接`:wq`退出即可（`:wq`是`vim`等编辑器的特色，不懂的可以了解一下）
+
+![image-20250927111521935](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927111521935.png)
 
 
 
