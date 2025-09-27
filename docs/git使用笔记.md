@@ -149,6 +149,20 @@ git push -u origin main # 	设置跟踪关系（下次可以直接用 git push�
 
 之后切换到`develop`分支
 
+![image-20250927110532421](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927110532421.png)
+
+执行`git pull`**确保当前是最新的代码**
+
+
+
+然后进行`git merge`合并
+
+
+
+最后`git pull` `git push`一下（这里的`git pull`也是为了确保是最新的代码）
+
+
+
 
 
 > 总结一下多人开发
