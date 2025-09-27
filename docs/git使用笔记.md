@@ -137,6 +137,18 @@ git push -u origin main # 	设置跟踪关系（下次可以直接用 git push�
 
 先`git add .`**暂存更改**
 
+![image-20250927105515634](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927105515634.png)
+
+然后`git commit`在**本地**（远程`github`是不会改变的）提交更改，`-m` 对更改进行说明
+
+![image-20250927105710161](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927105710161.png)
+
+然后git push在**当前分支**推送更改，这里`github`就会有变化了，但是仅限于当前的分支
+
+![image-20250927105858226](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927105858226.png)
+
+之后切换到`develop`分支
+
 
 
 > 总结一下多人开发
