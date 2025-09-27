@@ -119,17 +119,51 @@ git push -u origin main # 	设置跟踪关系（下次可以直接用 git push�
 
 ## 多人开发
 
-在`develop`分支再新建分支，并完成开发，之后切换回`develop`
+首先确保自己的本地clone了这个项目
 
-![image-20250405192549563](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250405192549563.png)
+![image-20250927104919526](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927104919526.png)
 
-将远程仓库的`develop`分支`pull`到本地
 
-![image-20250405193129266](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250405193129266.png)
 
-当你开发的时候，别人也在开发，`pull`下来的是最新的代码，这样再进行合并，就形成了最新的`develop`
+在当前文件夹打开`powershell`
 
-![image-20250405193452963](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250405193452963.png)
+<img src="https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927105000736.png" alt="image-20250927105000736" style="zoom: 80%;" />
+
+![image-20250927105038528](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927105038528.png)
+
+
+
+一定要先明确自己在哪个分支，现在我在`xgl`分支，我已经进行了一些更改
+
+先`git add .`**暂存更改**
+
+![image-20250927105515634](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927105515634.png)
+
+然后`git commit`在**本地**（远程`github`是不会改变的）提交更改，`-m` 对更改进行说明
+
+![image-20250927105710161](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927105710161.png)
+
+然后git push在**当前分支**推送更改，这里`github`就会有变化了，但是仅限于当前的分支
+
+![image-20250927105858226](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927105858226.png)
+
+之后切换到`develop`分支
+
+![image-20250927110532421](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927110532421.png)
+
+执行`git pull`**确保当前是最新的代码**
+
+
+
+然后进行`git merge`合并
+
+
+
+最后`git pull` `git push`一下（这里的`git pull`也是为了确保是最新的代码）
+
+
+
+
 
 > 总结一下多人开发
 >
