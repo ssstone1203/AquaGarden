@@ -119,17 +119,25 @@ git push -u origin main # 	设置跟踪关系（下次可以直接用 git push�
 
 ## 多人开发
 
-在`develop`分支再新建分支，并完成开发，之后切换回`develop`
+首先确保自己的本地clone了这个项目
 
-![image-20250405192549563](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250405192549563.png)
+![image-20250927104919526](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927104919526.png)
 
-将远程仓库的`develop`分支`pull`到本地
 
-![image-20250405193129266](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250405193129266.png)
 
-当你开发的时候，别人也在开发，`pull`下来的是最新的代码，这样再进行合并，就形成了最新的`develop`
+在当前文件夹打开`powershell`
 
-![image-20250405193452963](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250405193452963.png)
+<img src="https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927105000736.png" alt="image-20250927105000736" style="zoom: 80%;" />
+
+![image-20250927105038528](https://ssstone.oss-cn-beijing.aliyuncs.com/image-20250927105038528.png)
+
+
+
+一定要先明确自己在哪个分支，现在我在`xgl`分支，我已经进行了一些更改
+
+先`git add .`**暂存更改**
+
+
 
 > 总结一下多人开发
 >
