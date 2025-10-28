@@ -25,6 +25,6 @@
 >
 > 精度12bit
 
-测试数据如下：
+测试数据如下(j-scope截图)：
 
 ![测试数据](https://github.com/DaviZhi/picx-images-hosting/raw/master/屏幕截图-2025-10-29-004649.pfqutik9r.webp)
