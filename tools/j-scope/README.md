@@ -12,11 +12,11 @@
 
 1. 打开`setup`文件夹，运行安装包
 
-![step1](https://github.com/DaviZhi/picx-images-hosting/raw/master/工程/屏幕截图-2025-10-29-150408.1zio1zqos5.webp)
+![6901f526c62ec__20251029185802_14_64.png (478×58)](https://imgtolink.com/uploads/6901f526c62ec__20251029185802_14_64.png)
 
 2. 一路Next和Agree，选择安装选项，如下图
 
-![step2](https://github.com/DaviZhi/picx-images-hosting/raw/master/工程/屏幕截图-2025-10-29-151010.3rbmwwgook.webp)
+![6901f53e1419f__20251029185802_19_64.png (1298×776)](https://imgtolink.com/uploads/6901f53e1419f__20251029185802_19_64.png)
 
 > 上面4个选项都勾上
 >
@@ -30,15 +30,15 @@
 
 1. 回到刚刚的安装根目录，双击`JScope.exe`打开jscope。(也可以在桌面创建快捷方式)
 
-![step1](https://github.com/DaviZhi/picx-images-hosting/raw/master/工程/屏幕截图-2025-10-29-152021.32idcxe8ut.webp)
+![6901f508dd84e__20251029185802_20_64.png (2256×1189)](https://imgtolink.com/uploads/6901f508dd84e__20251029185802_20_64.png)
 
 2. 创建新工程，start jscope
 
-![step2](https://github.com/DaviZhi/picx-images-hosting/raw/master/工程/屏幕截图-2025-10-29-152507.8ok3qsfjo6.webp)
+![6901f4e584f91__20251029185802_15_64.png (990×1046)](https://imgtolink.com/uploads/6901f4e584f91__20251029185802_15_64.png)
 
 3. 界面配置
 
-![step3](https://github.com/DaviZhi/picx-images-hosting/raw/master/工程/屏幕截图-2025-10-29-153636.5fkzu4s21j.webp)
+![6901f4bc22bec__20251029185802_16_64.png (741×1021)](https://imgtolink.com/uploads/6901f4bc22bec__20251029185802_16_64.png)
 
 > RA8D1是Cortex-M85
 >
@@ -46,12 +46,12 @@
 
 4. 变量选择，**只能选择全局变量！！**
 
-![step4](https://github.com/DaviZhi/picx-images-hosting/raw/master/工程/屏幕截图-2025-10-29-154023.mhbpcwns.webp)
+![6901f48c522ae__20251029185802_17_64.png (1247×1000)](https://imgtolink.com/uploads/6901f48c522ae__20251029185802_17_64.png)
 
 5. 开始sampling，可以得到变量值的曲线
 
-![step5](https://github.com/DaviZhi/picx-images-hosting/raw/master/工程/屏幕截图-2025-10-29-154141.8z6xjxurtl.webp)
+![6901f45e58116__20251029185802_18_64.png (2880×1704)](https://imgtolink.com/uploads/6901f45e58116__20251029185802_18_64.png)
 
 6. 得到的变量曲线
 
-![step6](https://github.com/DaviZhi/picx-images-hosting/raw/master/屏幕截图-2025-10-29-004649.pfqutik9r.webp)
+![6901f209835c5_ 2025-10-29 004649.png (2560×1368)](https://imgtolink.com/uploads/6901f209835c5_ 2025-10-29 004649.png)
