@@ -20,6 +20,7 @@ typedef enum
 typedef struct
 {
 	uint32_t flowrate_set;
+	uint32_t flowrate_active;
 	pump_io_level_e pump_in1_level_set;
 	pump_in2_cfg_t* pump_in2_cfg_set;
 	

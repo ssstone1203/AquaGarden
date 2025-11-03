@@ -46,6 +46,7 @@ void Pump_FlowrateSet(pump_set_t* pump_set, uint16_t flwrt_set)
 	                       g_pump_timer_cfg.period_counts - pump_set->flowrate_set,
 	                       PUMP_IN2);
 	}
+	pump_set->flowrate_active = flwrt_set;
 }
 
 /**
@@ -78,7 +79,10 @@ void Pump_ModeSet(pump_set_t* pump_set, pump_modeset_e pump_mdset)
 		}
 		case PUMP_ACTIVE:
 		{
+		    pump_set->flowrate_set = pump_set->flowrate_active;
 			pump_set->pump_in1_level_set = PUMP_IN1_SET;
+			R_GPT_DutyCycleSet(&g_pump_timer_ctrl, pump_set->flowrate_set, PUMP_IN2);
+			R_IOPORT_PinWrite(&g_ioport_ctrl, PUMP_IN1, pump_set->pump_in1_level_set);
 			break;
 		}
 		default:

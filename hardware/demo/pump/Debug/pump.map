@@ -81,22 +81,22 @@
 20000418 20000418        0     1         __ram_noinit$$Limit = .
 20000420 20000420       a4    16 __ram_zero$$
 20000420 20000420        0     1         __ram_zero$$Base = .
-20000420 20000420        c     4         ./src/hal_entry.o:(.bss.Pump_Set)
-20000420 20000420        c     1                 Pump_Set
-2000042c 2000042c        8     4         ./ra_gen/common_data.o:(.bss.g_ioport_ctrl)
-2000042c 2000042c        8     1                 g_ioport_ctrl
-20000434 20000434       20     4         ./ra_gen/hal_data.o:(.bss.g_pump_timer_ctrl)
-20000434 20000434       20     1                 g_pump_timer_ctrl
-20000454 20000454       40     4         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.bss.g_bsp_group_irq_sources)
-20000454 20000454       40     1                 g_bsp_group_irq_sources
-20000494 20000494        4     4         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.bss.g_protect_pfswe_counter)
-20000494 20000494        4     1                 g_protect_pfswe_counter
-20000498 20000498        4     4         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.bss.gp_renesas_isr_context)
-20000498 20000498        4     1                 gp_renesas_isr_context
-2000049c 2000049c        a     2         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.bss.g_protect_counters)
-2000049c 2000049c        a     1                 g_protect_counters
-200004a8 200004a8        4     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.bss.SystemCoreClock)
-200004a8 200004a8        4     1                 SystemCoreClock
+20000420 20000420       10     4         ./src/hal_entry.o:(.bss.Pump_Set)
+20000420 20000420       10     1                 Pump_Set
+20000430 20000430        8     4         ./ra_gen/common_data.o:(.bss.g_ioport_ctrl)
+20000430 20000430        8     1                 g_ioport_ctrl
+20000438 20000438       20     4         ./ra_gen/hal_data.o:(.bss.g_pump_timer_ctrl)
+20000438 20000438       20     1                 g_pump_timer_ctrl
+20000458 20000458       40     4         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.bss.g_bsp_group_irq_sources)
+20000458 20000458       40     1                 g_bsp_group_irq_sources
+20000498 20000498        4     4         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.bss.g_protect_pfswe_counter)
+20000498 20000498        4     1                 g_protect_pfswe_counter
+2000049c 2000049c        4     4         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.bss.gp_renesas_isr_context)
+2000049c 2000049c        4     1                 gp_renesas_isr_context
+200004a0 200004a0        a     2         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.bss.g_protect_counters)
+200004a0 200004a0        a     1                 g_protect_counters
+200004ac 200004ac        4     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.bss.SystemCoreClock)
+200004ac 200004ac        4     1                 SystemCoreClock
 200004b0 200004b0        4    16         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.bss)
 200004b0 200004b0        4     1                 __tls
 200004b4 200004b4        1     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_misc_lock.c.o):(.bss)
@@ -210,23 +210,23 @@
      c08      c08       4e     4         ./device/src/dev_pump_driver.o:(.text.Pump_Init)
      c08      c08        0     1                 $t.0
      c09      c09       4e     1                 Pump_Init
-     c58      c58       28     4         ./device/src/dev_pump_driver.o:(.text.Pump_FlowrateSet)
+     c58      c58       30     4         ./device/src/dev_pump_driver.o:(.text.Pump_FlowrateSet)
      c58      c58        0     1                 $t.1
-     c59      c59       28     1                 Pump_FlowrateSet
-     c80      c80       64     4         ./device/src/dev_pump_driver.o:(.text.Pump_ModeSet)
-     c80      c80        0     1                 $t.2
-     c81      c81       64     1                 Pump_ModeSet
-     ce4      ce4        6     4         ./device/src/dev_pump_driver.o:(.text.Pump_Start)
-     ce4      ce4        0     1                 $t.3
-     ce5      ce5        6     1                 Pump_Start
-     cec      cec       2c     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.text._init_tls)
-     cec      cec        0     1                 $t.0
-     ced      ced       2c     1                 _init_tls
-     d08      d08        0     1                 $d.1
-     d18      d18       14     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.text._set_tls)
-     d18      d18        0     1                 $t.0
-     d19      d19       14     1                 _set_tls
-     d24      d24        0     1                 $d.1
+     c59      c59       30     1                 Pump_FlowrateSet
+     c88      c88       56     4         ./device/src/dev_pump_driver.o:(.text.Pump_ModeSet)
+     c88      c88        0     1                 $t.2
+     c89      c89       56     1                 Pump_ModeSet
+     ce0      ce0        6     4         ./device/src/dev_pump_driver.o:(.text.Pump_Start)
+     ce0      ce0        0     1                 $t.3
+     ce1      ce1        6     1                 Pump_Start
+     ce8      ce8       2c     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.text._init_tls)
+     ce8      ce8        0     1                 $t.0
+     ce9      ce9       2c     1                 _init_tls
+     d04      d04        0     1                 $d.1
+     d14      d14       14     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.text._set_tls)
+     d14      d14        0     1                 $t.0
+     d15      d15       14     1                 _set_tls
+     d20      d20        0     1                 $d.1
      d30      d30        c    16         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.text.__aeabi_read_tp)
      d30      d30        0     1                 $t.0
      d31      d31        0     1                 __aeabi_read_tp
@@ -377,70 +377,70 @@
     2125     2125      151     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-free.c.o):(.debug_abbrev)
     2276     2276       8c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_misc_lock.c.o):(.debug_abbrev)
     2302     2302      174     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-malloc.c.o):(.debug_abbrev)
-       0        0    20143     1 .debug_info
-       0        0     233c     1         ./src/hal_entry.o:(.debug_info)
-    233c     233c      9e9     1         ./src/hal_warmstart.o:(.debug_info)
-    2d25     2d25      be2     1         ./ra_gen/common_data.o:(.debug_info)
-    3907     3907     2f32     1         ./ra_gen/hal_data.o:(.debug_info)
-    6839     6839       37     1         ./ra_gen/main.o:(.debug_info)
-    6870     6870      49b     1         ./ra_gen/pin_data.o:(.debug_info)
-    6d0b     6d0b     3024     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_info)
-    9d2f     9d2f     7f36     1         ./ra/fsp/src/r_gpt/r_gpt.o:(.debug_info)
-   11c65    11c65      1df     1         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.debug_info)
-   11e44    11e44     470b     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_info)
-   1654f    1654f      58a     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_info)
-   16ad9    16ad9      104     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_info)
-   16bdd    16bdd      da8     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_info)
-   17985    17985       43     1         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.debug_info)
-   179c8    179c8     15a9     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_info)
-   18f71    18f71     2ec3     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_info)
-   1be34    1be34       5f     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_info)
-   1be93    1be93       b1     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_info)
-   1bf44    1bf44      b0f     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_info)
-   1ca53    1ca53     2e14     1         ./device/src/dev_pump_driver.o:(.debug_info)
-   1f867    1f867       2e     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_errno_errno.c.o):(.debug_info)
-   1f895    1f895       64     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_info)
-   1f8f9    1f8f9       60     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_info)
-   1f959    1f959      129     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_info)
-   1fa82    1fa82       76     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_info)
-   1faf8    1faf8       97     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_info)
-   1fb8f    1fb8f       78     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_info)
-   1fc07    1fc07      156     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-free.c.o):(.debug_info)
-   1fd5d    1fd5d      108     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_misc_lock.c.o):(.debug_info)
-   1fe65    1fe65      2de     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-malloc.c.o):(.debug_info)
-       0        0     ae98     1 .debug_str_offsets
-       0        0      b28     1         ./src/hal_entry.o:(.debug_str_offsets)
-     b28      b28      814     1         ./src/hal_warmstart.o:(.debug_str_offsets)
-    133c     133c      8b4     1         ./ra_gen/common_data.o:(.debug_str_offsets)
-    1bf0     1bf0     11dc     1         ./ra_gen/hal_data.o:(.debug_str_offsets)
-    2dcc     2dcc       1c     1         ./ra_gen/main.o:(.debug_str_offsets)
-    2de8     2de8      428     1         ./ra_gen/pin_data.o:(.debug_str_offsets)
-    3210     3210      fe4     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_str_offsets)
-    41f4     41f4     2424     1         ./ra/fsp/src/r_gpt/r_gpt.o:(.debug_str_offsets)
-    6618     6618       9c     1         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.debug_str_offsets)
-    66b4     66b4     1004     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_str_offsets)
-    76b8     76b8      45c     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_str_offsets)
-    7b14     7b14       74     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_str_offsets)
-    7b88     7b88      68c     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_str_offsets)
-    8214     8214       24     1         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.debug_str_offsets)
-    8238     8238      78c     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_str_offsets)
-    89c4     89c4      bac     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_str_offsets)
-    9570     9570       2c     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_str_offsets)
-    959c     959c       3c     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_str_offsets)
-    95d8     95d8      344     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_str_offsets)
-    991c     991c     12f8     1         ./device/src/dev_pump_driver.o:(.debug_str_offsets)
-    ac14     ac14       1c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_errno_errno.c.o):(.debug_str_offsets)
-    ac30     ac30       30     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_str_offsets)
-    ac60     ac60       30     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_str_offsets)
-    ac90     ac90       30     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_str_offsets)
-    acc0     acc0       3c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_str_offsets)
-    acfc     acfc       38     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_str_offsets)
-    ad34     ad34       60     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-free.c.o):(.debug_str_offsets)
-    ad94     ad94       4c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_misc_lock.c.o):(.debug_str_offsets)
-    ade0     ade0       b8     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-malloc.c.o):(.debug_str_offsets)
-       0        0     cbaa     1 .debug_str
-       0        0     cbaa     1         <internal>:(.debug_str)
-       0        0      48c     1 .debug_addr
+       0        0    20132     1 .debug_info
+       0        0     2346     1         ./src/hal_entry.o:(.debug_info)
+    2346     2346      9e9     1         ./src/hal_warmstart.o:(.debug_info)
+    2d2f     2d2f      be2     1         ./ra_gen/common_data.o:(.debug_info)
+    3911     3911     2f32     1         ./ra_gen/hal_data.o:(.debug_info)
+    6843     6843       37     1         ./ra_gen/main.o:(.debug_info)
+    687a     687a      49b     1         ./ra_gen/pin_data.o:(.debug_info)
+    6d15     6d15     3024     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_info)
+    9d39     9d39     7f36     1         ./ra/fsp/src/r_gpt/r_gpt.o:(.debug_info)
+   11c6f    11c6f      1df     1         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.debug_info)
+   11e4e    11e4e     470b     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_info)
+   16559    16559      58a     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_info)
+   16ae3    16ae3      104     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_info)
+   16be7    16be7      da8     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_info)
+   1798f    1798f       43     1         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.debug_info)
+   179d2    179d2     15a9     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_info)
+   18f7b    18f7b     2ec3     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_info)
+   1be3e    1be3e       5f     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_info)
+   1be9d    1be9d       b1     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_info)
+   1bf4e    1bf4e      b0f     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_info)
+   1ca5d    1ca5d     2df9     1         ./device/src/dev_pump_driver.o:(.debug_info)
+   1f856    1f856       2e     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_errno_errno.c.o):(.debug_info)
+   1f884    1f884       64     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_info)
+   1f8e8    1f8e8       60     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_info)
+   1f948    1f948      129     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_info)
+   1fa71    1fa71       76     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_info)
+   1fae7    1fae7       97     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_info)
+   1fb7e    1fb7e       78     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_info)
+   1fbf6    1fbf6      156     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-free.c.o):(.debug_info)
+   1fd4c    1fd4c      108     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_misc_lock.c.o):(.debug_info)
+   1fe54    1fe54      2de     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-malloc.c.o):(.debug_info)
+       0        0     ae9c     1 .debug_str_offsets
+       0        0      b2c     1         ./src/hal_entry.o:(.debug_str_offsets)
+     b2c      b2c      814     1         ./src/hal_warmstart.o:(.debug_str_offsets)
+    1340     1340      8b4     1         ./ra_gen/common_data.o:(.debug_str_offsets)
+    1bf4     1bf4     11dc     1         ./ra_gen/hal_data.o:(.debug_str_offsets)
+    2dd0     2dd0       1c     1         ./ra_gen/main.o:(.debug_str_offsets)
+    2dec     2dec      428     1         ./ra_gen/pin_data.o:(.debug_str_offsets)
+    3214     3214      fe4     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_str_offsets)
+    41f8     41f8     2424     1         ./ra/fsp/src/r_gpt/r_gpt.o:(.debug_str_offsets)
+    661c     661c       9c     1         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.debug_str_offsets)
+    66b8     66b8     1004     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_str_offsets)
+    76bc     76bc      45c     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_str_offsets)
+    7b18     7b18       74     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_str_offsets)
+    7b8c     7b8c      68c     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_str_offsets)
+    8218     8218       24     1         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.debug_str_offsets)
+    823c     823c      78c     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_str_offsets)
+    89c8     89c8      bac     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_str_offsets)
+    9574     9574       2c     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_str_offsets)
+    95a0     95a0       3c     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_str_offsets)
+    95dc     95dc      344     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_str_offsets)
+    9920     9920     12f8     1         ./device/src/dev_pump_driver.o:(.debug_str_offsets)
+    ac18     ac18       1c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_errno_errno.c.o):(.debug_str_offsets)
+    ac34     ac34       30     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_str_offsets)
+    ac64     ac64       30     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_str_offsets)
+    ac94     ac94       30     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_str_offsets)
+    acc4     acc4       3c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_str_offsets)
+    ad00     ad00       38     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_str_offsets)
+    ad38     ad38       60     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-free.c.o):(.debug_str_offsets)
+    ad98     ad98       4c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_misc_lock.c.o):(.debug_str_offsets)
+    ade4     ade4       b8     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-malloc.c.o):(.debug_str_offsets)
+       0        0     cbba     1 .debug_str
+       0        0     cbba     1         <internal>:(.debug_str)
+       0        0      488     1 .debug_addr
        0        0       10     1         ./src/hal_entry.o:(.debug_addr)
       10       10       10     1         ./src/hal_warmstart.o:(.debug_addr)
       20       20       14     1         ./ra_gen/common_data.o:(.debug_addr)
@@ -460,20 +460,20 @@
      334      334        c     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_addr)
      340      340       1c     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_addr)
      35c      35c       34     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_addr)
-     390      390       30     1         ./device/src/dev_pump_driver.o:(.debug_addr)
-     3c0      3c0        c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_addr)
-     3cc      3cc        c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_addr)
-     3d8      3d8       10     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_addr)
-     3e8      3e8        c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_addr)
-     3f4      3f4        c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_addr)
-     400      400       24     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-free.c.o):(.debug_addr)
-     424      424       2c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_misc_lock.c.o):(.debug_addr)
-     450      450       3c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-malloc.c.o):(.debug_addr)
+     390      390       2c     1         ./device/src/dev_pump_driver.o:(.debug_addr)
+     3bc      3bc        c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_addr)
+     3c8      3c8        c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_addr)
+     3d4      3d4       10     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_addr)
+     3e4      3e4        c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_addr)
+     3f0      3f0        c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_addr)
+     3fc      3fc       24     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-free.c.o):(.debug_addr)
+     420      420       2c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_misc_lock.c.o):(.debug_addr)
+     44c      44c       3c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-malloc.c.o):(.debug_addr)
        0        0       29     1 .comment
        0        0       29     1         <internal>:(.comment)
        0        0       4c     1 .ARM.attributes
        0        0       4c     1         ./src/hal_entry.o:(.ARM.attributes)
-       0        0      9f4     4 .debug_frame
+       0        0      a04     4 .debug_frame
        0        0       30     4         ./src/hal_entry.o:(.debug_frame)
       30       30       24     4         ./src/hal_warmstart.o:(.debug_frame)
       54       54       24     4         ./ra_gen/common_data.o:(.debug_frame)
@@ -490,17 +490,17 @@
      664      664       30     4         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_frame)
      694      694       40     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_frame)
      6d4      6d4       4c     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_frame)
-     720      720       94     4         ./device/src/dev_pump_driver.o:(.debug_frame)
-     7b4      7b4       34     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_frame)
-     7e8      7e8       24     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_frame)
-     80c      80c       24     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_frame)
-     830      830       24     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_frame)
-     854      854       34     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_frame)
-     888      888       24     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_frame)
-     8ac      8ac       34     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-free.c.o):(.debug_frame)
-     8e0      8e0       94     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_misc_lock.c.o):(.debug_frame)
-     974      974       80     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-malloc.c.o):(.debug_frame)
-       0        0     2e8a     1 .debug_line
+     720      720       a4     4         ./device/src/dev_pump_driver.o:(.debug_frame)
+     7c4      7c4       34     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_frame)
+     7f8      7f8       24     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_frame)
+     81c      81c       24     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_frame)
+     840      840       24     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_frame)
+     864      864       34     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_frame)
+     898      898       24     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_frame)
+     8bc      8bc       34     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-free.c.o):(.debug_frame)
+     8f0      8f0       94     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_misc_lock.c.o):(.debug_frame)
+     984      984       80     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-malloc.c.o):(.debug_frame)
+       0        0     2e93     1 .debug_line
        0        0      146     1         ./src/hal_entry.o:(.debug_line)
      146      146      119     1         ./src/hal_warmstart.o:(.debug_line)
      25f      25f       f8     1         ./ra_gen/common_data.o:(.debug_line)
@@ -520,20 +520,20 @@
     20e5     20e5       b3     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_line)
     2198     2198       b9     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_line)
     2251     2251      1ce     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_line)
-    241f     241f      242     1         ./device/src/dev_pump_driver.o:(.debug_line)
-    2661     2661       43     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_errno_errno.c.o):(.debug_line)
-    26a4     26a4       a2     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_line)
-    2746     2746       ad     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_line)
-    27f3     27f3       45     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_line)
-    2838     2838       a1     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_line)
-    28d9     28d9       9f     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_line)
-    2978     2978       96     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_line)
-    2a0e     2a0e      139     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-free.c.o):(.debug_line)
-    2b47     2b47      104     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_misc_lock.c.o):(.debug_line)
-    2c4b     2c4b      23f     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-malloc.c.o):(.debug_line)
+    241f     241f      24b     1         ./device/src/dev_pump_driver.o:(.debug_line)
+    266a     266a       43     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_errno_errno.c.o):(.debug_line)
+    26ad     26ad       a2     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_line)
+    274f     274f       ad     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_line)
+    27fc     27fc       45     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_line)
+    2841     2841       a1     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_line)
+    28e2     28e2       9f     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_line)
+    2981     2981       96     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_line)
+    2a17     2a17      139     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-free.c.o):(.debug_line)
+    2b50     2b50      104     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_misc_lock.c.o):(.debug_line)
+    2c54     2c54      23f     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-malloc.c.o):(.debug_line)
        0        0      f76     1 .debug_line_str
        0        0      f76     1         <internal>:(.debug_line_str)
-       0        0     1759     1 .debug_loclists
+       0        0     1754     1 .debug_loclists
        0        0       1e     1         ./src/hal_warmstart.o:(.debug_loclists)
       1e       1e      526     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_loclists)
      544      544      a00     1         ./ra/fsp/src/r_gpt/r_gpt.o:(.debug_loclists)
@@ -545,13 +545,13 @@
     1240     1240       55     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_loclists)
     1295     1295       1e     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_loclists)
     12b3     12b3       96     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_loclists)
-    1349     1349       cd     1         ./device/src/dev_pump_driver.o:(.debug_loclists)
-    1416     1416       2a     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_loclists)
-    1440     1440       1b     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_loclists)
-    145b     145b       7a     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_loclists)
-    14d5     14d5       3e     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_loclists)
-    1513     1513       78     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-free.c.o):(.debug_loclists)
-    158b     158b      1ce     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-malloc.c.o):(.debug_loclists)
+    1349     1349       c8     1         ./device/src/dev_pump_driver.o:(.debug_loclists)
+    1411     1411       2a     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_loclists)
+    143b     143b       1b     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_loclists)
+    1456     1456       7a     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_loclists)
+    14d0     14d0       3e     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_loclists)
+    150e     150e       78     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-free.c.o):(.debug_loclists)
+    1586     1586      1ce     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(nano-malloc-malloc.c.o):(.debug_loclists)
        0        0      34a     1 .debug_rnglists
        0        0       76     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_rnglists)
       76       76      11f     1         ./ra/fsp/src/r_gpt/r_gpt.o:(.debug_rnglists)
