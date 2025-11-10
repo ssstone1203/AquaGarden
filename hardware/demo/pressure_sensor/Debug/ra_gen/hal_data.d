@@ -7,11 +7,10 @@ ra_gen/hal_data.o: ..\ra_gen\hal_data.c ..\ra_gen\hal_data.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h \
-  G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra8d1\bsp_override.h \
-  G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra8d1\bsp_mcu_info.h \
-  G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra8d1\bsp_elc.h \
-  G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra8d1\bsp_feature.h \
-  G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra8d1\bsp_peripheral.h \
+  G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h \
+  G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_elc.h \
+  G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h \
+  G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\board_cfg.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra_gen\vector_data.h \
@@ -19,8 +18,8 @@ ra_gen/hal_data.o: ..\ra_gen\hal_data.c ..\ra_gen\hal_data.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_clang.h \
-  G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\R7FA8D1BH.h \
-  G:\AquaGarden\hardware\demo\pressure_sensor\ra\arm\CMSIS_6\CMSIS\Core\Include\core_cm85.h \
+  G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\R7FA6E2BB.h \
+  G:\AquaGarden\hardware\demo\pressure_sensor\ra\arm\CMSIS_6\CMSIS\Core\Include\core_cm33.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\system.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_common.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\..\..\inc\api\fsp_common_api.h \
@@ -46,9 +45,10 @@ ra_gen/hal_data.o: ..\ra_gen\hal_data.c ..\ra_gen\hal_data.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\r_ioport_api.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\r_ioport_cfg.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h \
-  G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\instances\r_iic_master.h \
-  G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\r_iic_master_cfg.h \
-  G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\r_i2c_master_api.h \
+  G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\instances\r_adc.h \
+  G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\r_adc_cfg.h \
+  G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\r_adc_api.h \
+  G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\r_elc_api.h \
   G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\r_transfer_api.h
 ..\ra_gen\hal_data.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\bsp_api.h:
@@ -59,11 +59,10 @@ G:\AquaGarden\hardware\demo\pressure_sensor\ra_gen\bsp_clock_cfg.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h:
-G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra8d1\bsp_override.h:
-G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra8d1\bsp_mcu_info.h:
-G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra8d1\bsp_elc.h:
-G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra8d1\bsp_feature.h:
-G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra8d1\bsp_peripheral.h:
+G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h:
+G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_elc.h:
+G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h:
+G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\board_cfg.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra_gen\vector_data.h:
@@ -71,8 +70,8 @@ G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\..\..\src\bsp\mcu\all
 G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_clang.h:
-G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\R7FA8D1BH.h:
-G:\AquaGarden\hardware\demo\pressure_sensor\ra\arm\CMSIS_6\CMSIS\Core\Include\core_cm85.h:
+G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\R7FA6E2BB.h:
+G:\AquaGarden\hardware\demo\pressure_sensor\ra\arm\CMSIS_6\CMSIS\Core\Include\core_cm33.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\system.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_common.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\..\..\inc\api\fsp_common_api.h:
@@ -98,7 +97,8 @@ G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\instances\r_ioport.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\r_ioport_api.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\r_ioport_cfg.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h:
-G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\instances\r_iic_master.h:
-G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\r_iic_master_cfg.h:
-G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\r_i2c_master_api.h:
+G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\instances\r_adc.h:
+G:\AquaGarden\hardware\demo\pressure_sensor\ra_cfg\fsp_cfg\r_adc_cfg.h:
+G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\r_adc_api.h:
+G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\r_elc_api.h:
 G:\AquaGarden\hardware\demo\pressure_sensor\ra\fsp\inc\api\r_transfer_api.h:

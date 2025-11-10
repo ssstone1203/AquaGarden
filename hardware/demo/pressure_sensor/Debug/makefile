@@ -13,12 +13,12 @@ RM := rm -rf
 -include src/subdir.mk
 -include ra_gen/subdir.mk
 -include ra/fsp/src/r_ioport/subdir.mk
--include ra/fsp/src/r_iic_master/subdir.mk
--include ra/fsp/src/bsp/mcu/ra8d1/subdir.mk
+-include ra/fsp/src/r_adc/subdir.mk
+-include ra/fsp/src/bsp/mcu/ra6e2/subdir.mk
 -include ra/fsp/src/bsp/mcu/all/subdir.mk
 -include ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/subdir.mk
 -include ra/arm/CMSIS_6/subdir.mk
--include device/subdir.mk
+-include device/src/subdir.mk
 -include subdir.mk
 -include objects.mk
 
@@ -95,7 +95,7 @@ all: pressure_sensor.elf secondary-outputs
 
 # Tool invocations
 pressure_sensor.elf: $(OBJS) $(USER_OBJS) $(LIBRARY_GENERATOR_OUTPUTTYPE_OUTPUTS) $(LINKER_SCRIPT)
-	$(file > pressure_sensor.elf.in,-mcpu=cortex-m85 -mthumb -mlittle-endian -mfloat-abi=hard -O2 -ffunction-sections -fdata-sections -fno-strict-aliasing -fmessage-length=0 -funsigned-char -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Waggregate-return -Wno-parentheses-equality -Wfloat-equal -g3 -o "pressure_sensor.elf" $(OBJS) $(USER_OBJS) -T "fsp.lld" -L"G:\\AquaGarden\\hardware\\demo\\pressure_sensor/script" -L"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\Debug" -Wl,-Map=pressure_sensor.map -Wl,--start-group -lcrt0 -lc++abi  -Wl,--end-group -Wl,--gc-sections -Wl,--cref -Wl,-z,norelro -Wl,--icf=none -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\ra_gen" -I"." -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\ra_cfg\\fsp_cfg\\bsp" -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\ra_cfg\\fsp_cfg" -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\src" -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\ra\\fsp\\inc" -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\ra\\fsp\\inc\\api" -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\ra\\fsp\\inc\\instances" -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\ra\\arm\\CMSIS_6\\CMSIS\\Core\\Include")
+	$(file > pressure_sensor.elf.in,-mcpu=cortex-m33 -mthumb -mlittle-endian -mfloat-abi=hard -mfpu=fpv5-sp-d16 -O2 -ffunction-sections -fdata-sections -fno-strict-aliasing -fmessage-length=0 -funsigned-char -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Waggregate-return -Wno-parentheses-equality -Wfloat-equal -g3 -o "pressure_sensor.elf" $(OBJS) $(USER_OBJS) -T "fsp.lld" -L"G:\\AquaGarden\\hardware\\demo\\pressure_sensor/script" -L"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\Debug" -Wl,-Map=pressure_sensor.map -Wl,--start-group -lcrt0 -lc++abi  -Wl,--end-group -Wl,--gc-sections -Wl,--cref -Wl,-z,norelro -Wl,--icf=none -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\ra_gen" -I"." -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\ra_cfg\\fsp_cfg\\bsp" -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\ra_cfg\\fsp_cfg" -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\src" -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\ra\\fsp\\inc" -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\ra\\fsp\\inc\\api" -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\ra\\fsp\\inc\\instances" -I"G:\\AquaGarden\\hardware\\demo\\pressure_sensor\\ra\\arm\\CMSIS_6\\CMSIS\\Core\\Include")
 	@echo Building target: $@ && clang  --target=arm-none-eabi @"pressure_sensor.elf.in"> pressure_sensor.cref
 pressure_sensor.srec: pressure_sensor.elf
 	llvm-objcopy "pressure_sensor.elf" -O srec  "pressure_sensor.srec"
