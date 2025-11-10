@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - AquaGarden 智能水族箱管理系统</title>
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="login-background">
+        <div class="animated-bg">
+            <div class="bubble bubble-1"></div>
+            <div class="bubble bubble-2"></div>
+            <div class="bubble bubble-3"></div>
+            <div class="bubble bubble-4"></div>
+            <div class="bubble bubble-5"></div>
+        </div>
+    </div>
+    
+    <div class="login-container">
+        <div class="login-left">
+            <div class="brand-section">
+                <div class="logo-animation">
+                    <div class="logo-circle">
+                        <i class="fas fa-fish"></i>
+                    </div>
+                    <div class="water-ripple"></div>
+                </div>
+                <h1 class="brand-title">AquaGarden</h1>
+                <p class="brand-tagline">智能水族箱管理系统</p>
+                
+                <div class="features">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>双摄像头实时监控</h3>
+                            <p>高清视频流，随时掌握水族箱状态</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>智能数据分析</h3>
+                            <p>实时监测水质，历史数据可视化</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>自动化控制</h3>
+                            <p>智能机械臂，精准喂食与清洁</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="login-right">
+            <div class="login-card">
+                <div class="login-header">
+                    <h2>欢迎回来</h2>
+                    <p>登录以访问您的控制面板</p>
+                </div>
+                
+                <form id="loginForm" class="login-form">
+                    <div class="form-group">
+                        <label for="username">
+                            <i class="fas fa-user"></i>
+                            账号
+                        </label>
+                        <div class="input-wrapper">
+                            <input 
+                                type="text" 
+                                id="username" 
+                                name="username" 
+                                placeholder="请输入账号"
+                                required
+                            >
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">
+                            <i class="fas fa-lock"></i>
+                            密码
+                        </label>
+                        <div class="input-wrapper">
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                placeholder="请输入密码"
+                                required
+                            >
+                            <button type="button" class="toggle-password" id="togglePassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="remember">
+                            <span>记住我</span>
+                        </label>
+                        <a href="#" class="forgot-link">忘记密码？</a>
+                    </div>
+                    
+                    <div id="errorMessage" class="error-message"></div>
+                    
+                    <button type="submit" class="login-button">
+                        <span>登录系统</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
+                
+                <div class="demo-info">
+                    <div class="demo-header">
+                        <i class="fas fa-info-circle"></i>
+                        <span>演示账号信息</span>
+                    </div>
+                    <div class="demo-credentials">
+                        <div class="credential-item">
+                            <i class="fas fa-user-circle"></i>
+                            <span>账号：<strong>admin</strong></span>
+                        </div>
+                        <div class="credential-item">
+                            <i class="fas fa-key"></i>
+                            <span>密码：<strong>admin123</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="login-footer">
+                <p>&copy; 2024 AquaGarden. 保留所有权利.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/login.js"></script>
+</body>
+</html>

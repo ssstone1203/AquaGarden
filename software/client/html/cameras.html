@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaGarden - 摄像头管理</title>
+    <link rel="stylesheet" href="static/css/main.css">
+    <link rel="stylesheet" href="static/css/cameras.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <div class="logo">
+                <i class="fas fa-fish"></i>
+                <span class="logo-text">AquaGarden</span>
+            </div>
+            <div class="nav-subtitle">智能水族箱管理系统</div>
+        </div>
+        
+        <div class="navbar-center">
+            <div class="time-display" id="currentTime"></div>
+        </div>
+        
+        <div class="navbar-right">
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>控制面板</span>
+                </a>
+                <a href="history.html" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    <span>历史数据</span>
+                </a>
+                <a href="cameras.html" class="nav-link active">
+                    <i class="fas fa-camera"></i>
+                    <span>摄像头管理</span>
+                </a>
+                <a href="settings.html" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span>系统设置</span>
+                </a>
+            </div>
+            
+            <div class="user-menu">
+                <i class="fas fa-user-circle"></i>
+                <span>Admin</span>
+            </div>
+            
+            <button id="logoutBtn" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>退出</span>
+            </button>
+        </div>
+    </nav>
+    
+    <!-- 主容器 -->
+    <div class="dashboard-container">
+        <!-- 页面标题 -->
+        <div class="page-header">
+            <h1><i class="fas fa-camera"></i> 摄像头管理</h1>
+            <p>管理机械臂摄像头和鱼缸摄像头的设置和状态</p>
+        </div>
+        
+        <!-- 摄像头状态概览 -->
+        <div class="cameras-overview">
+            <div class="camera-status-card">
+                <div class="camera-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="camera-info">
+                    <h3>机械臂摄像头</h3>
+                    <div class="status-indicators">
+                        <div class="status-item">
+                            <span class="status-label">状态:</span>
+                            <span class="status-value online">在线</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">分辨率:</span>
+                            <span class="status-value">1920x1080</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">帧率:</span>
+                            <span class="status-value">30 FPS</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="camera-actions">
+                    <button class="action-btn primary">
+                        <i class="fas fa-play"></i>
+                        <span>启动</span>
+                    </button>
+                    <button class="action-btn secondary">
+                        <i class="fas fa-cog"></i>
+                        <span>设置</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="camera-status-card">
+                <div class="camera-icon">
+                    <i class="fas fa-water"></i>
+                </div>
+                <div class="camera-info">
+                    <h3>鱼缸摄像头</h3>
+                    <div class="status-indicators">
+                        <div class="status-item">
+                            <span class="status-label">状态:</span>
+                            <span class="status-value online">在线</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">分辨率:</span>
+                            <span class="status-value">1920x1080</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">帧率:</span>
+                            <span class="status-value">30 FPS</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="camera-actions">
+                    <button class="action-btn primary">
+                        <i class="fas fa-play"></i>
+                        <span>启动</span>
+                    </button>
+                    <button class="action-btn secondary">
+                        <i class="fas fa-cog"></i>
+                        <span>设置</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 视频流区域 -->
+        <div class="video-streams-section">
+            <h2><i class="fas fa-video"></i> 实时视频流</h2>
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-header">
+                        <h3>机械臂摄像头</h3>
+                        <div class="video-controls">
+                            <button class="control-btn" title="全屏">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                            <button class="control-btn" title="截图">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                            <button class="control-btn" title="录制">
+                                <i class="fas fa-record-vinyl"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="video-container">
+                        <img id="robotCameraFull" src="" alt="机械臂摄像头">
+                        <div class="video-overlay">
+                            <div class="recording-indicator">
+                                <i class="fas fa-circle"></i> 直播中
+                            </div>
+                            <div class="video-info">
+                                <span>1920x1080 • 30 FPS</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="video-card">
+                    <div class="video-header">
+                        <h3>鱼缸摄像头</h3>
+                        <div class="video-controls">
+                            <button class="control-btn" title="全屏">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                            <button class="control-btn" title="截图">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                            <button class="control-btn" title="录制">
+                                <i class="fas fa-record-vinyl"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="video-container">
+                        <img id="tankCameraFull" src="" alt="鱼缸摄像头">
+                        <div class="video-overlay">
+                            <div class="recording-indicator">
+                                <i class="fas fa-circle"></i> 直播中
+                            </div>
+                            <div class="video-info">
+                                <span>1920x1080 • 30 FPS</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 摄像头设置 -->
+        <div class="camera-settings-section">
+            <h2><i class="fas fa-sliders-h"></i> 摄像头设置</h2>
+            <div class="settings-grid">
+                <!-- 机械臂摄像头设置 -->
+                <div class="settings-card">
+                    <h3>机械臂摄像头设置</h3>
+                    <div class="settings-form">
+                        <div class="form-group">
+                            <label for="robotResolution">分辨率</label>
+                            <select id="robotResolution" class="form-control">
+                                <option value="640x480">640x480</option>
+                                <option value="1280x720">1280x720</option>
+                                <option value="1920x1080" selected>1920x1080</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="robotFps">帧率 (FPS)</label>
+                            <select id="robotFps" class="form-control">
+                                <option value="15">15 FPS</option>
+                                <option value="30" selected>30 FPS</option>
+                                <option value="60">60 FPS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="robotQuality">视频质量</label>
+                            <select id="robotQuality" class="form-control">
+                                <option value="low">低质量</option>
+                                <option value="medium">中等质量</option>
+                                <option value="high" selected>高质量</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="robotBrightness">亮度</label>
+                            <input type="range" id="robotBrightness" min="0" max="100" value="50" class="form-range">
+                        </div>
+                        <div class="form-group">
+                            <label for="robotContrast">对比度</label>
+                            <input type="range" id="robotContrast" min="0" max="100" value="50" class="form-range">
+                        </div>
+                    </div>
+                    <div class="settings-actions">
+                        <button class="save-btn">保存设置</button>
+                        <button class="reset-btn">恢复默认</button>
+                    </div>
+                </div>
+                
+                <!-- 鱼缸摄像头设置 -->
+                <div class="settings-card">
+                    <h3>鱼缸摄像头设置</h3>
+                    <div class="settings-form">
+                        <div class="form-group">
+                            <label for="tankResolution">分辨率</label>
+                            <select id="tankResolution" class="form-control">
+                                <option value="640x480">640x480</option>
+                                <option value="1280x720">1280x720</option>
+                                <option value="1920x1080" selected>1920x1080</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tankFps">帧率 (FPS)</label>
+                            <select id="tankFps" class="form-control">
+                                <option value="15">15 FPS</option>
+                                <option value="30" selected>30 FPS</option>
+                                <option value="60">60 FPS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tankQuality">视频质量</label>
+                            <select id="tankQuality" class="form-control">
+                                <option value="low">低质量</option>
+                                <option value="medium">中等质量</option>
+                                <option value="high" selected>高质量</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tankBrightness">亮度</label>
+                            <input type="range" id="tankBrightness" min="0" max="100" value="50" class="form-range">
+                        </div>
+                        <div class="form-group">
+                            <label for="tankContrast">对比度</label>
+                            <input type="range" id="tankContrast" min="0" max="100" value="50" class="form-range">
+                        </div>
+                    </div>
+                    <div class="settings-actions">
+                        <button class="save-btn">保存设置</button>
+                        <button class="reset-btn">恢复默认</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 录像管理 -->
+        <div class="recording-section">
+            <h2><i class="fas fa-film"></i> 录像管理</h2>
+            <div class="recording-controls">
+                <div class="recording-settings">
+                    <h3>录像设置</h3>
+                    <div class="recording-options">
+                        <div class="option-group">
+                            <label>
+                                <input type="checkbox" checked>
+                                <span>自动录像</span>
+                            </label>
+                        </div>
+                        <div class="option-group">
+                            <label>
+                                <input type="checkbox">
+                                <span>运动检测录像</span>
+                            </label>
+                        </div>
+                        <div class="option-group">
+                            <label>录像时长:</label>
+                            <select>
+                                <option>5分钟</option>
+                                <option selected>10分钟</option>
+                                <option>30分钟</option>
+                                <option>1小时</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="recording-list">
+                    <h3>录像文件</h3>
+                    <div class="recording-files">
+                        <div class="recording-file">
+                            <div class="file-info">
+                                <i class="fas fa-video"></i>
+                                <div class="file-details">
+                                    <div class="file-name">robot_camera_20241208_120000.mp4</div>
+                                    <div class="file-meta">机械臂摄像头 • 10分钟 • 128MB</div>
+                                </div>
+                            </div>
+                            <div class="file-actions">
+                                <button class="file-btn" title="播放">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button class="file-btn" title="下载">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="file-btn" title="删除">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="recording-file">
+                            <div class="file-info">
+                                <i class="fas fa-video"></i>
+                                <div class="file-details">
+                                    <div class="file-name">tank_camera_20241208_113000.mp4</div>
+                                    <div class="file-meta">鱼缸摄像头 • 10分钟 • 135MB</div>
+                                </div>
+                            </div>
+                            <div class="file-actions">
+                                <button class="file-btn" title="播放">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button class="file-btn" title="下载">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="file-btn" title="删除">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="static/js/cameras.js"></script>
+</body>
+</html>

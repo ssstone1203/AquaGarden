@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaGarden - 历史数据</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/history.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <div class="logo">
+                <i class="fas fa-fish"></i>
+                <span class="logo-text">AquaGarden</span>
+            </div>
+            <div class="nav-subtitle">智能水族箱管理系统</div>
+        </div>
+        
+        <div class="navbar-center">
+            <div class="time-display" id="currentTime"></div>
+        </div>
+        
+        <div class="navbar-right">
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>控制面板</span>
+                </a>
+                <a href="history.html" class="nav-link active">
+                    <i class="fas fa-chart-line"></i>
+                    <span>历史数据</span>
+                </a>
+                <a href="cameras.html" class="nav-link">
+                    <i class="fas fa-camera"></i>
+                    <span>摄像头管理</span>
+                </a>
+                <a href="settings.html" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span>系统设置</span>
+                </a>
+            </div>
+            
+            <div class="user-menu">
+                <i class="fas fa-user-circle"></i>
+                <span>Admin</span>
+            </div>
+            
+            <button id="logoutBtn" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>退出</span>
+            </button>
+        </div>
+    </nav>
+    
+    <!-- 主容器 -->
+    <div class="dashboard-container">
+        <!-- 页面标题 -->
+        <div class="page-header">
+            <h1><i class="fas fa-chart-line"></i> 历史数据分析</h1>
+            <p>查看传感器历史数据趋势和统计分析</p>
+        </div>
+        
+        <!-- 时间范围选择 -->
+        <div class="time-range-selector">
+            <div class="time-range-card">
+                <h3>选择时间范围</h3>
+                <div class="time-options">
+                    <button class="time-btn active" data-range="1h">1小时</button>
+                    <button class="time-btn" data-range="6h">6小时</button>
+                    <button class="time-btn" data-range="24h">24小时</button>
+                    <button class="time-btn" data-range="7d">7天</button>
+                    <button class="time-btn" data-range="30d">30天</button>
+                </div>
+                <div class="custom-range">
+                    <label>自定义范围:</label>
+                    <input type="datetime-local" id="startTime">
+                    <span>至</span>
+                    <input type="datetime-local" id="endTime">
+                    <button class="apply-btn">应用</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 图表区域 -->
+        <div class="charts-grid">
+            <!-- 温度趋势图 -->
+            <div class="chart-card-large">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-thermometer-half"></i>
+                        <span>温度趋势</span>
+                    </div>
+                    <div class="chart-stats">
+                        <div class="stat-mini">
+                            <span class="label">最高</span>
+                            <span class="value" id="maxTemp">--°C</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="label">最低</span>
+                            <span class="value" id="minTemp">--°C</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="label">平均</span>
+                            <span class="value" id="avgTemp">--°C</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="temperatureChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- pH值趋势图 -->
+            <div class="chart-card-large">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-flask"></i>
+                        <span>pH值趋势</span>
+                    </div>
+                    <div class="chart-stats">
+                        <div class="stat-mini">
+                            <span class="label">最高</span>
+                            <span class="value" id="maxPh">--</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="label">最低</span>
+                            <span class="value" id="minPh">--</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="label">平均</span>
+                            <span class="value" id="avgPh">--</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="phChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 溶解氧趋势图 -->
+            <div class="chart-card-large">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-wind"></i>
+                        <span>溶解氧趋势</span>
+                    </div>
+                    <div class="chart-stats">
+                        <div class="stat-mini">
+                            <span class="label">最高</span>
+                            <span class="value" id="maxOxygen">-- mg/L</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="label">最低</span>
+                            <span class="value" id="minOxygen">-- mg/L</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="label">平均</span>
+                            <span class="value" id="avgOxygen">-- mg/L</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="oxygenChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 浊度趋势图 -->
+            <div class="chart-card-large">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-eye"></i>
+                        <span>浊度趋势</span>
+                    </div>
+                    <div class="chart-stats">
+                        <div class="stat-mini">
+                            <span class="label">最高</span>
+                            <span class="value" id="maxTurbidity">-- NTU</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="label">最低</span>
+                            <span class="value" id="minTurbidity">-- NTU</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="label">平均</span>
+                            <span class="value" id="avgTurbidity">-- NTU</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="turbidityChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 数据统计 -->
+        <div class="stats-section">
+            <h2><i class="fas fa-chart-bar"></i> 数据统计</h2>
+            <div class="stats-grid-detailed">
+                <div class="stat-card-detailed">
+                    <div class="stat-icon-detailed temp">
+                        <i class="fas fa-temperature-high"></i>
+                    </div>
+                    <div class="stat-content-detailed">
+                        <div class="stat-label">温度统计</div>
+                        <div class="stat-value-detailed" id="statTempDetailed">--</div>
+                        <div class="stat-range">
+                            <span>正常范围: 22-28°C</span>
+                            <span class="status-badge success">正常</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card-detailed">
+                    <div class="stat-icon-detailed ph">
+                        <i class="fas fa-vial"></i>
+                    </div>
+                    <div class="stat-content-detailed">
+                        <div class="stat-label">pH值统计</div>
+                        <div class="stat-value-detailed" id="statPhDetailed">--</div>
+                        <div class="stat-range">
+                            <span>正常范围: 6.5-8.0</span>
+                            <span class="status-badge success">正常</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card-detailed">
+                    <div class="stat-icon-detailed oxygen">
+                        <i class="fas fa-lungs"></i>
+                    </div>
+                    <div class="stat-content-detailed">
+                        <div class="stat-label">溶解氧统计</div>
+                        <div class="stat-value-detailed" id="statOxygenDetailed">--</div>
+                        <div class="stat-range">
+                            <span>正常范围: >6.0 mg/L</span>
+                            <span class="status-badge success">良好</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card-detailed">
+                    <div class="stat-icon-detailed turbidity">
+                        <i class="fas fa-smog"></i>
+                    </div>
+                    <div class="stat-content-detailed">
+                        <div class="stat-label">浊度统计</div>
+                        <div class="stat-value-detailed" id="statTurbidityDetailed">--</div>
+                        <div class="stat-range">
+                            <span>正常范围: <20 NTU</span>
+                            <span class="status-badge success">清澈</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 数据导出 -->
+        <div class="export-section">
+            <div class="export-card">
+                <h3><i class="fas fa-download"></i> 数据导出</h3>
+                <p>导出历史数据用于进一步分析</p>
+                <div class="export-options">
+                    <button class="export-btn csv">
+                        <i class="fas fa-file-csv"></i>
+                        <span>导出CSV</span>
+                    </button>
+                    <button class="export-btn excel">
+                        <i class="fas fa-file-excel"></i>
+                        <span>导出Excel</span>
+                    </button>
+                    <button class="export-btn pdf">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>导出PDF报告</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="static/js/history.js"></script>
+</body>
+</html>
