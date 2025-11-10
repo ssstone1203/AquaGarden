@@ -1,81 +1,7 @@
 /* generated HAL source file - do not edit */
 #include "hal_data.h"
-sci_uart_instance_ctrl_t g_uart0_ctrl;
-
-baud_setting_t g_uart0_baud_setting =
-        {
-        /* Baud rate calculated with 0.469% error. */.semr_baudrate_bits_b.abcse = 0,
-          .semr_baudrate_bits_b.abcs = 0, .semr_baudrate_bits_b.bgdm = 1, .cks = 0, .brr = 53, .mddr = (uint8_t) 256, .semr_baudrate_bits_b.brme =
-                  false };
-
-/** UART extended configuration for UARTonSCI HAL driver */
-const sci_uart_extended_cfg_t g_uart0_cfg_extend =
-{ .clock = SCI_UART_CLOCK_INT, .rx_edge_start = SCI_UART_START_BIT_FALLING_EDGE, .noise_cancel =
-          SCI_UART_NOISE_CANCELLATION_DISABLE,
-  .rx_fifo_trigger = SCI_UART_RX_FIFO_TRIGGER_MAX, .p_baud_setting = &g_uart0_baud_setting, .flow_control =
-          SCI_UART_FLOW_CONTROL_RTS,
-#if 0xFF != 0xFF
-                .flow_control_pin       = BSP_IO_PORT_FF_PIN_0xFF,
-                #else
-  .flow_control_pin = (bsp_io_port_pin_t) UINT16_MAX,
-#endif
-  .rs485_setting =
-  { .enable = SCI_UART_RS485_DISABLE, .polarity = SCI_UART_RS485_DE_POLARITY_HIGH,
-#if 0xFF != 0xFF
-                    .de_control_pin = BSP_IO_PORT_FF_PIN_0xFF,
-                #else
-    .de_control_pin = (bsp_io_port_pin_t) UINT16_MAX,
-#endif
-          },
-  .irda_setting =
-  { .ircr_bits_b.ire = 0, .ircr_bits_b.irrxinv = 0, .ircr_bits_b.irtxinv = 0, }, };
-
-/** UART interface configuration */
-const uart_cfg_t g_uart0_cfg =
-{ .channel = 0, .data_bits = UART_DATA_BITS_8, .parity = UART_PARITY_OFF, .stop_bits = UART_STOP_BITS_1, .p_callback =
-          NULL,
-  .p_context = NULL, .p_extend = &g_uart0_cfg_extend,
-#define RA_NOT_DEFINED (1)
-#if (RA_NOT_DEFINED == RA_NOT_DEFINED)
-  .p_transfer_tx = NULL,
-#else
-                .p_transfer_tx       = &RA_NOT_DEFINED,
-#endif
-#if (RA_NOT_DEFINED == RA_NOT_DEFINED)
-  .p_transfer_rx = NULL,
-#else
-                .p_transfer_rx       = &RA_NOT_DEFINED,
-#endif
-#undef RA_NOT_DEFINED
-  .rxi_ipl = (12),
-  .txi_ipl = (12), .tei_ipl = (12), .eri_ipl = (12),
-#if defined(VECTOR_NUMBER_SCI0_RXI)
-                .rxi_irq             = VECTOR_NUMBER_SCI0_RXI,
-#else
-  .rxi_irq = FSP_INVALID_VECTOR,
-#endif
-#if defined(VECTOR_NUMBER_SCI0_TXI)
-                .txi_irq             = VECTOR_NUMBER_SCI0_TXI,
-#else
-  .txi_irq = FSP_INVALID_VECTOR,
-#endif
-#if defined(VECTOR_NUMBER_SCI0_TEI)
-                .tei_irq             = VECTOR_NUMBER_SCI0_TEI,
-#else
-  .tei_irq = FSP_INVALID_VECTOR,
-#endif
-#if defined(VECTOR_NUMBER_SCI0_ERI)
-                .eri_irq             = VECTOR_NUMBER_SCI0_ERI,
-#else
-  .eri_irq = FSP_INVALID_VECTOR,
-#endif
-        };
-
-/* Instance structure to use this module. */
-const uart_instance_t g_uart0 =
-{ .p_ctrl = &g_uart0_ctrl, .p_cfg = &g_uart0_cfg, .p_api = &g_uart_on_sci };
-adc_instance_ctrl_t g_adc0_ctrl;
-const adc_extended_cfg_t g_adc0_cfg_extend =
+adc_instance_ctrl_t g_shs_adc_ctrl;
+const adc_extended_cfg_t g_shs_adc_cfg_extend =
 { .add_average_count = ADC_ADD_OFF,
   .clearing = ADC_CLEAR_AFTER_READ_ON,
   .trigger = ADC_START_SOURCE_DISABLED,
@@ -95,24 +21,24 @@ const adc_extended_cfg_t g_adc0_cfg_extend =
   .window_b_irq = FSP_INVALID_VECTOR,
 #endif
   .window_b_ipl = (BSP_IRQ_DISABLED), };
-const adc_cfg_t g_adc0_cfg =
-{ .unit = 0, .mode = ADC_MODE_SINGLE_SCAN, .resolution = ADC_RESOLUTION_12_BIT, .alignment =
+const adc_cfg_t g_shs_adc_cfg =
+{ .unit = 0, .mode = ADC_MODE_CONTINUOUS_SCAN, .resolution = ADC_RESOLUTION_12_BIT, .alignment =
           (adc_alignment_t) ADC_ALIGNMENT_RIGHT,
   .trigger = (adc_trigger_t) 0xF, // Not used
-  .p_callback = ADC0_ScanCpltCallback,
+  .p_callback = SHS_ScanCpltCallback,
   /** If NULL then do not add & */
 #if defined(NULL)
     .p_context           = NULL,
 #else
   .p_context = (void*) &NULL,
 #endif
-  .p_extend = &g_adc0_cfg_extend,
+  .p_extend = &g_shs_adc_cfg_extend,
 #if defined(VECTOR_NUMBER_ADC0_SCAN_END)
     .scan_end_irq        = VECTOR_NUMBER_ADC0_SCAN_END,
 #else
   .scan_end_irq = FSP_INVALID_VECTOR,
 #endif
-  .scan_end_ipl = (1),
+  .scan_end_ipl = (2),
 #if defined(VECTOR_NUMBER_ADC0_SCAN_END_B)
     .scan_end_b_irq      = VECTOR_NUMBER_ADC0_SCAN_END_B,
 #else
@@ -120,7 +46,7 @@ const adc_cfg_t g_adc0_cfg =
 #endif
   .scan_end_b_ipl = (BSP_IRQ_DISABLED), };
 #if ((0) | (0))
-const adc_window_cfg_t g_adc0_window_cfg =
+const adc_window_cfg_t g_shs_adc_window_cfg =
 {
     .compare_mask        =  0,
     .compare_mode_mask   =  0,
@@ -133,19 +59,19 @@ const adc_window_cfg_t g_adc0_window_cfg =
     .compare_b_ref_high  = 0,
 };
 #endif
-const adc_channel_cfg_t g_adc0_channel_cfg =
-{ .scan_mask = ADC_MASK_CHANNEL_2 | 0, .scan_mask_group_b = 0, .priority_group_a = ADC_GROUP_A_PRIORITY_OFF, .add_mask =
+const adc_channel_cfg_t g_shs_adc_channel_cfg =
+{ .scan_mask = ADC_MASK_CHANNEL_1 | 0, .scan_mask_group_b = 0, .priority_group_a = ADC_GROUP_A_PRIORITY_OFF, .add_mask =
           0,
   .sample_hold_mask = 0, .sample_hold_states = 24,
 #if ((0) | (0))
-    .p_window_cfg        = (adc_window_cfg_t *) &g_adc0_window_cfg,
+    .p_window_cfg        = (adc_window_cfg_t *) &g_shs_adc_window_cfg,
 #else
   .p_window_cfg = NULL,
 #endif
         };
 /* Instance structure to use this module. */
-const adc_instance_t g_adc0 =
-{ .p_ctrl = &g_adc0_ctrl, .p_cfg = &g_adc0_cfg, .p_channel_cfg = &g_adc0_channel_cfg, .p_api = &g_adc_on_adc };
+const adc_instance_t g_shs_adc =
+{ .p_ctrl = &g_shs_adc_ctrl, .p_cfg = &g_shs_adc_cfg, .p_channel_cfg = &g_shs_adc_channel_cfg, .p_api = &g_adc_on_adc };
 void g_hal_init(void)
 {
     g_common_init ();

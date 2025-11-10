@@ -55,13 +55,13 @@ S_UPPER_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
+device/src \
 ra/arm/CMSIS_6 \
 ra/fsp/src/bsp/cmsis/Device/RENESAS/Source \
 ra/fsp/src/bsp/mcu/all \
-ra/fsp/src/bsp/mcu/ra4m2 \
+ra/fsp/src/bsp/mcu/ra6e2 \
 ra/fsp/src/r_adc \
 ra/fsp/src/r_ioport \
-ra/fsp/src/r_sci_uart \
 ra_gen \
 src \
 

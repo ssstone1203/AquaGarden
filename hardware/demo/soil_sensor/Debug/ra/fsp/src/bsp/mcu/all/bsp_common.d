@@ -8,10 +8,10 @@ ra/fsp/src/bsp/mcu/all/bsp_common.o: \
   G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h \
   G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h \
   G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h \
-  G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra4m2\bsp_mcu_info.h \
-  G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra4m2\bsp_elc.h \
-  G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra4m2\bsp_feature.h \
-  G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra4m2\bsp_peripheral.h \
+  G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h \
+  G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_elc.h \
+  G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h \
+  G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h \
   G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h \
   G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\board_cfg.h \
   G:\AquaGarden\hardware\demo\soil_sensor\ra_gen\vector_data.h \
@@ -19,7 +19,7 @@ ra/fsp/src/bsp/mcu/all/bsp_common.o: \
   G:\AquaGarden\hardware\demo\soil_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h \
   G:\AquaGarden\hardware\demo\soil_sensor\ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h \
   G:\AquaGarden\hardware\demo\soil_sensor\ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_clang.h \
-  G:\AquaGarden\hardware\demo\soil_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\R7FA4M2AD.h \
+  G:\AquaGarden\hardware\demo\soil_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\R7FA6E2BB.h \
   G:\AquaGarden\hardware\demo\soil_sensor\ra\arm\CMSIS_6\CMSIS\Core\Include\core_cm33.h \
   G:\AquaGarden\hardware\demo\soil_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\system.h \
   G:\AquaGarden\hardware\demo\soil_sensor\ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_common.h \
@@ -49,10 +49,10 @@ G:\AquaGarden\hardware\demo\soil_sensor\ra_gen\bsp_clock_cfg.h:
 G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h:
 G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h:
 G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h:
-G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra4m2\bsp_mcu_info.h:
-G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra4m2\bsp_elc.h:
-G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra4m2\bsp_feature.h:
-G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra4m2\bsp_peripheral.h:
+G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h:
+G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_elc.h:
+G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h:
+G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h:
 G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h:
 G:\AquaGarden\hardware\demo\soil_sensor\ra_cfg\fsp_cfg\bsp\board_cfg.h:
 G:\AquaGarden\hardware\demo\soil_sensor\ra_gen\vector_data.h:
@@ -60,7 +60,7 @@ G:\AquaGarden\hardware\demo\soil_sensor\ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp
 G:\AquaGarden\hardware\demo\soil_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h:
 G:\AquaGarden\hardware\demo\soil_sensor\ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h:
 G:\AquaGarden\hardware\demo\soil_sensor\ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_clang.h:
-G:\AquaGarden\hardware\demo\soil_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\R7FA4M2AD.h:
+G:\AquaGarden\hardware\demo\soil_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\R7FA6E2BB.h:
 G:\AquaGarden\hardware\demo\soil_sensor\ra\arm\CMSIS_6\CMSIS\Core\Include\core_cm33.h:
 G:\AquaGarden\hardware\demo\soil_sensor\ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\system.h:
 G:\AquaGarden\hardware\demo\soil_sensor\ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_common.h:

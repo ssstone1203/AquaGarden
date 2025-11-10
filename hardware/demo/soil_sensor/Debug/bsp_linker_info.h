@@ -52,6 +52,11 @@ typedef struct st_bsp_init_copy_info
     uint32_t *const p_load;
     bsp_init_type_t type;
 } bsp_init_copy_info_t;
+typedef struct st_bsp_init_nocache_info
+{
+    uint32_t *const p_base;
+    uint32_t *const p_limit;
+} bsp_mpu_nocache_info_t;
 
 typedef struct st_bsp_init_info
 {
@@ -59,6 +64,8 @@ typedef struct st_bsp_init_info
     bsp_init_zero_info_t const *const p_zero_list;
     uint32_t copy_count;
     bsp_init_copy_info_t const *const p_copy_list;
+    uint32_t nocache_count;
+    bsp_mpu_nocache_info_t const *const p_nocache_list;
 } bsp_init_info_t;
 
 /***********************************************************************************************************************
@@ -78,12 +85,15 @@ extern bsp_init_info_t const g_init_info;
  **********************************************************************************************************************/
 /* DDSC symbol definitions */
 /* Zero initialization tables */
+extern uint32_t __ram_zero_nocache$$Base;
+extern uint32_t __ram_zero_nocache$$Limit;
 extern uint32_t __ram_zero$$Base;
 extern uint32_t __ram_zero$$Limit;
 extern uint32_t __ram_tbss$$Base;
 extern uint32_t __ram_tbss$$Limit;
 static const bsp_init_zero_info_t zero_list[] =
 {
+  {.p_base = &__ram_zero_nocache$$Base, .p_limit = &__ram_zero_nocache$$Limit,.type={.copy_64 = 0, .external = 0, .source_type = INIT_MEM_ZERO, .destination_type = INIT_MEM_RAM}},
   {.p_base = &__ram_zero$$Base, .p_limit = &__ram_zero$$Limit,.type={.copy_64 = 0, .external = 0, .source_type = INIT_MEM_ZERO, .destination_type = INIT_MEM_RAM}},
   {.p_base = &__ram_tbss$$Base, .p_limit = &__ram_tbss$$Limit,.type={.copy_64 = 0, .external = 0, .source_type = INIT_MEM_ZERO, .destination_type = INIT_MEM_RAM}}
 };
@@ -107,6 +117,15 @@ static const bsp_init_copy_info_t copy_list[] =
   {.p_base = &__ram_from_flash$$Base, .p_limit = &__ram_from_flash$$Limit, .p_load = &__ram_from_flash$$Load,.type={.copy_64 = 0, .external = 0, .source_type = INIT_MEM_FLASH, .destination_type = INIT_MEM_RAM}},
   {.p_base = &__ram_tdata$$Base, .p_limit = &__ram_tdata$$Limit, .p_load = &__ram_tdata$$Load,.type={.copy_64 = 0, .external = 0, .source_type = INIT_MEM_FLASH, .destination_type = INIT_MEM_RAM}}
 };
+/* nocache regions */
+extern uint32_t __ram_noinit_nocache$$Base;
+extern uint32_t __ram_noinit_nocache$$Limit;
+extern uint32_t __ram_zero_nocache$$Base;
+extern uint32_t __ram_zero_nocache$$Limit;
+static const bsp_mpu_nocache_info_t nocache_list[] =
+{
+  {.p_base = &__ram_noinit_nocache$$Base, .p_limit = &__ram_zero_nocache$$Limit},
+};
 
 /* initialization data structure */
 const bsp_init_info_t g_init_info =
@@ -114,7 +133,9 @@ const bsp_init_info_t g_init_info =
     .zero_count  = sizeof(zero_list) / sizeof(zero_list[0]),
     .p_zero_list = zero_list,
     .copy_count  = sizeof(copy_list) / sizeof(copy_list[0]),
-    .p_copy_list = copy_list
+    .p_copy_list = copy_list,
+    .nocache_count  = sizeof(nocache_list) / sizeof(nocache_list[0]),
+    .p_nocache_list = nocache_list
 };
 
 #endif   // BSP_LINKER_C

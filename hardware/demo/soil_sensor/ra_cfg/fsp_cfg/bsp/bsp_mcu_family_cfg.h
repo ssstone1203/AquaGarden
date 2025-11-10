@@ -7,9 +7,9 @@ extern "C" {
 
 #include "bsp_mcu_device_pn_cfg.h"
 #include "bsp_mcu_device_cfg.h"
-#include "../../../ra/fsp/src/bsp/mcu/ra4m2/bsp_mcu_info.h"
+#include "../../../ra/fsp/src/bsp/mcu/ra6e2/bsp_mcu_info.h"
 #include "bsp_clock_cfg.h"
-#define BSP_MCU_GROUP_RA4M2 (1)
+#define BSP_MCU_GROUP_RA6E2 (1)
 #define BSP_LOCO_HZ                 (32768)
 #define BSP_MOCO_HZ                 (8000000)
 #define BSP_SUB_CLOCK_HZ            (32768)
@@ -74,39 +74,27 @@ extern "C" {
 /* Peripheral Security Attribution Register (PSAR) Settings */
 #ifndef BSP_TZ_CFG_PSARB
 #define BSP_TZ_CFG_PSARB (\
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 2) /* CAN0 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 8) /* IIC1 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 9) /* IIC0 */ | \
+            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 3) /* CEC */ | \
+            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 4) /* I3C0 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 11) /* USBFS */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 18) /* SPI1 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 19) /* SPI0 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 22) /* SCI9 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 23) /* SCI8 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 24) /* SCI7 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 25) /* SCI6 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 26) /* SCI5 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 27) /* SCI4 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 28) /* SCI3 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 29) /* SCI2 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 30) /* SCI1 */ | \
-            (((1 > 0) ? 0U : 1U) << 31) /* SCI0 */ | \
-            0x33f4f9) /* Unused */
+            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 31) /* SCI0 */ | \
+            0x7FB3F7E7U) /* Unused */
 #endif
 #ifndef BSP_TZ_CFG_PSARC
 #define BSP_TZ_CFG_PSARC (\
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 0) /* CAC */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 1) /* CRC */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 3) /* CTSU */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 8) /* SSIE0 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 12) /* SDHI0 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 13) /* DOC */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 31) /* SCE9 */ | \
-            0x7fffcef4) /* Unused */
+            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 27) /* CANFD0 */ | \
+            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 28) /* TRNG */ | \
+            0xE7FFDEFC) /* Unused */
 #endif
 #ifndef BSP_TZ_CFG_PSARD
 #define BSP_TZ_CFG_PSARD (\
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 0) /* AGT3 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 1) /* AGT2 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 2) /* AGT1 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 3) /* AGT0 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 11) /* POEG3 */ | \
@@ -116,26 +104,20 @@ extern "C" {
             (((1 > 0) ? 0U : 1U) << 16) /* ADC0 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 20) /* DAC */ | \
             (((1 > 0) ? 0U : 1U) << 22) /* TSN */ | \
-            0xffae07f0) /* Unused */
+            0xFFAE87F3) /* Unused */
 #endif
 #ifndef BSP_TZ_CFG_PSARE
 #define BSP_TZ_CFG_PSARE (\
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 0) /* WDT */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 1) /* IWDT */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 2) /* RTC */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 14) /* AGT5 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 15) /* AGT4 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 22) /* GPT9 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 23) /* GPT8 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 24) /* GPT7 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 25) /* GPT6 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 26) /* GPT5 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 27) /* GPT4 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 28) /* GPT3 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 29) /* GPT2 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 30) /* GPT1 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 31) /* GPT0 */ | \
-            0x3f3ff8) /* Unused */
+            0x03FFFFF8) /* Unused */
 #endif
 #ifndef BSP_TZ_CFG_MSSAR
 #define BSP_TZ_CFG_MSSAR (\
@@ -145,6 +127,11 @@ extern "C" {
 #endif
 
 /* Type 2 Peripheral Security Attribution */
+
+/* Security attribution for Cache registers. */
+#ifndef BSP_TZ_CFG_CSAR
+#define BSP_TZ_CFG_CSAR (0xFFFFFFFFU)
+#endif
 
 /* Security attribution for RSTSRn registers. */
 #ifndef BSP_TZ_CFG_RSTSAR
@@ -163,27 +150,22 @@ extern "C" {
 
 /* Security attribution for LPM registers. */
 #ifndef BSP_TZ_CFG_LPMSAR
-#define BSP_TZ_CFG_LPMSAR ((RA_NOT_DEFINED > 0) ? 0xFFFFFCEAU : 0xFFFFFFFFU)
+#define BSP_TZ_CFG_LPMSAR ((RA_NOT_DEFINED > 0) ? 0xFFFFDCEAU : 0xFFFFFFFFU)
 #endif
 /* Deep Standby Interrupt Factor Security Attribution Register. */
 #ifndef BSP_TZ_CFG_DPFSAR
-#define BSP_TZ_CFG_DPFSAR ((RA_NOT_DEFINED > 0) ? 0xF2E00000U : 0xFFFFFFFFU)
+#define BSP_TZ_CFG_DPFSAR ((RA_NOT_DEFINED > 0) ? 0xFAE0A00CU : 0xFFFFFFFFU)
 #endif
 
 /* Security attribution for CGC registers. */
 #ifndef BSP_TZ_CFG_CGFSAR
 #if BSP_CFG_CLOCKS_SECURE
 /* Protect all CGC registers from Non-secure write access. */
-#define BSP_TZ_CFG_CGFSAR (0xFFFEF402U)
+#define BSP_TZ_CFG_CGFSAR (0xFFEAF602U)
 #else
 /* Allow Secure and Non-secure write access. */
 #define BSP_TZ_CFG_CGFSAR (0xFFFFFFFFU)
 #endif
-#endif
-
-/* Security attribution for Battery Backup registers. */
-#ifndef BSP_TZ_CFG_BBFSAR
-#define BSP_TZ_CFG_BBFSAR (0x00FFFFFF)
 #endif
 
 /* Security attribution for registers for IRQ channels. */
@@ -204,8 +186,7 @@ extern "C" {
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 12U) /* External IRQ12 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 13U) /* External IRQ13 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 14U) /* External IRQ14 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 15U) /* External IRQ15 */ | \
-            0xFFFF0000U)
+            0xFFFF8000U)
 #endif
 
 /* Security attribution for NMI registers. */
@@ -234,12 +215,12 @@ extern "C" {
 
 /* Security attribution registers for WUPEN0. */
 #ifndef BSP_TZ_CFG_ICUSARE
-#define BSP_TZ_CFG_ICUSARE ((RA_NOT_DEFINED > 0) ? 0x04F2FFFFU : 0xFFFFFFFFU)
+#define BSP_TZ_CFG_ICUSARE ((RA_NOT_DEFINED > 0) ? 0x84F2FFFFU : 0xFFFFFFFFU)
 #endif
 
 /* Security attribution registers for WUPEN1. */
 #ifndef BSP_TZ_CFG_ICUSARF
-#define BSP_TZ_CFG_ICUSARF ((RA_NOT_DEFINED > 0) ? 0xFFFFFFF8U : 0xFFFFFFFFU)
+#define BSP_TZ_CFG_ICUSARF ((RA_NOT_DEFINED > 0) ? 0xFFFFF7FFU : 0xFFFFFFFFU)
 #endif
 
 /* Set DTCSTSAR if the Secure program uses the DTC. */
@@ -292,12 +273,10 @@ extern "C" {
 #ifndef BSP_TZ_CFG_BUSSARB
 #define BSP_TZ_CFG_BUSSARB (0xFFFFFFFFU)
 #endif
-
 /* Enable Uninitialized Non-Secure Application Fallback. */
 #ifndef BSP_TZ_CFG_NON_SECURE_APPLICATION_FALLBACK
 #define BSP_TZ_CFG_NON_SECURE_APPLICATION_FALLBACK (1U)
 #endif
-
 /* Used to create IELS values for the interrupt initialization table g_interrupt_event_link_select. */
 #define BSP_PRV_IELS_ENUM(vector)    (ELC_ ## vector)
 

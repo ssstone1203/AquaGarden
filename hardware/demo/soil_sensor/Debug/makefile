@@ -12,13 +12,13 @@ RM := rm -rf
 -include sources.mk
 -include src/subdir.mk
 -include ra_gen/subdir.mk
--include ra/fsp/src/r_sci_uart/subdir.mk
 -include ra/fsp/src/r_ioport/subdir.mk
 -include ra/fsp/src/r_adc/subdir.mk
--include ra/fsp/src/bsp/mcu/ra4m2/subdir.mk
+-include ra/fsp/src/bsp/mcu/ra6e2/subdir.mk
 -include ra/fsp/src/bsp/mcu/all/subdir.mk
 -include ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/subdir.mk
 -include ra/arm/CMSIS_6/subdir.mk
+-include device/src/subdir.mk
 -include subdir.mk
 -include objects.mk
 

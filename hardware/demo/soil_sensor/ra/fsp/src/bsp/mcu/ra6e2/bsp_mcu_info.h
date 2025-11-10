@@ -6,12 +6,12 @@
 
 /*******************************************************************************************************************//**
  * @ingroup BSP_MCU
- * @defgroup BSP_MCU_RA4M2 RA4M2
- * @includedoc config_bsp_ra4m2_fsp.html
+ * @defgroup BSP_MCU_RA6E2 RA6E2
+ * @includedoc config_bsp_ra6e2_fsp.html
  * @{
  **********************************************************************************************************************/
 
-/** @} (end defgroup BSP_MCU_RA4M2) */
+/** @} (end defgroup BSP_MCU_RA6E2) */
 
 #ifndef BSP_MCU_INFO_H
 #define BSP_MCU_INFO_H
