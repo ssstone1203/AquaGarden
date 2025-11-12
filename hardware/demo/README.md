@@ -3,6 +3,7 @@
 ## 概况
 
 - `demo`文件夹包含了所有模块的测试代码，方便各个模块的测试和后续移植。
+- 所有的demo都是裸机开发的
 
 ## 💡关于e2studio的一些操作
 
@@ -18,5 +19,6 @@ demo
 ├─ pump				//水泵模块
 ├─ pressure_sensor	 //压力传感器
 ├─ RGB_light		//三色RGB
+├─ water_quality_sensor		//水质传感器
 └─ README.md
 ````
