@@ -1,0 +1,25 @@
+/* generated vector source file - do not edit */
+#include "bsp_api.h"
+/* Do not build these data structures if no interrupts are currently allocated because IAR will have build errors. */
+#if VECTOR_DATA_IRQ_COUNT > 0
+        BSP_DONT_REMOVE const fsp_vector_t g_vector_table[BSP_ICU_VECTOR_NUM_ENTRIES] BSP_PLACE_IN_SECTION(BSP_SECTION_APPLICATION_VECTORS) =
+        {
+                        [0] = iic_b_master_rxi_isr, /* IICB0 RXI (Receive) */
+            [1] = iic_b_master_txi_isr, /* IICB0 TXI (Transmit) */
+            [2] = iic_b_master_tei_isr, /* IICB0 TEI (Transmit end) */
+            [3] = iic_b_master_eri_isr, /* IICB0 ERI (Error) */
+            [4] = sci_i2c_txi_isr, /* SCI0 TXI (Transmit data empty) */
+            [5] = sci_i2c_tei_isr, /* SCI0 TEI (Transmit end) */
+        };
+        #if BSP_FEATURE_ICU_HAS_IELSR
+        const bsp_interrupt_event_t g_interrupt_event_link_select[BSP_ICU_VECTOR_NUM_ENTRIES] =
+        {
+            [0] = BSP_PRV_VECT_ENUM(EVENT_IICB0_RXI,GROUP0), /* IICB0 RXI (Receive) */
+            [1] = BSP_PRV_VECT_ENUM(EVENT_IICB0_TXI,GROUP1), /* IICB0 TXI (Transmit) */
+            [2] = BSP_PRV_VECT_ENUM(EVENT_IICB0_TEI,GROUP2), /* IICB0 TEI (Transmit end) */
+            [3] = BSP_PRV_VECT_ENUM(EVENT_IICB0_ERI,GROUP3), /* IICB0 ERI (Error) */
+            [4] = BSP_PRV_VECT_ENUM(EVENT_SCI0_TXI,GROUP4), /* SCI0 TXI (Transmit data empty) */
+            [5] = BSP_PRV_VECT_ENUM(EVENT_SCI0_TEI,GROUP5), /* SCI0 TEI (Transmit end) */
+        };
+        #endif
+        #endif
