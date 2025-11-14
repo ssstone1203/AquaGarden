@@ -60,7 +60,6 @@ ra/arm/CMSIS_6 \
 ra/fsp/src/bsp/cmsis/Device/RENESAS/Source \
 ra/fsp/src/bsp/mcu/all \
 ra/fsp/src/bsp/mcu/ra6e2 \
-ra/fsp/src/r_iic_b_master \
 ra/fsp/src/r_ioport \
 ra/fsp/src/r_sci_i2c \
 ra_gen \

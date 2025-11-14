@@ -29,7 +29,7 @@
     <node id="board.clock.uclk.source" option="board.clock.uclk.source.disabled"/>
     <node id="board.clock.canfdclk.source" option="board.clock.canfdclk.source.disabled"/>
     <node id="board.clock.cecclk.source" option="board.clock.cecclk.source.disabled"/>
-    <node id="board.clock.i3cclk.source" option="board.clock.i3cclk.source.pll"/>
+    <node id="board.clock.i3cclk.source" option="board.clock.i3cclk.source.disabled"/>
     <node id="board.clock.iclk.div" option="board.clock.iclk.div.1"/>
     <node id="board.clock.pclka.div" option="board.clock.pclka.div.2"/>
     <node id="board.clock.pclkb.div" option="board.clock.pclkb.div.4"/>
@@ -40,7 +40,7 @@
     <node id="board.clock.uclk.div" option="board.clock.uclk.div.5"/>
     <node id="board.clock.canfdclk.div" option="board.clock.canfdclk.div.6"/>
     <node id="board.clock.cecclk.div" option="board.clock.cecclk.div.1"/>
-    <node id="board.clock.i3cclk.div" option="board.clock.i3cclk.div.2"/>
+    <node id="board.clock.i3cclk.div" option="board.clock.i3cclk.div.1"/>
     <node id="board.clock.iclk.display" option="board.clock.iclk.display.value"/>
     <node id="board.clock.pclka.display" option="board.clock.pclka.display.value"/>
     <node id="board.clock.pclkb.display" option="board.clock.pclkb.display.value"/>
@@ -55,12 +55,10 @@
   </raClockConfiguration>
   <raPinConfiguration>
     <pincfg active="true" name="" symbol="">
-      <configSetting altId="i3c_fslash_iic.scl0.p408" configurationId="i3c_fslash_iic.scl0" peripheral="I3C/IIC"/>
-      <configSetting altId="i3c_fslash_iic.sda0.p407" configurationId="i3c_fslash_iic.sda0" peripheral="I3C/IIC"/>
       <configSetting altId="jtag_fslash_swd.swclk.p300" configurationId="jtag_fslash_swd.swclk" peripheral="JTAG/SWD"/>
       <configSetting altId="jtag_fslash_swd.swdio.p108" configurationId="jtag_fslash_swd.swdio" peripheral="JTAG/SWD"/>
-      <configSetting altId="sci0.rxd0.p212" configurationId="sci0.rxd0" isUsedByDriver="true" peripheral="SCI0"/>
-      <configSetting altId="sci0.txd0.p213" configurationId="sci0.txd0" isUsedByDriver="true" peripheral="SCI0"/>
+      <configSetting altId="sci0.rxd0.p100" configurationId="sci0.rxd0" isUsedByDriver="true" peripheral="SCI0"/>
+      <configSetting altId="sci0.txd0.p101" configurationId="sci0.txd0" isUsedByDriver="true" peripheral="SCI0"/>
     </pincfg>
   </raPinConfiguration>
 </raConfiguration>

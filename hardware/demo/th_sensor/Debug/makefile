@@ -14,7 +14,6 @@ RM := rm -rf
 -include ra_gen/subdir.mk
 -include ra/fsp/src/r_sci_i2c/subdir.mk
 -include ra/fsp/src/r_ioport/subdir.mk
--include ra/fsp/src/r_iic_b_master/subdir.mk
 -include ra/fsp/src/bsp/mcu/ra6e2/subdir.mk
 -include ra/fsp/src/bsp/mcu/all/subdir.mk
 -include ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/subdir.mk
@@ -96,7 +95,7 @@ all: th_sensor.elf secondary-outputs
 
 # Tool invocations
 th_sensor.elf: $(OBJS) $(USER_OBJS) $(LIBRARY_GENERATOR_OUTPUTTYPE_OUTPUTS) $(LINKER_SCRIPT)
-	$(file > th_sensor.elf.in,-mcpu=cortex-m33 -mthumb -mlittle-endian -mfloat-abi=hard -mfpu=fpv5-sp-d16 -O2 -ffunction-sections -fdata-sections -fno-strict-aliasing -fmessage-length=0 -funsigned-char -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Waggregate-return -Wno-parentheses-equality -Wfloat-equal -g3 -o "th_sensor.elf" $(OBJS) $(USER_OBJS) -T "fsp.lld" -L"E:\\AquaGarden\\hardware\\demo\\th_sensor/script" -L"E:\\AquaGarden\\hardware\\demo\\th_sensor\\Debug" -Wl,-Map=th_sensor.map -Wl,--start-group -lcrt0 -lc++abi  -Wl,--end-group -Wl,--gc-sections -Wl,--cref -Wl,-z,norelro -Wl,--icf=none -I"E:\\AquaGarden\\hardware\\demo\\th_sensor\\ra_gen" -I"." -I"E:\\AquaGarden\\hardware\\demo\\th_sensor\\ra_cfg\\fsp_cfg\\bsp" -I"E:\\AquaGarden\\hardware\\demo\\th_sensor\\ra_cfg\\fsp_cfg" -I"E:\\AquaGarden\\hardware\\demo\\th_sensor\\src" -I"E:\\AquaGarden\\hardware\\demo\\th_sensor\\ra\\fsp\\inc" -I"E:\\AquaGarden\\hardware\\demo\\th_sensor\\ra\\fsp\\inc\\api" -I"E:\\AquaGarden\\hardware\\demo\\th_sensor\\ra\\fsp\\inc\\instances" -I"E:\\AquaGarden\\hardware\\demo\\th_sensor\\ra\\arm\\CMSIS_6\\CMSIS\\Core\\Include")
+	$(file > th_sensor.elf.in,-mcpu=cortex-m33 -mthumb -mlittle-endian -mfloat-abi=hard -mfpu=fpv5-sp-d16 -O2 -ffunction-sections -fdata-sections -fno-strict-aliasing -fmessage-length=0 -funsigned-char -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Waggregate-return -Wno-parentheses-equality -Wfloat-equal -g3 -o "th_sensor.elf" $(OBJS) $(USER_OBJS) -T "fsp.lld" -L"G:\\AquaGarden\\hardware\\demo\\th_sensor/script" -L"G:\\AquaGarden\\hardware\\demo\\th_sensor\\Debug" -Wl,-Map=th_sensor.map -Wl,--start-group -lcrt0 -lc++abi  -Wl,--end-group -Wl,--gc-sections -Wl,--cref -Wl,-z,norelro -Wl,--icf=none -I"G:\\AquaGarden\\hardware\\demo\\th_sensor\\ra_gen" -I"." -I"G:\\AquaGarden\\hardware\\demo\\th_sensor\\ra_cfg\\fsp_cfg\\bsp" -I"G:\\AquaGarden\\hardware\\demo\\th_sensor\\ra_cfg\\fsp_cfg" -I"G:\\AquaGarden\\hardware\\demo\\th_sensor\\src" -I"G:\\AquaGarden\\hardware\\demo\\th_sensor\\ra\\fsp\\inc" -I"G:\\AquaGarden\\hardware\\demo\\th_sensor\\ra\\fsp\\inc\\api" -I"G:\\AquaGarden\\hardware\\demo\\th_sensor\\ra\\fsp\\inc\\instances" -I"G:\\AquaGarden\\hardware\\demo\\th_sensor\\ra\\arm\\CMSIS_6\\CMSIS\\Core\\Include")
 	@echo Building target: $@ && clang  --target=arm-none-eabi @"th_sensor.elf.in"> th_sensor.cref
 th_sensor.srec: th_sensor.elf
 	llvm-objcopy "th_sensor.elf" -O srec  "th_sensor.srec"

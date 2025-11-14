@@ -52,235 +52,273 @@
  8000000  8000000        0     1         __ddsc_DATA_FLASH_END = .
        0        0        0     1 .flash.startof
        0        0        0     1         __ddsc_FLASH_START = .
-       0        0       58     4 __flash_vectors$$
+       0        0       48     4 __flash_vectors$$
        0        0        0     1         __flash_vectors$$Base = .
        0        0        0     1         _VECTORS = .
        0        0       40     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.fixed_vectors)
        0        0       40     1                 __Vectors
-      40       40       18     4         ./ra_gen/vector_data.o:(.application_vectors)
-      40       40       18     1                 g_vector_table
-      58       58        0     1         __flash_vectors$$Limit = .
-      58       58        0     1 __flash_noinit$$
-      58       58        0     1         __flash_noinit$$Base = .
-      58       58        0     1         __flash_noinit$$Limit = .
-20000000       58        1     1 __ram_from_flash$$
-20000000       58        0     1         __ram_from_flash$$Base = .
-20000000       58        0     1         __ram_from_flash$$Load = LOADADDR ( __ram_from_flash$$ )
-20000000       58        1     1         ./src/hal_entry.o:(.data.g_data)
-20000000       58        1     1                 g_data
-20000001       59        0     1         __ram_from_flash$$Limit = .
-20000020 20000020        0     1 __ram_noinit_nocache$$
-20000020 20000020        0     1         __ram_noinit_nocache$$Base = .
-20000020 20000020        0     1         __ram_noinit_nocache$$Limit = .
-20000020 20000020        0     1 __ram_zero_nocache$$
-20000020 20000020        0     1         __ram_zero_nocache$$Base = .
-20000020 20000020        0     1         . = ALIGN ( 32 )
-20000020 20000020        0     1         __ram_zero_nocache$$Limit = .
-20000020 20000020      418     8 __ram_noinit$$
-20000020 20000020        0     1         __ram_noinit$$Base = .
-20000020 20000020      400     8         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.bss.g_main_stack)
-20000020 20000020      400     1                 g_main_stack
-20000420 20000420       18     4         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.ram_noinit)
-20000420 20000420       18     1                 g_clock_freq
-20000438 20000438        0     1         __ram_noinit$$Limit = .
-20000440 20000440       c4    16 __ram_zero$$
-20000440 20000440        0     1         __ram_zero$$Base = .
-20000440 20000440        8     4         ./ra_gen/common_data.o:(.bss.g_ioport_ctrl)
-20000440 20000440        8     1                 g_ioport_ctrl
-20000448 20000448       40     4         ./ra_gen/hal_data.o:(.bss.g_i2c0_ctrl)
-20000448 20000448       40     1                 g_i2c0_ctrl
-20000488 20000488       40     4         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.bss.g_bsp_group_irq_sources)
-20000488 20000488       40     1                 g_bsp_group_irq_sources
-200004c8 200004c8        4     4         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.bss.g_protect_pfswe_counter)
-200004c8 200004c8        4     1                 g_protect_pfswe_counter
-200004cc 200004cc       18     4         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.bss.gp_renesas_isr_context)
-200004cc 200004cc       18     1                 gp_renesas_isr_context
-200004e4 200004e4        a     2         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.bss.g_protect_counters)
-200004e4 200004e4        a     1                 g_protect_counters
-200004f0 200004f0        4     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.bss.SystemCoreClock)
-200004f0 200004f0        4     1                 SystemCoreClock
-20000500 20000500        4    16         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.bss)
-20000500 20000500        4     1                 __tls
-20000504 20000504        0     1         __ram_zero$$Limit = .
-20000504 20000504        0     1 __ram_tdata$$
-20000504 20000504        0     1         __ram_tdata$$Base = .
-20000504 20000504        0     1         __ram_tdata$$Load = LOADADDR ( __ram_tdata$$ )
-20000504 20000504        0     1         __ram_tdata$$Limit = .
-20000504 20000504        0     1 __ram_tbss$$
-20000504 20000504        0     1         __ram_tbss$$Base = .
-20000504 20000504        0     1         __ram_tbss$$Limit = .
-20000508 20000508        0     1 __ram_thread_stack$$
-20000508 20000508        0     1         __ram_thread_stack$$Base = .
-20000508 20000508        0     1         __ram_thread_stack$$Limit = .
+      40       40        8     4         ./ra_gen/vector_data.o:(.application_vectors)
+      40       40        8     1                 g_vector_table
+      48       48        0     1         __flash_vectors$$Limit = .
+      48       48        0     1 __flash_noinit$$
+      48       48        0     1         __flash_noinit$$Base = .
+      48       48        0     1         __flash_noinit$$Limit = .
+20000000 20000000        0     1 __ram_from_flash$$
+20000000 20000000        0     1         __ram_from_flash$$Base = .
+20000000 20000000        0     1         __ram_from_flash$$Load = LOADADDR ( __ram_from_flash$$ )
+20000000 20000000        0     1         __ram_from_flash$$Limit = .
+20000000 20000000        0     1 __ram_noinit_nocache$$
+20000000 20000000        0     1         __ram_noinit_nocache$$Base = .
+20000000 20000000        0     1         __ram_noinit_nocache$$Limit = .
+20000000 20000000        0     1 __ram_zero_nocache$$
+20000000 20000000        0     1         __ram_zero_nocache$$Base = .
+20000000 20000000        0     1         . = ALIGN ( 32 )
+20000000 20000000        0     1         __ram_zero_nocache$$Limit = .
+20000000 20000000      418     8 __ram_noinit$$
+20000000 20000000        0     1         __ram_noinit$$Base = .
+20000000 20000000      400     8         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.bss.g_main_stack)
+20000000 20000000      400     1                 g_main_stack
+20000400 20000400       18     4         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.ram_noinit)
+20000400 20000400       18     1                 g_clock_freq
+20000418 20000418        0     1         __ram_noinit$$Limit = .
+20000420 20000420       d4    16 __ram_zero$$
+20000420 20000420        0     1         __ram_zero$$Base = .
+20000420 20000420        4     2         ./src/hal_entry.o:(.bss.g_ths_cmd)
+20000420 20000420        4     1                 g_ths_cmd
+20000424 20000424       18     4         ./src/hal_entry.o:(.bss.g_ths_data)
+20000424 20000424       18     1                 g_ths_data
+2000043c 2000043c        4     4         ./src/hal_entry.o:(.bss.g_ths_temp)
+2000043c 2000043c        4     1                 g_ths_temp
+20000440 20000440        4     4         ./src/hal_entry.o:(.bss.g_ths_rh)
+20000440 20000440        4     1                 g_ths_rh
+20000444 20000444        8     4         ./ra_gen/common_data.o:(.bss.g_ioport_ctrl)
+20000444 20000444        8     1                 g_ioport_ctrl
+2000044c 2000044c       40     4         ./ra_gen/hal_data.o:(.bss.g_i2c0_ctrl)
+2000044c 2000044c       40     1                 g_i2c0_ctrl
+2000048c 2000048c       40     4         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.bss.g_bsp_group_irq_sources)
+2000048c 2000048c       40     1                 g_bsp_group_irq_sources
+200004cc 200004cc        4     4         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.bss.g_protect_pfswe_counter)
+200004cc 200004cc        4     1                 g_protect_pfswe_counter
+200004d0 200004d0        8     4         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.bss.gp_renesas_isr_context)
+200004d0 200004d0        8     1                 gp_renesas_isr_context
+200004d8 200004d8        a     2         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.bss.g_protect_counters)
+200004d8 200004d8        a     1                 g_protect_counters
+200004e4 200004e4        4     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.bss.SystemCoreClock)
+200004e4 200004e4        4     1                 SystemCoreClock
+200004f0 200004f0        4    16         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.bss)
+200004f0 200004f0        4     1                 __tls
+200004f4 200004f4        0     1         __ram_zero$$Limit = .
+200004f4 200004f4        0     1 __ram_tdata$$
+200004f4 200004f4        0     1         __ram_tdata$$Base = .
+200004f4 200004f4        0     1         __ram_tdata$$Load = LOADADDR ( __ram_tdata$$ )
+200004f4 200004f4        0     1         __ram_tdata$$Limit = .
+200004f4 200004f4        0     1 __ram_tbss$$
+200004f4 200004f4        0     1         __ram_tbss$$Base = .
+200004f4 200004f4        0     1         __ram_tbss$$Limit = .
+200004f8 200004f8        0     1 __ram_thread_stack$$
+200004f8 200004f8        0     1         __ram_thread_stack$$Base = .
+200004f8 200004f8        0     1         __ram_thread_stack$$Limit = .
 20002000 20002000        0     1 .ram.endof
 20002000 20002000        0     1         __ddsc_RAM_END = .
 20002000 20002000        0     1 .ram.flat_nsc
 20002000 20002000        0     1         __ddsc_RAM_NSC = .
-      5c       5c     15a6     4 __flash_readonly$$
-      5c       5c        0     1         __flash_readonly$$Base = .
-      5c       5c        2     4         ./src/hal_entry.o:(.text.sci_i2c_master_callback)
-      5c       5c        0     1                 $t.1
-      5d       5d        2     1                 sci_i2c_master_callback
-      60       60       3c     4         ./src/hal_entry.o:(.text.hal_entry)
-      60       60        0     1                 $t.2
-      61       61       3c     1                 hal_entry
-      9c       9c       1a     4         ./src/hal_warmstart.o:(.text.R_BSP_WarmStart)
-      9c       9c        0     1                 $t.0
-      9d       9d       1a     1                 R_BSP_WarmStart
-      b8       b8        c     4         ./ra_gen/main.o:(.text.main)
-      b8       b8        0     1                 $t.0
-      b9       b9        c     1                 main
-      c4       c4      166     4         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.text.R_SCI_I2C_Open)
-      c4       c4        0     1                 $t.0
-      c5       c5      166     1                 R_SCI_I2C_Open
-     22c      22c       98     4         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.text.R_SCI_I2C_Write)
-     22c      22c        0     1                 $t.2
-     22d      22d       98     1                 R_SCI_I2C_Write
-     2c4      2c4      126     4         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.text.sci_i2c_txi_isr)
-     2c4      2c4        0     1                 $t.9
-     2c5      2c5      126     1                 sci_i2c_txi_isr
-     3ec      3ec      116     4         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.text.sci_i2c_tei_isr)
-     3ec      3ec        0     1                 $t.10
-     3ed      3ed      116     1                 sci_i2c_tei_isr
-     504      504       18     4         ./ra/fsp/src/r_ioport/r_ioport.o:(.text.R_IOPORT_Open)
-     504      504        0     1                 $t.0
-     505      505       18     1                 R_IOPORT_Open
-     51c      51c      144     4         ./ra/fsp/src/r_ioport/r_ioport.o:(.text.r_ioport_pins_config)
-     51c      51c        0     1                 $t.13
-     51d      51d      144     1                 r_ioport_pins_config
-     660      660      1e6     4         ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o:(.text.iic_b_master_open_hw_master)
-     660      660        0     1                 $t.8
-     661      661      1e6     1                 iic_b_master_open_hw_master
-     848      848      17e     4         ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o:(.text.iic_b_master_rxi_isr)
-     848      848        0     1                 $t.10
-     849      849      17e     1                 iic_b_master_rxi_isr
-     9c8      9c8      144     4         ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o:(.text.iic_b_master_txi_isr)
-     9c8      9c8        0     1                 $t.11
-     9c9      9c9      144     1                 iic_b_master_txi_isr
-     b0c      b0c      10c     4         ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o:(.text.iic_b_master_tei_isr)
-     b0c      b0c        0     1                 $t.12
-     b0d      b0d      10c     1                 iic_b_master_tei_isr
-     c18      c18      202     4         ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o:(.text.iic_b_master_eri_isr)
-     c18      c18        0     1                 $t.13
-     c19      c19      202     1                 iic_b_master_eri_isr
-     e1c      e1c       3a     4         ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o:(.text.iic_b_master_notify)
-     e1c      e1c        0     1                 $t.14
-     e1d      e1d       3a     1                 iic_b_master_notify
-     e58      e58       2c     4         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.text.SystemCoreClockUpdate)
-     e58      e58        0     1                 $t.2
-     e59      e59       2c     1                 SystemCoreClockUpdate
-     e84      e84      174     4         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.text.bsp_clock_init)
-     e84      e84        0     1                 $t.5
-     e85      e85      174     1                 bsp_clock_init
-     ff8      ff8        2     4         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.text.R_BSP_SubClockStabilizeWaitAfterReset)
-     ff8      ff8        0     1                 $t.7
-     ff9      ff9        2     1                 R_BSP_SubClockStabilizeWaitAfterReset
-     ffc      ffc       6c     4         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.text.R_BSP_Init_RTC)
-     ffc      ffc        0     1                 $t.10
-     ffd      ffd       6c     1                 R_BSP_Init_RTC
-    1068     1068        2     4         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.text.bsp_init_internal)
-    1068     1068        0     1                 $t.0
-    1069     1069        2     1                 bsp_init_internal
-    1069     1069        2     1                 bsp_init
-    106c     106c       82     4         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.text.R_BSP_SoftwareDelay)
-    106c     106c        0     1                 $t.0
-    106d     106d       82     1                 R_BSP_SoftwareDelay
-    10f0     10f0        8     4         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.text.bsp_prv_software_delay_loop)
-    10f0     10f0        0     1                 sw_delay_loop
-    10f0     10f0        0     1                 $t.1
-    10f1     10f1        8     1                 bsp_prv_software_delay_loop
-    10f8     10f8       52     4         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.text.NMI_Handler)
-    10f8     10f8        0     1                 $t.1
-    10f9     10f9       52     1                 NMI_Handler
-    114c     114c       96     4         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.text.bsp_irq_cfg)
-    114c     114c        0     1                 $t.0
-    114d     114d       96     1                 bsp_irq_cfg
-    11e4     11e4       58     4         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.text.R_BSP_RegisterProtectEnable)
-    11e4     11e4        0     1                 $t.0
-    11e5     11e5       58     1                 R_BSP_RegisterProtectEnable
-    123c     123c       50     4         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.text.R_BSP_RegisterProtectDisable)
-    123c     123c        0     1                 $t.1
-    123d     123d       50     1                 R_BSP_RegisterProtectDisable
-    128c     128c        e     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.text.Reset_Handler)
-    128c     128c        0     1                 $t.0
-    128d     128d        e     1                 Reset_Handler
-    129c     129c        4     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.text.Default_Handler)
-    129c     129c        0     1                 $t.1
-    129d     129d        4     1                 Default_Handler
-    129d     129d        4     1                 HardFault_Handler
-    129d     129d        4     1                 MemManage_Handler
-    129d     129d        4     1                 BusFault_Handler
-    129d     129d        4     1                 UsageFault_Handler
-    129d     129d        4     1                 SecureFault_Handler
-    129d     129d        4     1                 SVC_Handler
-    129d     129d        4     1                 DebugMon_Handler
-    129d     129d        4     1                 PendSV_Handler
-    129d     129d        4     1                 SysTick_Handler
-    12a0     12a0      19c     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.text.SystemInit)
-    12a0     12a0        0     1                 $t.0
-    12a1     12a1      19c     1                 SystemInit
-    143c     143c       2c     4         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.text._init_tls)
-    143c     143c        0     1                 $t.0
-    143d     143d       2c     1                 _init_tls
-    1458     1458        0     1                 $d.1
-    1468     1468       14     4         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.text._set_tls)
-    1468     1468        0     1                 $t.0
-    1469     1469       14     1                 _set_tls
-    1474     1474        0     1                 $d.1
-    147c     147c        8     2         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.text.bzero)
-    147c     147c        0     1                 $t.0
-    147d     147d        8     1                 bzero
-    147d     147d        8     1                 __aeabi_memclr4
-    147d     147d        8     1                 __aeabi_memclr8
-    147d     147d        8     1                 __aeabi_memclr
-    1484     1484       14     2         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.text.memcpy)
-    1484     1484        0     1                 $t.0
-    1485     1485       14     1                 memcpy
-    1485     1485       14     1                 __aeabi_memcpy4
-    1485     1485       14     1                 __aeabi_memcpy8
-    1485     1485       14     1                 __aeabi_memcpy
-    1498     1498        e     2         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.text.memset)
-    1498     1498        0     1                 $t.0
-    1499     1499        e     1                 memset
-    14a6     14a6        6     1         ./ra_gen/hal_data.o:(.rodata.g_i2c0_cfg_extend)
-    14a6     14a6        6     1                 g_i2c0_cfg_extend
-    14ac     14ac       28     4         ./ra_gen/hal_data.o:(.rodata.g_i2c0_cfg)
-    14ac     14ac       28     1                 g_i2c0_cfg
-    14d4     14d4       30     4         ./ra_gen/pin_data.o:(.rodata.g_bsp_pin_cfg_data)
-    14d4     14d4       30     1                 g_bsp_pin_cfg_data
-    1504     1504        c     4         ./ra_gen/pin_data.o:(.rodata.g_bsp_pin_cfg)
-    1504     1504        c     1                 g_bsp_pin_cfg
-    1510     1510        c     2         ./ra_gen/vector_data.o:(.rodata.g_interrupt_event_link_select)
-    1510     1510        c     1                 g_interrupt_event_link_select
-    151c     151c        6     2         ./ra/fsp/src/r_ioport/r_ioport.o:(.rodata.g_vbatt_pins_input)
-    151c     151c        6     1                 g_vbatt_pins_input
-    1524     1524        8     4         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.rodata.nocache_list)
-    1524     1524        8     1                 nocache_list
-    152c     152c       18     4         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.rodata.g_init_info)
-    152c     152c       18     1                 g_init_info
-    1544     1544       24     4         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.rodata.zero_list)
-    1544     1544       24     1                 zero_list
-    1568     1568       40     4         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.rodata.copy_list)
-    1568     1568       40     1                 copy_list
-    15a8     15a8        a     2         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.rodata.g_prcr_masks)
-    15a8     15a8        a     1                 g_prcr_masks
-    15b4     15b4       4e     4         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.version)
-    15b4     15b4        4     1                 g_fsp_version
-    15b8     15b8        6     1                 g_fsp_version_string
-    15be     15be       44     1                 g_fsp_version_build_string
-    1602     1602        0     1         __flash_readonly$$Limit = .
-    1602     1602        0     1 __flash_preinit_array$$
-    1602     1602        0     1         __preinit_array_start = .
-    1602     1602        0     1         __preinit_array_end = .
-    1602     1602        0     1 __flash_init_array$$
-    1602     1602        0     1         __init_array_start = .
-    1602     1602        0     1         __init_array_end = .
-    1602     1602        0     1 __flash_fini_array$$
-    1602     1602        0     1         __fini_array_start = .
-    1602     1602        0     1         __fini_array_end = .
-    1602     1602        0     1 __flash_arm.exidx$$
-    1602     1602        0     1         __exidx_start = .
-    1602     1602        0     1         __exidx_end = .
+      48       48     1b82     8 __flash_readonly$$
+      48       48        0     1         __flash_readonly$$Base = .
+      48       48        2     4         ./src/hal_entry.o:(.text.sci_i2c_master_callback)
+      48       48        0     1                 $t.0
+      49       49        2     1                 sci_i2c_master_callback
+      4c       4c       62     4         ./src/hal_entry.o:(.text.hal_entry)
+      4c       4c        0     1                 $t.1
+      4d       4d       62     1                 hal_entry
+      b0       b0       1a     4         ./src/hal_warmstart.o:(.text.R_BSP_WarmStart)
+      b0       b0        0     1                 $t.0
+      b1       b1       1a     1                 R_BSP_WarmStart
+      cc       cc        c     4         ./ra_gen/main.o:(.text.main)
+      cc       cc        0     1                 $t.0
+      cd       cd        c     1                 main
+      d8       d8      166     4         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.text.R_SCI_I2C_Open)
+      d8       d8        0     1                 $t.0
+      d9       d9      166     1                 R_SCI_I2C_Open
+     240      240       9a     4         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.text.R_SCI_I2C_Read)
+     240      240        0     1                 $t.1
+     241      241       9a     1                 R_SCI_I2C_Read
+     2dc      2dc       98     4         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.text.R_SCI_I2C_Write)
+     2dc      2dc        0     1                 $t.2
+     2dd      2dd       98     1                 R_SCI_I2C_Write
+     374      374      126     4         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.text.sci_i2c_txi_isr)
+     374      374        0     1                 $t.9
+     375      375      126     1                 sci_i2c_txi_isr
+     49c      49c      116     4         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.text.sci_i2c_tei_isr)
+     49c      49c        0     1                 $t.10
+     49d      49d      116     1                 sci_i2c_tei_isr
+     5b4      5b4       18     4         ./ra/fsp/src/r_ioport/r_ioport.o:(.text.R_IOPORT_Open)
+     5b4      5b4        0     1                 $t.0
+     5b5      5b5       18     1                 R_IOPORT_Open
+     5cc      5cc      144     4         ./ra/fsp/src/r_ioport/r_ioport.o:(.text.r_ioport_pins_config)
+     5cc      5cc        0     1                 $t.13
+     5cd      5cd      144     1                 r_ioport_pins_config
+     710      710       2c     4         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.text.SystemCoreClockUpdate)
+     710      710        0     1                 $t.2
+     711      711       2c     1                 SystemCoreClockUpdate
+     73c      73c      12c     4         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.text.bsp_clock_init)
+     73c      73c        0     1                 $t.5
+     73d      73d      12c     1                 bsp_clock_init
+     868      868        2     4         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.text.R_BSP_SubClockStabilizeWaitAfterReset)
+     868      868        0     1                 $t.7
+     869      869        2     1                 R_BSP_SubClockStabilizeWaitAfterReset
+     86c      86c       6c     4         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.text.R_BSP_Init_RTC)
+     86c      86c        0     1                 $t.10
+     86d      86d       6c     1                 R_BSP_Init_RTC
+     8d8      8d8        2     4         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.text.bsp_init_internal)
+     8d8      8d8        0     1                 $t.0
+     8d9      8d9        2     1                 bsp_init_internal
+     8d9      8d9        2     1                 bsp_init
+     8dc      8dc       82     4         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.text.R_BSP_SoftwareDelay)
+     8dc      8dc        0     1                 $t.0
+     8dd      8dd       82     1                 R_BSP_SoftwareDelay
+     960      960        8     4         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.text.bsp_prv_software_delay_loop)
+     960      960        0     1                 sw_delay_loop
+     960      960        0     1                 $t.1
+     961      961        8     1                 bsp_prv_software_delay_loop
+     968      968       52     4         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.text.NMI_Handler)
+     968      968        0     1                 $t.1
+     969      969       52     1                 NMI_Handler
+     9bc      9bc       a4     4         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.text.bsp_irq_cfg)
+     9bc      9bc        0     1                 $t.0
+     9bd      9bd       a4     1                 bsp_irq_cfg
+     a60      a60       58     4         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.text.R_BSP_RegisterProtectEnable)
+     a60      a60        0     1                 $t.0
+     a61      a61       58     1                 R_BSP_RegisterProtectEnable
+     ab8      ab8       50     4         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.text.R_BSP_RegisterProtectDisable)
+     ab8      ab8        0     1                 $t.1
+     ab9      ab9       50     1                 R_BSP_RegisterProtectDisable
+     b08      b08        e     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.text.Reset_Handler)
+     b08      b08        0     1                 $t.0
+     b09      b09        e     1                 Reset_Handler
+     b18      b18        4     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.text.Default_Handler)
+     b18      b18        0     1                 $t.1
+     b19      b19        4     1                 Default_Handler
+     b19      b19        4     1                 HardFault_Handler
+     b19      b19        4     1                 MemManage_Handler
+     b19      b19        4     1                 BusFault_Handler
+     b19      b19        4     1                 UsageFault_Handler
+     b19      b19        4     1                 SecureFault_Handler
+     b19      b19        4     1                 SVC_Handler
+     b19      b19        4     1                 DebugMon_Handler
+     b19      b19        4     1                 PendSV_Handler
+     b19      b19        4     1                 SysTick_Handler
+     b1c      b1c      19c     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.text.SystemInit)
+     b1c      b1c        0     1                 $t.0
+     b1d      b1d      19c     1                 SystemInit
+     cb8      cb8       26     4         ./device/src/dev_ths_driver.o:(.text.THS_PeriodicModeStart)
+     cb8      cb8        0     1                 $t.0
+     cb9      cb9       26     1                 THS_PeriodicModeStart
+     ce0      ce0       c0     8         ./device/src/dev_ths_driver.o:(.text.THS_PeriodicDataRead)
+     ce0      ce0        0     1                 $t.1
+     ce1      ce1       c0     1                 THS_PeriodicDataRead
+     d80      d80        0     1                 $d.2
+     da0      da0       2c     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.text._init_tls)
+     da0      da0        0     1                 $t.0
+     da1      da1       2c     1                 _init_tls
+     dbc      dbc        0     1                 $d.1
+     dcc      dcc       14     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.text._set_tls)
+     dcc      dcc        0     1                 $t.0
+     dcd      dcd       14     1                 _set_tls
+     dd8      dd8        0     1                 $d.1
+     de0      de0        8     2         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.text.bzero)
+     de0      de0        0     1                 $t.0
+     de1      de1        8     1                 bzero
+     de1      de1        8     1                 __aeabi_memclr4
+     de1      de1        8     1                 __aeabi_memclr8
+     de1      de1        8     1                 __aeabi_memclr
+     de8      de8       14     2         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.text.memcpy)
+     de8      de8        0     1                 $t.0
+     de9      de9       14     1                 memcpy
+     de9      de9       14     1                 __aeabi_memcpy4
+     de9      de9       14     1                 __aeabi_memcpy8
+     de9      de9       14     1                 __aeabi_memcpy
+     dfc      dfc        e     2         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.text.memset)
+     dfc      dfc        0     1                 $t.0
+     dfd      dfd        e     1                 memset
+     e10      e10      3d8     8         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libclang_rt.builtins.a(adddf3.c.obj):(.text.__adddf3)
+     e10      e10        0     1                 $t.0
+     e11      e11      3d8     1                 __adddf3
+    11d8     11d8        0     1                 $d.1
+    11e8     11e8       14     2         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libclang_rt.builtins.a(adddf3.c.obj):(.text.__aeabi_dadd)
+    11e8     11e8        0     1                 $t.2
+    11e9     11e9       14     1                 __aeabi_dadd
+    11fc     11fc       20     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libclang_rt.builtins.a(fp_mode.c.obj):(.text.__fe_getround)
+    11fc     11fc        0     1                 $t.0
+    11fd     11fd       20     1                 __fe_getround
+    1218     1218        0     1                 $d.1
+    121c     121c       10     2         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libclang_rt.builtins.a(fp_mode.c.obj):(.text.__fe_raise_inexact)
+    121c     121c        0     1                 $t.2
+    121d     121d       10     1                 __fe_raise_inexact
+    1230     1230      3a0     8         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libclang_rt.builtins.a(divdf3.c.obj):(.text.__divdf3)
+    1230     1230        0     1                 $t.0
+    1231     1231      3a0     1                 __divdf3
+    15c8     15c8        0     1                 $d.1
+    15d0     15d0       14     2         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libclang_rt.builtins.a(divdf3.c.obj):(.text.__aeabi_ddiv)
+    15d0     15d0        0     1                 $t.2
+    15d1     15d1       14     1                 __aeabi_ddiv
+    15e8     15e8       60     8         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libclang_rt.builtins.a(floatunsidf.c.obj):(.text.__aeabi_ui2d)
+    15e8     15e8        0     1                 $t.2
+    15e9     15e9       60     1                 __aeabi_ui2d
+    1640     1640        0     1                 $d.3
+    1648     1648      2e8     8         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libclang_rt.builtins.a(muldf3.c.obj):(.text.__muldf3)
+    1648     1648        0     1                 $t.0
+    1649     1649      2e8     1                 __muldf3
+    1928     1928        0     1                 $d.1
+    1930     1930       14     2         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libclang_rt.builtins.a(muldf3.c.obj):(.text.__aeabi_dmul)
+    1930     1930        0     1                 $t.2
+    1931     1931       14     1                 __aeabi_dmul
+    1944     1944      126     2         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libclang_rt.builtins.a(truncdfsf2.c.obj):(.text.__truncdfsf2)
+    1944     1944        0     1                 $t.0
+    1945     1945      126     1                 __truncdfsf2
+    1a6a     1a6a       10     2         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libclang_rt.builtins.a(truncdfsf2.c.obj):(.text.__aeabi_d2f)
+    1a6a     1a6a        0     1                 $t.1
+    1a6b     1a6b       10     1                 __aeabi_d2f
+    1a7a     1a7a        6     1         ./ra_gen/hal_data.o:(.rodata.g_i2c0_cfg_extend)
+    1a7a     1a7a        6     1                 g_i2c0_cfg_extend
+    1a80     1a80       28     4         ./ra_gen/hal_data.o:(.rodata.g_i2c0_cfg)
+    1a80     1a80       28     1                 g_i2c0_cfg
+    1aa8     1aa8       20     4         ./ra_gen/pin_data.o:(.rodata.g_bsp_pin_cfg_data)
+    1aa8     1aa8       20     1                 g_bsp_pin_cfg_data
+    1ac8     1ac8        c     4         ./ra_gen/pin_data.o:(.rodata.g_bsp_pin_cfg)
+    1ac8     1ac8        c     1                 g_bsp_pin_cfg
+    1ad4     1ad4        4     2         ./ra_gen/vector_data.o:(.rodata.g_interrupt_event_link_select)
+    1ad4     1ad4        4     1                 g_interrupt_event_link_select
+    1ad8     1ad8        6     2         ./ra/fsp/src/r_ioport/r_ioport.o:(.rodata.g_vbatt_pins_input)
+    1ad8     1ad8        6     1                 g_vbatt_pins_input
+    1ae0     1ae0        8     4         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.rodata.nocache_list)
+    1ae0     1ae0        8     1                 nocache_list
+    1ae8     1ae8       18     4         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.rodata.g_init_info)
+    1ae8     1ae8       18     1                 g_init_info
+    1b00     1b00       24     4         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.rodata.zero_list)
+    1b00     1b00       24     1                 zero_list
+    1b24     1b24       40     4         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.rodata.copy_list)
+    1b24     1b24       40     1                 copy_list
+    1b64     1b64        a     2         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.rodata.g_prcr_masks)
+    1b64     1b64        a     1                 g_prcr_masks
+    1b70     1b70        c     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libclang_rt.builtins.a(fp_mode.c.obj):(.rodata..Lswitch.table.__fe_getround)
+    1b70     1b70        c     1                 .Lswitch.table.__fe_getround
+    1b7c     1b7c       4e     4         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.version)
+    1b7c     1b7c        4     1                 g_fsp_version
+    1b80     1b80        6     1                 g_fsp_version_string
+    1b86     1b86       44     1                 g_fsp_version_build_string
+    1bca     1bca        0     1         __flash_readonly$$Limit = .
+    1bca     1bca        0     1 __flash_preinit_array$$
+    1bca     1bca        0     1         __preinit_array_start = .
+    1bca     1bca        0     1         __preinit_array_end = .
+    1bca     1bca        0     1 __flash_init_array$$
+    1bca     1bca        0     1         __init_array_start = .
+    1bca     1bca        0     1         __init_array_end = .
+    1bca     1bca        0     1 __flash_fini_array$$
+    1bca     1bca        0     1         __fini_array_start = .
+    1bca     1bca        0     1         __fini_array_end = .
+    1bca     1bca        0     1 __flash_arm.exidx$$
+    1bca     1bca        0     1         __exidx_start = .
+    1bca     1bca        0     1         __exidx_end = .
     8000     8000        0     1 .flash.endof
     8000     8000        0     1         __ddsc_FLASH_END = .
     8000     8000        0     1 .flash.flat_nsc
@@ -330,217 +368,217 @@
  100a260  100a260        0     1 PROVIDE ( __tbss_offset = ADDR ( __ram_tbss$$ ) - ADDR ( __ram_tdata$$ ) )
  100a260  100a260        0     1 PROVIDE ( __tbss_size = SIZEOF ( __ram_tbss$$ ) )
  100a260  100a260        0     1 PROVIDE ( __arm32_tls_tcb_offset = 8 )
-       0        0     2427     1 .debug_abbrev
-       0        0      115     1         ./src/hal_entry.o:(.debug_abbrev)
-     115      115      106     1         ./src/hal_warmstart.o:(.debug_abbrev)
-     21b      21b      10d     1         ./ra_gen/common_data.o:(.debug_abbrev)
-     328      328      25c     1         ./ra_gen/hal_data.o:(.debug_abbrev)
-     584      584       3c     1         ./ra_gen/main.o:(.debug_abbrev)
-     5c0      5c0       e6     1         ./ra_gen/pin_data.o:(.debug_abbrev)
-     6a6      6a6       92     1         ./ra_gen/vector_data.o:(.debug_abbrev)
-     738      738      435     1         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.debug_abbrev)
-     b6d      b6d      30d     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_abbrev)
-     e7a      e7a      41f     1         ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o:(.debug_abbrev)
-    1299     1299       a2     1         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.debug_abbrev)
-    133b     133b      2e7     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_abbrev)
-    1622     1622      149     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_abbrev)
-    176b     176b       ad     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_abbrev)
-    1818     1818      1ff     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_abbrev)
-    1a17     1a17       44     1         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.debug_abbrev)
-    1a5b     1a5b      1c1     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_abbrev)
-    1c1c     1c1c      221     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_abbrev)
-    1e3d     1e3d       67     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_abbrev)
-    1ea4     1ea4       a7     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_abbrev)
-    1f4b     1f4b      1fe     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_abbrev)
-    2149     2149       2e     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_errno_errno.c.o):(.debug_abbrev)
-    2177     2177       74     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_abbrev)
-    21eb     21eb       62     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_abbrev)
-    224d     224d       21     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_abbrev)
-    226e     226e       94     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_abbrev)
-    2302     2302       a0     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_abbrev)
-    23a2     23a2       85     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_abbrev)
-       0        0    1e42d     1 .debug_info
-       0        0      605     1         ./src/hal_entry.o:(.debug_info)
-     605      605      9e9     1         ./src/hal_warmstart.o:(.debug_info)
-     fee      fee      be2     1         ./ra_gen/common_data.o:(.debug_info)
-    1bd0     1bd0     4c2d     1         ./ra_gen/hal_data.o:(.debug_info)
-    67fd     67fd       37     1         ./ra_gen/main.o:(.debug_info)
-    6834     6834      49b     1         ./ra_gen/pin_data.o:(.debug_info)
-    6ccf     6ccf      34d     1         ./ra_gen/vector_data.o:(.debug_info)
-    701c     701c     3dbf     1         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.debug_info)
-    addb     addb     3024     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_info)
-    ddff     ddff     5452     1         ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o:(.debug_info)
-   13251    13251      1df     1         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.debug_info)
-   13430    13430     475a     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_info)
-   17b8a    17b8a      58a     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_info)
-   18114    18114      104     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_info)
-   18218    18218      da8     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_info)
-   18fc0    18fc0       43     1         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.debug_info)
-   19003    19003     15a8     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_info)
-   1a5ab    1a5ab     2ec3     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_info)
-   1d46e    1d46e       5f     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_info)
-   1d4cd    1d4cd       b1     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_info)
-   1d57e    1d57e      b0f     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_info)
-   1e08d    1e08d       2e     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_errno_errno.c.o):(.debug_info)
-   1e0bb    1e0bb       64     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_info)
-   1e11f    1e11f       60     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_info)
-   1e17f    1e17f      129     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_info)
-   1e2a8    1e2a8       76     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_info)
-   1e31e    1e31e       97     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_info)
-   1e3b5    1e3b5       78     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_info)
-       0        0      3b8     1 .debug_rnglists
-       0        0       1a     1         ./src/hal_entry.o:(.debug_rnglists)
-      1a       1a      12a     1         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.debug_rnglists)
-     144      144       76     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_rnglists)
-     1ba      1ba      107     1         ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o:(.debug_rnglists)
-     2c1      2c1       5b     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_rnglists)
-     31c      31c       1a     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_rnglists)
-     336      336       18     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_rnglists)
-     34e      34e       17     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_rnglists)
-     365      365       24     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_rnglists)
-     389      389       17     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_rnglists)
-     3a0      3a0       18     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_rnglists)
-       0        0     9b80     1 .debug_str_offsets
-       0        0      500     1         ./src/hal_entry.o:(.debug_str_offsets)
-     500      500      814     1         ./src/hal_warmstart.o:(.debug_str_offsets)
-     d14      d14      8b4     1         ./ra_gen/common_data.o:(.debug_str_offsets)
-    15c8     15c8     13d8     1         ./ra_gen/hal_data.o:(.debug_str_offsets)
-    29a0     29a0       1c     1         ./ra_gen/main.o:(.debug_str_offsets)
-    29bc     29bc      428     1         ./ra_gen/pin_data.o:(.debug_str_offsets)
-    2de4     2de4      330     1         ./ra_gen/vector_data.o:(.debug_str_offsets)
-    3114     3114     1160     1         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.debug_str_offsets)
-    4274     4274      fe4     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_str_offsets)
-    5258     5258     14f0     1         ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o:(.debug_str_offsets)
-    6748     6748       9c     1         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.debug_str_offsets)
-    67e4     67e4     1018     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_str_offsets)
-    77fc     77fc      45c     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_str_offsets)
-    7c58     7c58       74     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_str_offsets)
-    7ccc     7ccc      68c     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_str_offsets)
-    8358     8358       24     1         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.debug_str_offsets)
-    837c     837c      78c     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_str_offsets)
-    8b08     8b08      bac     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_str_offsets)
-    96b4     96b4       2c     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_str_offsets)
-    96e0     96e0       3c     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_str_offsets)
-    971c     971c      344     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_str_offsets)
-    9a60     9a60       1c     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_errno_errno.c.o):(.debug_str_offsets)
-    9a7c     9a7c       30     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_str_offsets)
-    9aac     9aac       30     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_str_offsets)
-    9adc     9adc       30     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_str_offsets)
-    9b0c     9b0c       3c     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_str_offsets)
-    9b48     9b48       38     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_str_offsets)
-       0        0     bdef     1 .debug_str
-       0        0     bdef     1         <internal>:(.debug_str)
-       0        0      4b8     1 .debug_addr
-       0        0       18     1         ./src/hal_entry.o:(.debug_addr)
-      18       18       10     1         ./src/hal_warmstart.o:(.debug_addr)
-      28       28       14     1         ./ra_gen/common_data.o:(.debug_addr)
-      3c       3c       2c     1         ./ra_gen/hal_data.o:(.debug_addr)
-      68       68        c     1         ./ra_gen/main.o:(.debug_addr)
-      74       74       10     1         ./ra_gen/pin_data.o:(.debug_addr)
-      84       84       10     1         ./ra_gen/vector_data.o:(.debug_addr)
-      94       94       a0     1         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.debug_addr)
-     134      134       8c     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_addr)
-     1c0      1c0      11c     1         ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o:(.debug_addr)
-     2dc      2dc       20     1         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.debug_addr)
-     2fc      2fc       68     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_addr)
-     364      364       20     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_addr)
-     384      384       20     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_addr)
-     3a4      3a4       1c     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_addr)
-     3c0      3c0        c     1         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.debug_addr)
-     3cc      3cc       24     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_addr)
-     3f0      3f0       2c     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_addr)
-     41c      41c        c     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_addr)
-     428      428       1c     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_addr)
-     444      444       34     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_addr)
-     478      478        c     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_addr)
-     484      484        c     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_addr)
-     490      490       10     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_addr)
-     4a0      4a0        c     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_addr)
-     4ac      4ac        c     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_addr)
+       0        0     2118     1 .debug_abbrev
+       0        0      14a     1         ./src/hal_entry.o:(.debug_abbrev)
+     14a      14a      106     1         ./src/hal_warmstart.o:(.debug_abbrev)
+     250      250      10d     1         ./ra_gen/common_data.o:(.debug_abbrev)
+     35d      35d      235     1         ./ra_gen/hal_data.o:(.debug_abbrev)
+     592      592       3c     1         ./ra_gen/main.o:(.debug_abbrev)
+     5ce      5ce       e6     1         ./ra_gen/pin_data.o:(.debug_abbrev)
+     6b4      6b4       92     1         ./ra_gen/vector_data.o:(.debug_abbrev)
+     746      746      435     1         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.debug_abbrev)
+     b7b      b7b      30d     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_abbrev)
+     e88      e88       a2     1         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.debug_abbrev)
+     f2a      f2a      2de     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_abbrev)
+    1208     1208      149     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_abbrev)
+    1351     1351       ad     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_abbrev)
+    13fe     13fe      1ff     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_abbrev)
+    15fd     15fd       44     1         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.debug_abbrev)
+    1641     1641      1b2     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_abbrev)
+    17f3     17f3      221     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_abbrev)
+    1a14     1a14       67     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_abbrev)
+    1a7b     1a7b       a7     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_abbrev)
+    1b22     1b22      1fe     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_abbrev)
+    1d20     1d20      11a     1         ./device/src/dev_ths_driver.o:(.debug_abbrev)
+    1e3a     1e3a       2e     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_errno_errno.c.o):(.debug_abbrev)
+    1e68     1e68       74     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_abbrev)
+    1edc     1edc       62     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_abbrev)
+    1f3e     1f3e       21     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_abbrev)
+    1f5f     1f5f       94     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_abbrev)
+    1ff3     1ff3       a0     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_abbrev)
+    2093     2093       85     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_abbrev)
+       0        0    16c85     1 .debug_info
+       0        0      6cd     1         ./src/hal_entry.o:(.debug_info)
+     6cd      6cd      9e9     1         ./src/hal_warmstart.o:(.debug_info)
+    10b6     10b6      be2     1         ./ra_gen/common_data.o:(.debug_info)
+    1c98     1c98     2293     1         ./ra_gen/hal_data.o:(.debug_info)
+    3f2b     3f2b       37     1         ./ra_gen/main.o:(.debug_info)
+    3f62     3f62      49b     1         ./ra_gen/pin_data.o:(.debug_info)
+    43fd     43fd      34d     1         ./ra_gen/vector_data.o:(.debug_info)
+    474a     474a     3dbf     1         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.debug_info)
+    8509     8509     3024     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_info)
+    b52d     b52d      1df     1         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.debug_info)
+    b70c     b70c     470b     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_info)
+    fe17     fe17      58a     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_info)
+   103a1    103a1      104     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_info)
+   104a5    104a5      da8     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_info)
+   1124d    1124d       43     1         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.debug_info)
+   11290    11290     15a7     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_info)
+   12837    12837     2ec3     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_info)
+   156fa    156fa       5f     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_info)
+   15759    15759       b1     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_info)
+   1580a    1580a      b0f     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_info)
+   16319    16319      5cc     1         ./device/src/dev_ths_driver.o:(.debug_info)
+   168e5    168e5       2e     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_errno_errno.c.o):(.debug_info)
+   16913    16913       64     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_info)
+   16977    16977       60     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_info)
+   169d7    169d7      129     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_info)
+   16b00    16b00       76     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_info)
+   16b76    16b76       97     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_info)
+   16c0d    16c0d       78     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_info)
+       0        0      2c9     1 .debug_rnglists
+       0        0       17     1         ./src/hal_entry.o:(.debug_rnglists)
+      17       17      12a     1         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.debug_rnglists)
+     141      141       76     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_rnglists)
+     1b7      1b7       5b     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_rnglists)
+     212      212       1a     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_rnglists)
+     22c      22c       18     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_rnglists)
+     244      244       17     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_rnglists)
+     25b      25b       24     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_rnglists)
+     27f      27f       17     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_rnglists)
+     296      296       18     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_rnglists)
+     2ae      2ae       1b     1         ./device/src/dev_ths_driver.o:(.debug_rnglists)
+       0        0     82cc     1 .debug_str_offsets
+       0        0      550     1         ./src/hal_entry.o:(.debug_str_offsets)
+     550      550      814     1         ./src/hal_warmstart.o:(.debug_str_offsets)
+     d64      d64      8b4     1         ./ra_gen/common_data.o:(.debug_str_offsets)
+    1618     1618      b70     1         ./ra_gen/hal_data.o:(.debug_str_offsets)
+    2188     2188       1c     1         ./ra_gen/main.o:(.debug_str_offsets)
+    21a4     21a4      428     1         ./ra_gen/pin_data.o:(.debug_str_offsets)
+    25cc     25cc      330     1         ./ra_gen/vector_data.o:(.debug_str_offsets)
+    28fc     28fc     1160     1         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.debug_str_offsets)
+    3a5c     3a5c      fe4     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_str_offsets)
+    4a40     4a40       9c     1         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.debug_str_offsets)
+    4adc     4adc     1004     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_str_offsets)
+    5ae0     5ae0      45c     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_str_offsets)
+    5f3c     5f3c       74     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_str_offsets)
+    5fb0     5fb0      68c     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_str_offsets)
+    663c     663c       24     1         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.debug_str_offsets)
+    6660     6660      78c     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_str_offsets)
+    6dec     6dec      bac     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_str_offsets)
+    7998     7998       2c     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_str_offsets)
+    79c4     79c4       3c     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_str_offsets)
+    7a00     7a00      344     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_str_offsets)
+    7d44     7d44      468     1         ./device/src/dev_ths_driver.o:(.debug_str_offsets)
+    81ac     81ac       1c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_errno_errno.c.o):(.debug_str_offsets)
+    81c8     81c8       30     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_str_offsets)
+    81f8     81f8       30     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_str_offsets)
+    8228     8228       30     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_str_offsets)
+    8258     8258       3c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_str_offsets)
+    8294     8294       38     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_str_offsets)
+       0        0     ab9d     1 .debug_str
+       0        0     ab9d     1         <internal>:(.debug_str)
+       0        0      3b0     1 .debug_addr
+       0        0       24     1         ./src/hal_entry.o:(.debug_addr)
+      24       24       10     1         ./src/hal_warmstart.o:(.debug_addr)
+      34       34       14     1         ./ra_gen/common_data.o:(.debug_addr)
+      48       48       1c     1         ./ra_gen/hal_data.o:(.debug_addr)
+      64       64        c     1         ./ra_gen/main.o:(.debug_addr)
+      70       70       10     1         ./ra_gen/pin_data.o:(.debug_addr)
+      80       80       10     1         ./ra_gen/vector_data.o:(.debug_addr)
+      90       90       a0     1         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.debug_addr)
+     130      130       8c     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_addr)
+     1bc      1bc       20     1         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.debug_addr)
+     1dc      1dc       64     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_addr)
+     240      240       20     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_addr)
+     260      260       20     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_addr)
+     280      280       1c     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_addr)
+     29c      29c        c     1         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.debug_addr)
+     2a8      2a8       24     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_addr)
+     2cc      2cc       2c     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_addr)
+     2f8      2f8        c     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_addr)
+     304      304       1c     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_addr)
+     320      320       34     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_addr)
+     354      354       1c     1         ./device/src/dev_ths_driver.o:(.debug_addr)
+     370      370        c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_addr)
+     37c      37c        c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_addr)
+     388      388       10     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_addr)
+     398      398        c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_addr)
+     3a4      3a4        c     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_addr)
        0        0       29     1 .comment
        0        0       29     1         <internal>:(.comment)
        0        0       4c     1 .ARM.attributes
        0        0       4c     1         ./src/hal_entry.o:(.ARM.attributes)
-       0        0      8cc     4 .debug_frame
-       0        0       50     4         ./src/hal_entry.o:(.debug_frame)
-      50       50       24     4         ./src/hal_warmstart.o:(.debug_frame)
-      74       74       24     4         ./ra_gen/common_data.o:(.debug_frame)
-      98       98       24     4         ./ra_gen/hal_data.o:(.debug_frame)
-      bc       bc       30     4         ./ra_gen/main.o:(.debug_frame)
-      ec       ec      108     4         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.debug_frame)
-     1f4      1f4      154     4         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_frame)
-     348      348      190     4         ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o:(.debug_frame)
-     4d8      4d8      104     4         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_frame)
-     5dc      5dc       44     4         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_frame)
-     620      620       34     4         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_frame)
-     654      654       4c     4         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_frame)
-     6a0      6a0       38     4         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_frame)
-     6d8      6d8       40     4         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_frame)
-     718      718       30     4         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_frame)
-     748      748       40     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_frame)
-     788      788       4c     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_frame)
-     7d4      7d4       34     4         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_frame)
-     808      808       24     4         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_frame)
-     82c      82c       24     4         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_frame)
-     850      850       24     4         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_frame)
-     874      874       34     4         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_frame)
-     8a8      8a8       24     4         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_frame)
-       0        0     3241     1 .debug_line
-       0        0      145     1         ./src/hal_entry.o:(.debug_line)
-     145      145      119     1         ./src/hal_warmstart.o:(.debug_line)
-     25e      25e       f8     1         ./ra_gen/common_data.o:(.debug_line)
-     356      356      14f     1         ./ra_gen/hal_data.o:(.debug_line)
-     4a5      4a5       71     1         ./ra_gen/main.o:(.debug_line)
-     516      516       bc     1         ./ra_gen/pin_data.o:(.debug_line)
-     5d2      5d2       9f     1         ./ra_gen/vector_data.o:(.debug_line)
-     671      671      78c     1         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.debug_line)
-     dfd      dfd      546     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_line)
-    1343     1343      ce1     1         ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o:(.debug_line)
-    2024     2024       a7     1         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.debug_line)
-    20cb     20cb      459     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_line)
-    2524     2524      105     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_line)
-    2629     2629      151     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_line)
-    277a     277a      137     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_line)
-    28b1     28b1       8e     1         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.debug_line)
-    293f     293f       f3     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_line)
-    2a32     2a32      128     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_line)
-    2b5a     2b5a       b3     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_line)
-    2c0d     2c0d       b9     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_line)
-    2cc6     2cc6      1ce     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_line)
-    2e94     2e94       43     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_errno_errno.c.o):(.debug_line)
-    2ed7     2ed7       a2     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_line)
-    2f79     2f79       ad     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_line)
-    3026     3026       45     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_line)
-    306b     306b       a1     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_line)
-    310c     310c       9f     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_line)
-    31ab     31ab       96     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_line)
-       0        0      efe     1 .debug_line_str
-       0        0      efe     1         <internal>:(.debug_line_str)
-       0        0     176e     1 .debug_loclists
+       0        0      784     4 .debug_frame
+       0        0       40     4         ./src/hal_entry.o:(.debug_frame)
+      40       40       24     4         ./src/hal_warmstart.o:(.debug_frame)
+      64       64       24     4         ./ra_gen/common_data.o:(.debug_frame)
+      88       88       24     4         ./ra_gen/hal_data.o:(.debug_frame)
+      ac       ac       30     4         ./ra_gen/main.o:(.debug_frame)
+      dc       dc      108     4         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.debug_frame)
+     1e4      1e4      154     4         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_frame)
+     338      338      104     4         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_frame)
+     43c      43c       44     4         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_frame)
+     480      480       34     4         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_frame)
+     4b4      4b4       4c     4         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_frame)
+     500      500       38     4         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_frame)
+     538      538       40     4         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_frame)
+     578      578       30     4         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_frame)
+     5a8      5a8       40     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_frame)
+     5e8      5e8       4c     4         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_frame)
+     634      634       58     4         ./device/src/dev_ths_driver.o:(.debug_frame)
+     68c      68c       34     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_frame)
+     6c0      6c0       24     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_frame)
+     6e4      6e4       24     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_frame)
+     708      708       24     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_frame)
+     72c      72c       34     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_frame)
+     760      760       24     4         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_frame)
+       0        0     26dd     1 .debug_line
+       0        0      156     1         ./src/hal_entry.o:(.debug_line)
+     156      156      119     1         ./src/hal_warmstart.o:(.debug_line)
+     26f      26f       f8     1         ./ra_gen/common_data.o:(.debug_line)
+     367      367      139     1         ./ra_gen/hal_data.o:(.debug_line)
+     4a0      4a0       71     1         ./ra_gen/main.o:(.debug_line)
+     511      511       bc     1         ./ra_gen/pin_data.o:(.debug_line)
+     5cd      5cd       9f     1         ./ra_gen/vector_data.o:(.debug_line)
+     66c      66c      78c     1         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.debug_line)
+     df8      df8      546     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_line)
+    133e     133e       a7     1         ./ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.o:(.debug_line)
+    13e5     13e5      439     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_line)
+    181e     181e      105     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_line)
+    1923     1923      151     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_line)
+    1a74     1a74      137     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_line)
+    1bab     1bab       8e     1         ./ra/fsp/src/bsp/mcu/all/bsp_io.o:(.debug_line)
+    1c39     1c39       f2     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_line)
+    1d2b     1d2b      128     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_line)
+    1e53     1e53       b3     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_line)
+    1f06     1f06       b9     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o:(.debug_line)
+    1fbf     1fbf      1ce     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_line)
+    218d     218d      1a3     1         ./device/src/dev_ths_driver.o:(.debug_line)
+    2330     2330       43     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_errno_errno.c.o):(.debug_line)
+    2373     2373       a2     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_line)
+    2415     2415       ad     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o):(.debug_line)
+    24c2     24c2       45     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_line)
+    2507     2507       a1     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_line)
+    25a8     25a8       9f     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_line)
+    2647     2647       96     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_line)
+       0        0      ed6     1 .debug_line_str
+       0        0      ed6     1         <internal>:(.debug_line_str)
+       0        0      ff5     1 .debug_loclists
        0        0       1e     1         ./src/hal_warmstart.o:(.debug_loclists)
       1e       1e      504     1         ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o:(.debug_loclists)
      522      522      526     1         ./ra/fsp/src/r_ioport/r_ioport.o:(.debug_loclists)
-     a48      a48      7f2     1         ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o:(.debug_loclists)
-    123a     123a      18d     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_loclists)
-    13c7     13c7       1d     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_loclists)
-    13e4     13e4      107     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_loclists)
-    14eb     14eb       35     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_loclists)
-    1520     1520       48     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_loclists)
-    1568     1568       55     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_loclists)
-    15bd     15bd       1e     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_loclists)
-    15db     15db       96     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_loclists)
-    1671     1671       2a     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_loclists)
-    169b     169b       1b     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_loclists)
-    16b6     16b6       7a     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_loclists)
-    1730     1730       3e     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_loclists)
+     a48      a48      18c     1         ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o:(.debug_loclists)
+     bd4      bd4       1d     1         ./ra/fsp/src/bsp/mcu/all/bsp_common.o:(.debug_loclists)
+     bf1      bf1      107     1         ./ra/fsp/src/bsp/mcu/all/bsp_delay.o:(.debug_loclists)
+     cf8      cf8       35     1         ./ra/fsp/src/bsp/mcu/all/bsp_group_irq.o:(.debug_loclists)
+     d2d      d2d       5d     1         ./ra/fsp/src/bsp/mcu/all/bsp_irq.o:(.debug_loclists)
+     d8a      d8a       55     1         ./ra/fsp/src/bsp/mcu/all/bsp_register_protection.o:(.debug_loclists)
+     ddf      ddf       1e     1         ./ra/fsp/src/bsp/mcu/all/bsp_sbrk.o:(.debug_loclists)
+     dfd      dfd       96     1         ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o:(.debug_loclists)
+     e93      e93       65     1         ./device/src/dev_ths_driver.o:(.debug_loclists)
+     ef8      ef8       2a     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o):(.debug_loclists)
+     f22      f22       1b     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o):(.debug_loclists)
+     f3d      f3d       7a     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o):(.debug_loclists)
+     fb7      fb7       3e     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o):(.debug_loclists)
        0        0       20     1 .debug_aranges
-       0        0       20     1         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_aranges)
-       0        0     1000     4 .symtab
-       0        0     1000     4         <internal>:(.symtab)
+       0        0       20     1         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o):(.debug_aranges)
+       0        0     11f0     4 .symtab
+       0        0     11f0     4         <internal>:(.symtab)
        0        0      4e9     1 .shstrtab
        0        0      4e9     1         <internal>:(.shstrtab)
-       0        0     115f     1 .strtab
-       0        0     115f     1         <internal>:(.strtab)
+       0        0     124d     1 .strtab
+       0        0     124d     1         <internal>:(.strtab)
 
 Cross Reference Table
 
@@ -551,17 +589,23 @@ hal_entry                                         ./src/hal_entry.o
                                                   ./ra_gen/main.o
 g_i2c0_ctrl                                       ./ra_gen/hal_data.o
                                                   ./src/hal_entry.o
+                                                  ./device/src/dev_ths_driver.o
 g_i2c0_cfg                                        ./ra_gen/hal_data.o
                                                   ./src/hal_entry.o
 R_SCI_I2C_Open                                    ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o
                                                   ./src/hal_entry.o
-g_data                                            ./src/hal_entry.o
-R_SCI_I2C_Write                                   ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o
+g_ths_cmd                                         ./src/hal_entry.o
+THS_PeriodicModeStart                             ./device/src/dev_ths_driver.o
                                                   ./src/hal_entry.o
+g_ths_data                                        ./src/hal_entry.o
+g_ths_temp                                        ./src/hal_entry.o
+g_ths_rh                                          ./src/hal_entry.o
 R_BSP_SoftwareDelay                               ./ra/fsp/src/bsp/mcu/all/bsp_delay.o
                                                   ./src/hal_entry.o
                                                   ./ra/fsp/src/r_ioport/r_ioport.o
                                                   ./ra/fsp/src/bsp/mcu/all/bsp_clocks.o
+THS_PeriodicDataRead                              ./device/src/dev_ths_driver.o
+                                                  ./src/hal_entry.o
 R_BSP_WarmStart                                   ./src/hal_warmstart.o
                                                   ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o
 g_ioport_ctrl                                     ./ra_gen/common_data.o
@@ -576,14 +620,6 @@ main                                              ./ra_gen/main.o
                                                   ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o
 g_bsp_pin_cfg_data                                ./ra_gen/pin_data.o
 g_vector_table                                    ./ra_gen/vector_data.o
-iic_b_master_rxi_isr                              ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o
-                                                  ./ra_gen/vector_data.o
-iic_b_master_txi_isr                              ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o
-                                                  ./ra_gen/vector_data.o
-iic_b_master_tei_isr                              ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o
-                                                  ./ra_gen/vector_data.o
-iic_b_master_eri_isr                              ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o
-                                                  ./ra_gen/vector_data.o
 sci_i2c_txi_isr                                   ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o
                                                   ./ra_gen/vector_data.o
 sci_i2c_tei_isr                                   ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o
@@ -592,7 +628,10 @@ g_interrupt_event_link_select                     ./ra_gen/vector_data.o
                                                   ./ra/fsp/src/bsp/mcu/all/bsp_irq.o
 gp_renesas_isr_context                            ./ra/fsp/src/bsp/mcu/all/bsp_irq.o
                                                   ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o
-                                                  ./ra/fsp/src/r_iic_b_master/r_iic_b_master.o
+R_SCI_I2C_Read                                    ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o
+                                                  ./device/src/dev_ths_driver.o
+R_SCI_I2C_Write                                   ./ra/fsp/src/r_sci_i2c/r_sci_i2c.o
+                                                  ./device/src/dev_ths_driver.o
 g_protect_pfswe_counter                           ./ra/fsp/src/bsp/mcu/all/bsp_io.o
                                                   ./ra/fsp/src/r_ioport/r_ioport.o
 __ram_noinit_nocache$$Base                        fsp_gen.lld:147
@@ -678,39 +717,39 @@ SVC_Handler                                       ./ra/fsp/src/bsp/cmsis/Device/
 DebugMon_Handler                                  ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o
 PendSV_Handler                                    ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o
 SysTick_Handler                                   ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o
-__aeabi_memclr4                                   F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o)
+__aeabi_memclr4                                   E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o)
                                                   ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o
-__aeabi_memcpy4                                   F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o)
+__aeabi_memcpy4                                   E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o)
                                                   ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o
 __tls_base                                        fsp_gen.lld:397
                                                   ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o
-_init_tls                                         F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o)
+_init_tls                                         E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o)
                                                   ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o
-_set_tls                                          F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o)
+_set_tls                                          E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o)
                                                   ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o
 __init_array_start                                fsp_gen.lld:261
                                                   ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o
 __init_array_end                                  fsp_gen.lld:264
                                                   ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/system.o
-__aeabi_memcpy                                    F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o)
-                                                  F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o)
-__aeabi_memclr                                    F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o)
-                                                  F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o)
+__aeabi_memcpy                                    E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o)
+                                                  E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o)
+__aeabi_memclr                                    E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o)
+                                                  E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o)
 __tdata_source                                    fsp_gen.lld:398
-                                                  F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o)
+                                                  E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o)
 __tdata_size                                      fsp_gen.lld:399
-                                                  F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o)
+                                                  E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o)
 __tbss_offset                                     fsp_gen.lld:400
-                                                  F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o)
+                                                  E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o)
 __tbss_size                                       fsp_gen.lld:401
-                                                  F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o)
+                                                  E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_inittls.c.o)
 __arm32_tls_tcb_offset                            fsp_gen.lld:402
-                                                  F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o)
-__tls                                             F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o)
-                                                  F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o)
-bzero                                             F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o)
-memset                                            F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o)
-                                                  F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o)
-__aeabi_memclr8                                   F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o)
-memcpy                                            F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o)
-__aeabi_memcpy8                                   F:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o)
+                                                  E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o)
+__tls                                             E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_read_tp.S.o)
+                                                  E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(libc_picolib_machine_arm_tls.c.o)
+bzero                                             E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o)
+memset                                            E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memset.c.o)
+                                                  E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o)
+__aeabi_memclr8                                   E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(bzero.c.o)
+memcpy                                            E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o)
+__aeabi_memcpy8                                   E:\Renesas\RA\e2studio_v2025-07_fsp_v6.1.0\toolchains\llvm_arm\LLVM-ET-Arm-18.1.3-Windows-x86_64\bin\..\lib\clang-runtimes/arm-none-eabi/armv8m.main_hard_fp_exn_rtti\lib\libc.a(memcpy.c.o)
