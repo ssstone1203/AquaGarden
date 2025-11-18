@@ -20,5 +20,7 @@ demo
 ├─ pressure_sensor	 //压力传感器
 ├─ RGB_light		//三色RGB
 ├─ water_quality_sensor		//水质传感器
+├─ uwt_sensor		//水下温度传感器
+├─ th_sensor		//温湿度传感器
 └─ README.md
 ````
