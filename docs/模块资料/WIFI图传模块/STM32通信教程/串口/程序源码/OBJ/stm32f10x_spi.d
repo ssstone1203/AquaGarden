@@ -2,7 +2,7 @@
 ..\obj\stm32f10x_spi.o: ..\FWLib\inc\stm32f10x_spi.h
 ..\obj\stm32f10x_spi.o: ..\CMSIS\stm32f10x.h
 ..\obj\stm32f10x_spi.o: ..\CMSIS\core_cm3.h
-..\obj\stm32f10x_spi.o: G:\keil5\ARM\ARMCC\Bin\..\include\stdint.h
+..\obj\stm32f10x_spi.o: E:\Keil_v5\ARM\ARMCOMPLIER506\Bin\..\include\stdint.h
 ..\obj\stm32f10x_spi.o: ..\CMSIS\system_stm32f10x.h
 ..\obj\stm32f10x_spi.o: ..\CMSIS\stm32f10x.h
 ..\obj\stm32f10x_spi.o: ..\USER\stm32f10x_conf.h

@@ -27,7 +27,7 @@ void Servo_CmdFrameFill(servo_frame_t* servo_frame, uint8_t id, uint8_t length, 
   * @param servo_frame 帧结构指针
   * @return 校验和（~sum 低8位）
   */
-uint8_t Servo_Checksum(servo_frame_t* servo_frame)
+uint8_t Servo_ChecksumCalc(servo_frame_t* servo_frame)
 {
 	uint16_t sum = 0;
 	uint8_t  len = servo_frame->servo_element.servo_length;
@@ -73,7 +73,7 @@ void Servo_PositionSet(servo_ctrl_t* servo_ctrl, uint8_t servo_id, uint16_t posi
 	servo_ctrl->servo_ctrl_tx.servo_element.servo_args[1] = position >> 8;
 	servo_ctrl->servo_ctrl_tx.servo_element.servo_args[2] = (uint8_t)duration;
 	servo_ctrl->servo_ctrl_tx.servo_element.servo_args[3] = duration >> 8;
-	servo_ctrl->servo_ctrl_tx.servo_element.servo_args[4] = Servo_Checksum(&servo_ctrl->servo_ctrl_tx);
+	servo_ctrl->servo_ctrl_tx.servo_element.servo_args[4] = Servo_ChecksumCalc(&servo_ctrl->servo_ctrl_tx);
 	
 	Servo_CmdFrameSend(&servo_ctrl->servo_ctrl_tx);
 }

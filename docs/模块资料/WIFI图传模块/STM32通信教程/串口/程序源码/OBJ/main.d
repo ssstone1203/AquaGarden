@@ -1,7 +1,7 @@
 ..\obj\main.o: main.c
 ..\obj\main.o: ..\CMSIS\stm32f10x.h
 ..\obj\main.o: ..\CMSIS\core_cm3.h
-..\obj\main.o: G:\keil5\ARM\ARMCC\Bin\..\include\stdint.h
+..\obj\main.o: E:\Keil_v5\ARM\ARMCOMPLIER506\Bin\..\include\stdint.h
 ..\obj\main.o: ..\CMSIS\system_stm32f10x.h
 ..\obj\main.o: ..\CMSIS\stm32f10x.h
 ..\obj\main.o: ..\USER\stm32f10x_conf.h
@@ -30,7 +30,7 @@
 ..\obj\main.o: ..\FWLib\inc\misc.h
 ..\obj\main.o: ..\BSP\delay.h
 ..\obj\main.o: ..\BSP\bsp_usart.h
-..\obj\main.o: G:\keil5\ARM\ARMCC\Bin\..\include\stdio.h
+..\obj\main.o: E:\Keil_v5\ARM\ARMCOMPLIER506\Bin\..\include\stdio.h
 ..\obj\main.o: ..\BSP\esp32_wifi.h
-..\obj\main.o: G:\keil5\ARM\ARMCC\Bin\..\include\string.h
+..\obj\main.o: E:\Keil_v5\ARM\ARMCOMPLIER506\Bin\..\include\string.h
 ..\obj\main.o: ..\BSP\bsp_usart.h

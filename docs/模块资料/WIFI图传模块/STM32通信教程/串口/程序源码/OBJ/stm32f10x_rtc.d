@@ -2,7 +2,7 @@
 ..\obj\stm32f10x_rtc.o: ..\FWLib\inc\stm32f10x_rtc.h
 ..\obj\stm32f10x_rtc.o: ..\CMSIS\stm32f10x.h
 ..\obj\stm32f10x_rtc.o: ..\CMSIS\core_cm3.h
-..\obj\stm32f10x_rtc.o: G:\keil5\ARM\ARMCC\Bin\..\include\stdint.h
+..\obj\stm32f10x_rtc.o: E:\Keil_v5\ARM\ARMCOMPLIER506\Bin\..\include\stdint.h
 ..\obj\stm32f10x_rtc.o: ..\CMSIS\system_stm32f10x.h
 ..\obj\stm32f10x_rtc.o: ..\CMSIS\stm32f10x.h
 ..\obj\stm32f10x_rtc.o: ..\USER\stm32f10x_conf.h

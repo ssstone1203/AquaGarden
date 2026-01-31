@@ -2,7 +2,7 @@
 ..\obj\stm32f10x_gpio.o: ..\FWLib\inc\stm32f10x_gpio.h
 ..\obj\stm32f10x_gpio.o: ..\CMSIS\stm32f10x.h
 ..\obj\stm32f10x_gpio.o: ..\CMSIS\core_cm3.h
-..\obj\stm32f10x_gpio.o: G:\keil5\ARM\ARMCC\Bin\..\include\stdint.h
+..\obj\stm32f10x_gpio.o: E:\Keil_v5\ARM\ARMCOMPLIER506\Bin\..\include\stdint.h
 ..\obj\stm32f10x_gpio.o: ..\CMSIS\system_stm32f10x.h
 ..\obj\stm32f10x_gpio.o: ..\CMSIS\stm32f10x.h
 ..\obj\stm32f10x_gpio.o: ..\USER\stm32f10x_conf.h

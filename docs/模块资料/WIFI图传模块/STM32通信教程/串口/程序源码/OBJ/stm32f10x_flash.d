@@ -2,7 +2,7 @@
 ..\obj\stm32f10x_flash.o: ..\FWLib\inc\stm32f10x_flash.h
 ..\obj\stm32f10x_flash.o: ..\CMSIS\stm32f10x.h
 ..\obj\stm32f10x_flash.o: ..\CMSIS\core_cm3.h
-..\obj\stm32f10x_flash.o: G:\keil5\ARM\ARMCC\Bin\..\include\stdint.h
+..\obj\stm32f10x_flash.o: E:\Keil_v5\ARM\ARMCOMPLIER506\Bin\..\include\stdint.h
 ..\obj\stm32f10x_flash.o: ..\CMSIS\system_stm32f10x.h
 ..\obj\stm32f10x_flash.o: ..\CMSIS\stm32f10x.h
 ..\obj\stm32f10x_flash.o: ..\USER\stm32f10x_conf.h

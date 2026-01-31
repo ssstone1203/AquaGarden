@@ -1,9 +1,9 @@
 ..\obj\bsp_usart.o: ..\BSP\bsp_usart.c
 ..\obj\bsp_usart.o: ..\BSP\bsp_usart.h
-..\obj\bsp_usart.o: G:\keil5\ARM\ARMCC\Bin\..\include\stdio.h
+..\obj\bsp_usart.o: E:\Keil_v5\ARM\ARMCOMPLIER506\Bin\..\include\stdio.h
 ..\obj\bsp_usart.o: ..\CMSIS\stm32f10x.h
 ..\obj\bsp_usart.o: ..\CMSIS\core_cm3.h
-..\obj\bsp_usart.o: G:\keil5\ARM\ARMCC\Bin\..\include\stdint.h
+..\obj\bsp_usart.o: E:\Keil_v5\ARM\ARMCOMPLIER506\Bin\..\include\stdint.h
 ..\obj\bsp_usart.o: ..\CMSIS\system_stm32f10x.h
 ..\obj\bsp_usart.o: ..\CMSIS\stm32f10x.h
 ..\obj\bsp_usart.o: ..\USER\stm32f10x_conf.h
@@ -31,6 +31,6 @@
 ..\obj\bsp_usart.o: ..\FWLib\inc\stm32f10x_wwdg.h
 ..\obj\bsp_usart.o: ..\FWLib\inc\misc.h
 ..\obj\bsp_usart.o: ..\BSP\esp32_wifi.h
-..\obj\bsp_usart.o: G:\keil5\ARM\ARMCC\Bin\..\include\string.h
+..\obj\bsp_usart.o: E:\Keil_v5\ARM\ARMCOMPLIER506\Bin\..\include\string.h
 ..\obj\bsp_usart.o: ..\BSP\bsp_usart.h
 ..\obj\bsp_usart.o: ..\BSP\delay.h

@@ -65,7 +65,7 @@ typedef struct
 
 void Servo_Init(servo_ctrl_t* servo_ctrl);
 void Servo_CmdFrameFill(servo_frame_t* servo_frame, uint8_t id, uint8_t length, uint8_t cmd);
-uint8_t Servo_Checksum(servo_frame_t* servo_frame);
+uint8_t Servo_ChecksumCalc(servo_frame_t* servo_frame);
 void Servo_CmdFrameSend(servo_frame_t* servo_frame);
 void Servo_PositionSet(servo_ctrl_t* servo_ctrl, uint8_t servo_id, uint16_t position, uint16_t duration);
 

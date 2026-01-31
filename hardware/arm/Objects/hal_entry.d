@@ -40,4 +40,5 @@
   ra\fsp\inc\api\r_ioport_api.h ra_cfg\fsp_cfg\r_ioport_cfg.h \
   ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h ra\fsp\inc\instances\r_sci_uart.h \
   ra\fsp\inc\api\r_uart_api.h ra\fsp\inc\api\r_transfer_api.h \
-  ra_cfg\fsp_cfg\r_sci_uart_cfg.h app\global.h
+  ra_cfg\fsp_cfg\r_sci_uart_cfg.h app\global.h app\control\arm_control.h \
+  app\algorithm\kinematics.h app\device\serial_servo.h

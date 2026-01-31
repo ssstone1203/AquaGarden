@@ -2,7 +2,7 @@
 ..\obj\misc.o: ..\FWLib\inc\misc.h
 ..\obj\misc.o: ..\CMSIS\stm32f10x.h
 ..\obj\misc.o: ..\CMSIS\core_cm3.h
-..\obj\misc.o: G:\keil5\ARM\ARMCC\Bin\..\include\stdint.h
+..\obj\misc.o: E:\Keil_v5\ARM\ARMCOMPLIER506\Bin\..\include\stdint.h
 ..\obj\misc.o: ..\CMSIS\system_stm32f10x.h
 ..\obj\misc.o: ..\CMSIS\stm32f10x.h
 ..\obj\misc.o: ..\USER\stm32f10x_conf.h

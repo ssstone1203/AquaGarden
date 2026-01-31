@@ -1,10 +1,10 @@
 ..\obj\esp32_wifi.o: ..\BSP\esp32_wifi.c
 ..\obj\esp32_wifi.o: ..\BSP\esp32_wifi.h
-..\obj\esp32_wifi.o: G:\keil5\ARM\ARMCC\Bin\..\include\stdio.h
-..\obj\esp32_wifi.o: G:\keil5\ARM\ARMCC\Bin\..\include\string.h
+..\obj\esp32_wifi.o: E:\Keil_v5\ARM\ARMCOMPLIER506\Bin\..\include\stdio.h
+..\obj\esp32_wifi.o: E:\Keil_v5\ARM\ARMCOMPLIER506\Bin\..\include\string.h
 ..\obj\esp32_wifi.o: ..\CMSIS\stm32f10x.h
 ..\obj\esp32_wifi.o: ..\CMSIS\core_cm3.h
-..\obj\esp32_wifi.o: G:\keil5\ARM\ARMCC\Bin\..\include\stdint.h
+..\obj\esp32_wifi.o: E:\Keil_v5\ARM\ARMCOMPLIER506\Bin\..\include\stdint.h
 ..\obj\esp32_wifi.o: ..\CMSIS\system_stm32f10x.h
 ..\obj\esp32_wifi.o: ..\CMSIS\stm32f10x.h
 ..\obj\esp32_wifi.o: ..\USER\stm32f10x_conf.h

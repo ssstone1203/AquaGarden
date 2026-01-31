@@ -2,6 +2,8 @@
 ".\objects\hal_entry.o"
 ".\objects\hal_warmstart.o"
 ".\objects\serial_servo.o"
+".\objects\kinematics.o"
+".\objects\arm_control.o"
 ".\objects\startup.o"
 ".\objects\system.o"
 ".\objects\bsp_clocks.o"

@@ -340,7 +340,7 @@
               <MiscControls>@via/rasc_armclang.via</MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\app;.\app\device</IncludePath>
+              <IncludePath>.\app;.\app\device;.\app\algorithm;.\app\control</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -418,6 +418,36 @@
               <FileName>serial_servo.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\app\device\serial_servo.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>app/algorithm</GroupName>
+          <Files>
+            <File>
+              <FileName>kinematics.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\algorithm\kinematics.c</FilePath>
+            </File>
+            <File>
+              <FileName>kinematics.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\algorithm\kinematics.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>app/control</GroupName>
+          <Files>
+            <File>
+              <FileName>arm_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\control\arm_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>arm_control.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\control\arm_control.h</FilePath>
             </File>
           </Files>
         </Group>
