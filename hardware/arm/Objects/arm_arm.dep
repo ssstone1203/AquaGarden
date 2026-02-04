@@ -1,6 +1,6 @@
 Dependencies for Project 'arm', Target 'arm': (DO NOT MODIFY !)
 CompilerVersion: 6220000::V6.22::ARMCLANG
-F (.\src\hal_entry.c)(0x697E4F39)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections -I ./app -I ./app/device -I ./app/algorithm -I ./app/control @via/rasc_armclang.via-I./RTE/_arm-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/arm-D__UVISION_VERSION="541" -D_RTE_-o ./objects/hal_entry.o -MMD)
+F (.\src\hal_entry.c)(0x69838F70)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections -I ./app -I ./app/device -I ./app/algorithm -I ./app/control @via/rasc_armclang.via-I./RTE/_arm-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/arm-D__UVISION_VERSION="541" -D_RTE_-o ./objects/hal_entry.o -MMD)
 I (ra_gen\hal_data.h)(0x697996CE)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
@@ -53,9 +53,9 @@ I (ra\fsp\inc\api\r_uart_api.h)(0x68A700AC)
 I (ra\fsp\inc\api\r_transfer_api.h)(0x68A700AC)
 I (ra_cfg\fsp_cfg\r_sci_uart_cfg.h)(0x697996CE)
 I (app\global.h)(0x69798C1F)
+I (app\device\serial_servo.h)(0x697E4F5B)
 I (app\control\arm_control.h)(0x697E4F34)
 I (app\algorithm\kinematics.h)(0x697E4F6B)
-I (app\device\serial_servo.h)(0x697E4F5B)
 F (.\src\hal_warmstart.c)(0x68A700D2)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections -I ./app -I ./app/device -I ./app/algorithm -I ./app/control @via/rasc_armclang.via-I./RTE/_arm-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/arm-D__UVISION_VERSION="541" -D_RTE_-o ./objects/hal_warmstart.o -MMD)
 I (ra_gen\hal_data.h)(0x697996CE)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
@@ -109,7 +109,7 @@ I (ra\fsp\inc\api\r_uart_api.h)(0x68A700AC)
 I (ra\fsp\inc\api\r_transfer_api.h)(0x68A700AC)
 I (ra_cfg\fsp_cfg\r_sci_uart_cfg.h)(0x697996CE)
 F (.\App\global.h)(0x69798C1F)()
-F (.\app\device\serial_servo.c)(0x697E4F6A)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections -I ./app -I ./app/device -I ./app/algorithm -I ./app/control @via/rasc_armclang.via-I./RTE/_arm-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/arm-D__UVISION_VERSION="541" -D_RTE_-o ./objects/serial_servo.o -MMD)
+F (.\app\device\serial_servo.c)(0x69838C1C)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections -I ./app -I ./app/device -I ./app/algorithm -I ./app/control @via/rasc_armclang.via-I./RTE/_arm-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/arm-D__UVISION_VERSION="541" -D_RTE_-o ./objects/serial_servo.o -MMD)
 I (app\device\serial_servo.h)(0x697E4F5B)
 I (ra_gen\hal_data.h)(0x697996CE)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
@@ -167,7 +167,7 @@ F (.\app\device\serial_servo.h)(0x697E4F5B)()
 F (.\app\algorithm\kinematics.c)(0x697E4F6D)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections -I ./app -I ./app/device -I ./app/algorithm -I ./app/control @via/rasc_armclang.via-I./RTE/_arm-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/arm-D__UVISION_VERSION="541" -D_RTE_-o ./objects/kinematics.o -MMD)
 I (app\algorithm\kinematics.h)(0x697E4F6B)
 F (.\app\algorithm\kinematics.h)(0x697E4F6B)()
-F (.\app\control\arm_control.c)(0x697E4F6E)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections -I ./app -I ./app/device -I ./app/algorithm -I ./app/control @via/rasc_armclang.via-I./RTE/_arm-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/arm-D__UVISION_VERSION="541" -D_RTE_-o ./objects/arm_control.o -MMD)
+F (.\app\control\arm_control.c)(0x69838E2B)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections -I ./app -I ./app/device -I ./app/algorithm -I ./app/control @via/rasc_armclang.via-I./RTE/_arm-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/arm-D__UVISION_VERSION="541" -D_RTE_-o ./objects/arm_control.o -MMD)
 I (app\control\arm_control.h)(0x697E4F34)
 I (app\algorithm\kinematics.h)(0x697E4F6B)
 I (app\device\serial_servo.h)(0x697E4F5B)

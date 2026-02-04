@@ -1,6 +1,10 @@
 #include "arm_control.h"
 #include "hal_data.h"
+#include "bsp_api.h"
 #include <math.h>
+
+/* 每帧约 10 字节 @ 115200 bps ≈ 0.9 ms，帧间留 2 ms 避免覆盖 servo_frame_buf */
+#define SERVO_FRAME_INTERVAL_MS  2
 
 /**
  * @brief 机械臂控制初始化
@@ -147,6 +151,10 @@ kin_status_t ArmControl_EndPositionSet(arm_control_t* arm_ctrl, float x, float y
     // 将解算得到的关节角度应用到舵机
     for (uint8_t i = 0; i < 4; i++)
     {
+        if (i > 0)
+        {
+            R_BSP_SoftwareDelay(SERVO_FRAME_INTERVAL_MS, BSP_DELAY_UNITS_MILLISECONDS);
+        }
         uint16_t position = ArmControl_ServoPositionFromAngle(arm_ctrl->kin_obj.joint[i].theta, i);
         
         uint8_t servo_id;
@@ -185,6 +193,10 @@ void ArmControl_AllJointsSet(arm_control_t* arm_ctrl, float angles[4], uint16_t 
     // 控制所有舵机
     for (uint8_t i = 0; i < 4; i++)
     {
+        if (i > 0)
+        {
+            R_BSP_SoftwareDelay(SERVO_FRAME_INTERVAL_MS, BSP_DELAY_UNITS_MILLISECONDS);
+        }
         ArmControl_JointAngleSet(arm_ctrl, i, angles[i], duration);
     }
 }
@@ -219,6 +231,10 @@ void ArmControl_Reset(arm_control_t* arm_ctrl, uint16_t duration)
     // 直接使用复位位置值控制舵机
     for (uint8_t i = 0; i < 4; i++)
     {
+        if (i > 0)
+        {
+            R_BSP_SoftwareDelay(SERVO_FRAME_INTERVAL_MS, BSP_DELAY_UNITS_MILLISECONDS);
+        }
         Servo_PositionSet(&arm_ctrl->servo_ctrl, servo_ids[i], reset_positions[i], duration);
     }
     

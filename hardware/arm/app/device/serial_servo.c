@@ -42,23 +42,26 @@ uint8_t Servo_ChecksumCalc(servo_frame_t* servo_frame)
 	return (uint8_t)(~sum);
 }
 
+/* 静态缓冲区：UART 驱动异步发送时只保存指针，在 TXI 中断中按指针读取，
+ * 必须保证数据在发送完成前有效，不能用栈上的局部变量 */
+static uint8_t servo_frame_buf[16];
+
 void Servo_CmdFrameSend(servo_frame_t* servo_frame)
 {
 	uint8_t  len = servo_frame->servo_element.servo_length;
 	uint32_t bytes = (uint32_t)(len + 3);
-	uint8_t  frame_to_send[16];   /* 最大 3+13，用固定数组避免 VLA */
 
-	frame_to_send[0] = servo_frame->servo_header[0];
-	frame_to_send[1] = servo_frame->servo_header[1];
-	frame_to_send[2] = servo_frame->servo_element.servo_id;
-	frame_to_send[3] = servo_frame->servo_element.servo_length;
-	frame_to_send[4] = servo_frame->servo_element.servo_cmd;
+	servo_frame_buf[0] = servo_frame->servo_header[0];
+	servo_frame_buf[1] = servo_frame->servo_header[1];
+	servo_frame_buf[2] = servo_frame->servo_element.servo_id;
+	servo_frame_buf[3] = servo_frame->servo_element.servo_length;
+	servo_frame_buf[4] = servo_frame->servo_element.servo_cmd;
 	for (uint8_t i = 0; i < len - 2; i++)
 	{
-		frame_to_send[5 + i] = servo_frame->servo_element.servo_args[i];
+		servo_frame_buf[5 + i] = servo_frame->servo_element.servo_args[i];
 	}
 
-	R_SCI_UART_Write(&g_serial_servo_uart_ctrl, frame_to_send, bytes);
+	R_SCI_UART_Write(&g_serial_servo_uart_ctrl, servo_frame_buf, bytes);
 }
 
 void Servo_PositionSet(servo_ctrl_t* servo_ctrl, uint8_t servo_id, uint16_t position, uint16_t duration)

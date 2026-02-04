@@ -1,5 +1,6 @@
 #include "hal_data.h"
 #include "global.h"
+#include "serial_servo.h"
 #include "arm_control.h"
 
 /*******************************************************************************************************************//**
@@ -8,14 +9,21 @@
  **********************************************************************************************************************/
 
 // 机械臂控制对象
-static arm_control_t g_arm_ctrl;
+//#define ARM_DEBUG
+//static arm_control_t g_arm_ctrl;
+servo_ctrl_t g_servo_ctrl;
 
 void hal_entry(void)
 {
     /* 初始化机械臂控制 */
     // 打开串口（用于舵机通信）
     R_SCI_UART_Open(&g_serial_servo_uart_ctrl, &g_serial_servo_uart_cfg);
+	
+	Servo_Init(&g_servo_ctrl);
+	
+	Servo_PositionSet(&g_servo_ctrl, 1, 700, 100);	//debug
     
+	#ifdef ARM_DEBUG
     // 初始化机械臂控制模块
     ArmControl_Init(&g_arm_ctrl);
     
@@ -45,7 +53,8 @@ void hal_entry(void)
     // 只改变基座旋转角度
     ArmControl_JointAngleSet(&g_arm_ctrl, 0, 45.0f, 1000);
     R_BSP_SoftwareDelay(1500, BSP_DELAY_UNITS_MILLISECONDS);
-    
+    #endif
+	
     /* 主循环 */
     while(1)
     {
@@ -59,8 +68,8 @@ void hal_entry(void)
         // R_BSP_SoftwareDelay(2500, BSP_DELAY_UNITS_MILLISECONDS);
         // ArmControl_EndPositionSet(&g_arm_ctrl, 15.0f, 0.0f, 15.0f, 0.0f, 2000);
         // R_BSP_SoftwareDelay(2500, BSP_DELAY_UNITS_MILLISECONDS);
-        
-        R_BSP_SoftwareDelay(100, BSP_DELAY_UNITS_MILLISECONDS);
+//        Servo_PositionSet(&g_servo_ctrl, 1, 700, 100);
+//        R_BSP_SoftwareDelay(100, BSP_DELAY_UNITS_MILLISECONDS);
     }
 
 #if BSP_TZ_SECURE_BUILD
