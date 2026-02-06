@@ -2,6 +2,7 @@
 ".\objects\hal_entry.o"
 ".\objects\hal_warmstart.o"
 ".\objects\serial_servo.o"
+".\objects\stepper_slideway.o"
 ".\objects\kinematics.o"
 ".\objects\arm_control.o"
 ".\objects\startup.o"
@@ -27,6 +28,7 @@
 ".\objects\main.o"
 ".\objects\pin_data.o"
 ".\objects\vector_data.o"
+".\objects\r_sci_i2c.o"
 --scatter ".\script\fsp.scat"
 --via=via/rasc_armlink.via --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

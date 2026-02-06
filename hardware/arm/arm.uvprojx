@@ -419,6 +419,16 @@
               <FileType>5</FileType>
               <FilePath>.\app\device\serial_servo.h</FilePath>
             </File>
+            <File>
+              <FileName>stepper_slideway.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\device\stepper_slideway.c</FilePath>
+            </File>
+            <File>
+              <FileName>stepper_slideway.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\device\stepper_slideway.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

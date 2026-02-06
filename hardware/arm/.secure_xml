@@ -69,6 +69,8 @@
       <configSetting altId="debug0.swdio.p108" configurationId="debug0.swdio" isUsedByDriver="true" peripheral="DEBUG0"/>
       <configSetting altId="sci2.rxd.p301" configurationId="sci2.rxd" isUsedByDriver="true" peripheral="SCI2"/>
       <configSetting altId="sci2.txd.p302" configurationId="sci2.txd" isUsedByDriver="true" peripheral="SCI2"/>
+      <configSetting altId="sci3.scl.p706" configurationId="sci3.scl" isUsedByDriver="true" peripheral="SCI3"/>
+      <configSetting altId="sci3.sda.p707" configurationId="sci3.sda" isUsedByDriver="true" peripheral="SCI3"/>
     </pincfg>
   </raPinConfiguration>
 </raConfiguration>

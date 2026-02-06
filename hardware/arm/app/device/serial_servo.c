@@ -3,6 +3,9 @@
 
 void Servo_Init(servo_ctrl_t* servo_ctrl)
 {
+	// 打开串口（用于舵机通信）
+	R_SCI_UART_Open(&g_serial_servo_uart_ctrl, &g_serial_servo_uart_cfg);
+	
 	memset(&servo_ctrl->servo_ctrl_tx, 0, sizeof(servo_frame_t));
 	memset(&servo_ctrl->servo_ctrl_rx, 0, sizeof(servo_frame_t));
 }

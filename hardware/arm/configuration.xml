@@ -243,6 +243,10 @@
       <description>SCI UART</description>
       <originalPack>Renesas.RA.6.1.0.pack</originalPack>
     </component>
+    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_sci_i2c" variant="" vendor="Renesas" version="6.1.0">
+      <description>SCI I2C Master Interface</description>
+      <originalPack>Renesas.RA.6.1.0.pack</originalPack>
+    </component>
   </raComponentSelection>
   <raElcConfiguration/>
   <raIcuConfiguration/>
@@ -284,9 +288,24 @@
       <property id="module.driver.uart.tei_ipl" value="board.icu.common.irq.priority12"/>
       <property id="module.driver.uart.eri_ipl" value="board.icu.common.irq.priority12"/>
     </module>
+    <module id="module.driver.i2c_on_sci_i2c.571134268">
+      <property id="module.driver.i2c.name" value="g_stepper_i2c"/>
+      <property id="module.driver.i2c.channel" value="3"/>
+      <property id="module.driver.i2c.slave" value="0x35"/>
+      <property id="module.driver.i2c.addr_mode" value="module.driver.i2c.addr_mode.addr_mode_7bit"/>
+      <property id="module.driver.i2c.rate" value="module.driver.i2c.rate.rate_standard"/>
+      <property id="module.driver.i2c.rate_value" value="100000"/>
+      <property id="module.driver.i2c.sda_delay" value="300"/>
+      <property id="module.driver.i2c.snfr" value="module.driver.i2c.snfr.div_one"/>
+      <property id="module.driver.i2c.bitrate_modulation" value="module.driver.i2c.bitrate_modulation.true"/>
+      <property id="module.driver.i2c.p_callback" value="NULL"/>
+      <property id="module.driver.i2c.ipl" value="board.icu.common.irq.priority12"/>
+      <property id="module.driver.i2c.rx_ipl" value="_disabled"/>
+    </module>
     <context id="_hal.0">
       <stack module="module.driver.ioport_on_ioport.0"/>
       <stack module="module.driver.uart_on_sci_uart.510958668"/>
+      <stack module="module.driver.i2c_on_sci_i2c.571134268"/>
     </context>
     <config id="config.driver.sci_uart">
       <property id="config.driver.sci_uart.param_checking_enable" value="config.driver.sci_uart.param_checking_enable.bsp"/>
@@ -299,6 +318,11 @@
     <config id="config.driver.ioport">
       <property id="config.driver.ioport.checking" value="config.driver.ioport.checking.system"/>
       <property id="config.driver.ioport.ccd_support_enable" value="config.driver.ioport.ccd_support_enable.disabled"/>
+    </config>
+    <config id="config.driver.sci_i2c">
+      <property id="config.driver.sci_i2c.param_checking_enable" value="config.driver.sci_i2c.param_checking_enable.bsp"/>
+      <property id="config.driver.sci_i2c.dtc_enable" value="config.driver.sci_i2c.dtc_enable.disabled"/>
+      <property id="config.driver.sci_i2c.addr_mode_10_bit_enable" value="config.driver.sci_i2c.addr_mode_10_bit_enable.disabled"/>
     </config>
   </raModuleConfiguration>
   <raPinConfiguration>
@@ -316,9 +340,19 @@
       <configSetting altId="p301.gpio_mode.gpio_mode_peripheral" configurationId="p301.gpio_mode"/>
       <configSetting altId="p302.sci2.txd" configurationId="p302"/>
       <configSetting altId="p302.gpio_mode.gpio_mode_peripheral" configurationId="p302.gpio_mode"/>
+      <configSetting altId="p706.sci3.scl" configurationId="p706"/>
+      <configSetting altId="p706.gpio_mode.gpio_mode_peripheral" configurationId="p706.gpio_mode"/>
+      <configSetting altId="p706.gpio_otype.gpio_otype_n_ch_od" configurationId="p706.gpio_otype"/>
+      <configSetting altId="p707.sci3.sda" configurationId="p707"/>
+      <configSetting altId="p707.gpio_mode.gpio_mode_peripheral" configurationId="p707.gpio_mode"/>
+      <configSetting altId="p707.gpio_otype.gpio_otype_n_ch_od" configurationId="p707.gpio_otype"/>
       <configSetting altId="sci2.mode.asynchronous.free" configurationId="sci2.mode"/>
       <configSetting altId="sci2.rxd.p301" configurationId="sci2.rxd"/>
       <configSetting altId="sci2.txd.p302" configurationId="sci2.txd"/>
+      <configSetting altId="sci3.mode.iic.b" configurationId="sci3.mode"/>
+      <configSetting altId="sci3.pairing.b" configurationId="sci3.pairing"/>
+      <configSetting altId="sci3.scl.p706" configurationId="sci3.scl"/>
+      <configSetting altId="sci3.sda.p707" configurationId="sci3.sda"/>
     </pincfg>
   </raPinConfiguration>
 </raConfiguration>
