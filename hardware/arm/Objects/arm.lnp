@@ -22,13 +22,13 @@
 ".\objects\bsp_security.o"
 ".\objects\bsp_linker.o"
 ".\objects\r_ioport.o"
+".\objects\r_sci_i2c.o"
 ".\objects\r_sci_uart.o"
 ".\objects\common_data.o"
 ".\objects\hal_data.o"
 ".\objects\main.o"
 ".\objects\pin_data.o"
 ".\objects\vector_data.o"
-".\objects\r_sci_i2c.o"
 --scatter ".\script\fsp.scat"
 --via=via/rasc_armlink.via --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

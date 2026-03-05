@@ -3,16 +3,15 @@
 <title>Static Call Graph - [.\Objects\arm.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\Objects\arm.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6220000: Last Updated: Fri Feb  6 22:20:44 2026
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6220000: Last Updated: Thu Mar  5 20:07:08 2026
 <BR><P>
-<H3>Maximum Stack Usage =         48 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
+<H3>Maximum Stack Usage =        152 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
-Reset_Handler &rArr; SystemInit &rArr; bsp_irq_cfg &rArr; R_BSP_RegisterProtectDisable
+Reset_Handler &rArr; main &rArr; hal_entry &rArr; ArmControl_EndPositionSet &rArr; Kinematics_InverseKinematicsCalc &rArr; __hardfp_atan2f
 <P>
 <H3>
 Mutually Recursive functions
-</H3> <LI><a href="#[27]">hal_entry</a>&nbsp;&nbsp;&nbsp;&rArr;&nbsp;&nbsp;&nbsp;<a href="#[27]">hal_entry</a><BR>
- <LI><a href="#[18]">bsp_prv_software_delay_loop</a>&nbsp;&nbsp;&nbsp;&rArr;&nbsp;&nbsp;&nbsp;<a href="#[18]">bsp_prv_software_delay_loop</a><BR>
+</H3> <LI><a href="#[21]">bsp_prv_software_delay_loop</a>&nbsp;&nbsp;&nbsp;&rArr;&nbsp;&nbsp;&nbsp;<a href="#[21]">bsp_prv_software_delay_loop</a><BR>
 </UL>
 <P>
 <H3>
@@ -40,37 +39,61 @@ Function Pointers
 <H3>
 Global Symbols
 </H3>
-<P><STRONG><a name="[29]"></a>__aeabi_memcpy</STRONG> (Thumb, 36 bytes, Stack size 0 bytes, memcpya.o(.text))
+<P><STRONG><a name="[34]"></a>__aeabi_memcpy</STRONG> (Thumb, 36 bytes, Stack size 0 bytes, memcpya.o(.text))
 <BR><BR>[Called By]<UL><LI><a href="#[b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;sci_uart_rxi_isr
 </UL>
 
-<P><STRONG><a name="[24]"></a>__aeabi_memcpy4</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memcpya.o(.text))
-<BR><BR>[Called By]<UL><LI><a href="#[1f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemRuntimeInit
+<P><STRONG><a name="[2e]"></a>__aeabi_memcpy4</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memcpya.o(.text))
+<BR><BR>[Called By]<UL><LI><a href="#[2a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemRuntimeInit
 </UL>
 
-<P><STRONG><a name="[2a]"></a>__aeabi_memcpy8</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memcpya.o(.text), UNUSED)
+<P><STRONG><a name="[3c]"></a>__aeabi_memcpy8</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memcpya.o(.text), UNUSED)
 
-<P><STRONG><a name="[12]"></a>__aeabi_memset</STRONG> (Thumb, 14 bytes, Stack size 0 bytes, memseta.o(.text), UNUSED)
+<P><STRONG><a name="[12]"></a>__aeabi_memset</STRONG> (Thumb, 14 bytes, Stack size 0 bytes, memseta.o(.text))
 <BR><BR>[Called By]<UL><LI><a href="#[13]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_memset$wrapper
 <LI><a href="#[11]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memclr
 </UL>
 
-<P><STRONG><a name="[2b]"></a>__aeabi_memset4</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memseta.o(.text), UNUSED)
+<P><STRONG><a name="[3d]"></a>__aeabi_memset4</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memseta.o(.text), UNUSED)
 
-<P><STRONG><a name="[2c]"></a>__aeabi_memset8</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memseta.o(.text), UNUSED)
+<P><STRONG><a name="[3e]"></a>__aeabi_memset8</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memseta.o(.text), UNUSED)
 
-<P><STRONG><a name="[11]"></a>__aeabi_memclr</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, memseta.o(.text), UNUSED)
+<P><STRONG><a name="[11]"></a>__aeabi_memclr</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, memseta.o(.text))
 <BR><BR>[Calls]<UL><LI><a href="#[12]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memset
 </UL>
-
-<P><STRONG><a name="[23]"></a>__aeabi_memclr4</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memseta.o(.text))
-<BR><BR>[Called By]<UL><LI><a href="#[1f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemRuntimeInit
+<BR>[Called By]<UL><LI><a href="#[19]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Servo_Init
 </UL>
 
-<P><STRONG><a name="[2d]"></a>__aeabi_memclr8</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memseta.o(.text), UNUSED)
+<P><STRONG><a name="[1b]"></a>__aeabi_memclr4</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memseta.o(.text))
+<BR><BR>[Called By]<UL><LI><a href="#[2a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemRuntimeInit
+<LI><a href="#[1a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Kinematics_Init
+</UL>
+
+<P><STRONG><a name="[3f]"></a>__aeabi_memclr8</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memseta.o(.text), UNUSED)
 
 <P><STRONG><a name="[13]"></a>_memset$wrapper</STRONG> (Thumb, 18 bytes, Stack size 8 bytes, memseta.o(.text), UNUSED)
 <BR><BR>[Calls]<UL><LI><a href="#[12]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memset
+</UL>
+
+<P><STRONG><a name="[14]"></a>ArmControl_EndPositionSet</STRONG> (Thumb, 176 bytes, Stack size 48 bytes, arm_control.o(.text.ArmControl_EndPositionSet))
+<BR><BR>[Stack]<UL><LI>Max Depth = 144<LI>Call Chain = ArmControl_EndPositionSet &rArr; Kinematics_InverseKinematicsCalc &rArr; __hardfp_atan2f
+</UL>
+<BR>[Calls]<UL><LI><a href="#[15]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Kinematics_InverseKinematicsCalc
+<LI><a href="#[17]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Servo_PositionSet
+<LI><a href="#[16]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_SoftwareDelay
+</UL>
+<BR>[Called By]<UL><LI><a href="#[31]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;hal_entry
+</UL>
+
+<P><STRONG><a name="[40]"></a>__I$use$fp</STRONG> (Thumb, 0 bytes, Stack size 48 bytes, iusefp.o(.text), UNUSED)
+
+<P><STRONG><a name="[18]"></a>ArmControl_Init</STRONG> (Thumb, 30 bytes, Stack size 8 bytes, arm_control.o(.text.ArmControl_Init))
+<BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = ArmControl_Init &rArr; Kinematics_Init
+</UL>
+<BR>[Calls]<UL><LI><a href="#[1a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Kinematics_Init
+<LI><a href="#[19]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Servo_Init
+</UL>
+<BR>[Called By]<UL><LI><a href="#[31]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;hal_entry
 </UL>
 
 <P><STRONG><a name="[4]"></a>BusFault_Handler</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, startup.o(.text.Default_Handler))
@@ -79,7 +102,7 @@ Global Symbols
 <P><STRONG><a name="[8]"></a>DebugMon_Handler</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, startup.o(.text.Default_Handler))
 <BR>[Address Reference Count : 1]<UL><LI> startup.o(.fixed_vectors)
 </UL>
-<P><STRONG><a name="[2e]"></a>Default_Handler</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, startup.o(.text.Default_Handler), UNUSED)
+<P><STRONG><a name="[41]"></a>Default_Handler</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, startup.o(.text.Default_Handler), UNUSED)
 
 <P><STRONG><a name="[2]"></a>HardFault_Handler</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, startup.o(.text.Default_Handler))
 <BR>[Address Reference Count : 1]<UL><LI> startup.o(.fixed_vectors)
@@ -102,127 +125,186 @@ Global Symbols
 <P><STRONG><a name="[5]"></a>UsageFault_Handler</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, startup.o(.text.Default_Handler))
 <BR>[Address Reference Count : 1]<UL><LI> startup.o(.fixed_vectors)
 </UL>
+<P><STRONG><a name="[1a]"></a>Kinematics_Init</STRONG> (Thumb, 40 bytes, Stack size 8 bytes, kinematics.o(.text.Kinematics_Init))
+<BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = Kinematics_Init
+</UL>
+<BR>[Calls]<UL><LI><a href="#[1b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memclr4
+</UL>
+<BR>[Called By]<UL><LI><a href="#[18]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ArmControl_Init
+</UL>
+
+<P><STRONG><a name="[15]"></a>Kinematics_InverseKinematicsCalc</STRONG> (Thumb, 448 bytes, Stack size 64 bytes, kinematics.o(.text.Kinematics_InverseKinematicsCalc))
+<BR><BR>[Stack]<UL><LI>Max Depth = 96<LI>Call Chain = Kinematics_InverseKinematicsCalc &rArr; __hardfp_atan2f
+</UL>
+<BR>[Calls]<UL><LI><a href="#[1c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__hardfp_atan2f
+<LI><a href="#[1d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__hardfp_acosf
+</UL>
+<BR>[Called By]<UL><LI><a href="#[14]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ArmControl_EndPositionSet
+</UL>
+
 <P><STRONG><a name="[1]"></a>NMI_Handler</STRONG> (Thumb, 68 bytes, Stack size 24 bytes, bsp_group_irq.o(.text.NMI_Handler))
 <BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = NMI_Handler
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> startup.o(.fixed_vectors)
 </UL>
-<P><STRONG><a name="[14]"></a>R_BSP_Init_RTC</STRONG> (Thumb, 122 bytes, Stack size 16 bytes, bsp_clocks.o(.text.R_BSP_Init_RTC))
+<P><STRONG><a name="[1e]"></a>R_BSP_Init_RTC</STRONG> (Thumb, 122 bytes, Stack size 16 bytes, bsp_clocks.o(.text.R_BSP_Init_RTC))
 <BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = R_BSP_Init_RTC &rArr; R_BSP_RegisterProtectDisable
 </UL>
-<BR>[Calls]<UL><LI><a href="#[17]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectEnable
-<LI><a href="#[16]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectDisable
-<LI><a href="#[15]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_SoftwareDelay
+<BR>[Calls]<UL><LI><a href="#[20]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectEnable
+<LI><a href="#[1f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectDisable
+<LI><a href="#[16]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_SoftwareDelay
 </UL>
-<BR>[Called By]<UL><LI><a href="#[1b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
+<BR>[Called By]<UL><LI><a href="#[24]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
 </UL>
 
-<P><STRONG><a name="[16]"></a>R_BSP_RegisterProtectDisable</STRONG> (Thumb, 78 bytes, Stack size 8 bytes, bsp_register_protection.o(.text.R_BSP_RegisterProtectDisable))
+<P><STRONG><a name="[1f]"></a>R_BSP_RegisterProtectDisable</STRONG> (Thumb, 78 bytes, Stack size 8 bytes, bsp_register_protection.o(.text.R_BSP_RegisterProtectDisable))
 <BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = R_BSP_RegisterProtectDisable
 </UL>
-<BR>[Called By]<UL><LI><a href="#[26]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_vbatt_init
-<LI><a href="#[21]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_irq_cfg
-<LI><a href="#[14]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_Init_RTC
-<LI><a href="#[1b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
+<BR>[Called By]<UL><LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_vbatt_init
+<LI><a href="#[2c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_irq_cfg
+<LI><a href="#[1e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_Init_RTC
+<LI><a href="#[24]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
 </UL>
 
-<P><STRONG><a name="[17]"></a>R_BSP_RegisterProtectEnable</STRONG> (Thumb, 82 bytes, Stack size 0 bytes, bsp_register_protection.o(.text.R_BSP_RegisterProtectEnable))
-<BR><BR>[Called By]<UL><LI><a href="#[26]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_vbatt_init
-<LI><a href="#[21]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_irq_cfg
-<LI><a href="#[14]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_Init_RTC
-<LI><a href="#[1b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
+<P><STRONG><a name="[20]"></a>R_BSP_RegisterProtectEnable</STRONG> (Thumb, 82 bytes, Stack size 0 bytes, bsp_register_protection.o(.text.R_BSP_RegisterProtectEnable))
+<BR><BR>[Called By]<UL><LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_vbatt_init
+<LI><a href="#[2c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_irq_cfg
+<LI><a href="#[1e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_Init_RTC
+<LI><a href="#[24]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
 </UL>
 
-<P><STRONG><a name="[15]"></a>R_BSP_SoftwareDelay</STRONG> (Thumb, 132 bytes, Stack size 0 bytes, bsp_delay.o(.text.R_BSP_SoftwareDelay))
-<BR><BR>[Calls]<UL><LI><a href="#[18]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_prv_software_delay_loop
+<P><STRONG><a name="[16]"></a>R_BSP_SoftwareDelay</STRONG> (Thumb, 132 bytes, Stack size 0 bytes, bsp_delay.o(.text.R_BSP_SoftwareDelay))
+<BR><BR>[Calls]<UL><LI><a href="#[21]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_prv_software_delay_loop
 </UL>
-<BR>[Called By]<UL><LI><a href="#[26]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_vbatt_init
-<LI><a href="#[14]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_Init_RTC
-<LI><a href="#[1e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_clock_init
-</UL>
-
-<P><STRONG><a name="[25]"></a>R_BSP_SubClockStabilizeWaitAfterReset</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, bsp_clocks.o(.text.R_BSP_SubClockStabilizeWaitAfterReset))
-<BR><BR>[Called By]<UL><LI><a href="#[1e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_clock_init
+<BR>[Called By]<UL><LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_vbatt_init
+<LI><a href="#[1e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_Init_RTC
+<LI><a href="#[29]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_clock_init
+<LI><a href="#[14]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ArmControl_EndPositionSet
+<LI><a href="#[31]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;hal_entry
 </UL>
 
-<P><STRONG><a name="[1d]"></a>R_BSP_WarmStart</STRONG> (Thumb, 26 bytes, Stack size 0 bytes, hal_warmstart.o(.text.R_BSP_WarmStart))
-<BR><BR>[Called By]<UL><LI><a href="#[1b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
+<P><STRONG><a name="[2f]"></a>R_BSP_SubClockStabilizeWaitAfterReset</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, bsp_clocks.o(.text.R_BSP_SubClockStabilizeWaitAfterReset))
+<BR><BR>[Called By]<UL><LI><a href="#[29]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_clock_init
 </UL>
 
-<P><STRONG><a name="[19]"></a>R_IOPORT_Open</STRONG> (Thumb, 22 bytes, Stack size 8 bytes, r_ioport.o(.text.R_IOPORT_Open), UNUSED)
-<BR><BR>[Calls]<UL><LI><a href="#[1a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;r_ioport_pins_config
+<P><STRONG><a name="[28]"></a>R_BSP_WarmStart</STRONG> (Thumb, 26 bytes, Stack size 0 bytes, hal_warmstart.o(.text.R_BSP_WarmStart))
+<BR><BR>[Called By]<UL><LI><a href="#[24]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
+</UL>
+
+<P><STRONG><a name="[22]"></a>R_IOPORT_Open</STRONG> (Thumb, 22 bytes, Stack size 8 bytes, r_ioport.o(.text.R_IOPORT_Open), UNUSED)
+<BR><BR>[Calls]<UL><LI><a href="#[23]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;r_ioport_pins_config
+</UL>
+
+<P><STRONG><a name="[32]"></a>R_SCI_UART_Open</STRONG> (Thumb, 828 bytes, Stack size 32 bytes, r_sci_uart.o(.text.R_SCI_UART_Open))
+<BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = R_SCI_UART_Open
+</UL>
+<BR>[Called By]<UL><LI><a href="#[31]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;hal_entry
+</UL>
+
+<P><STRONG><a name="[27]"></a>R_SCI_UART_Write</STRONG> (Thumb, 76 bytes, Stack size 8 bytes, r_sci_uart.o(.text.R_SCI_UART_Write))
+<BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = R_SCI_UART_Write
+</UL>
+<BR>[Called By]<UL><LI><a href="#[26]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Servo_CmdFrameSend
 </UL>
 
 <P><STRONG><a name="[0]"></a>Reset_Handler</STRONG> (Thumb, 10 bytes, Stack size 0 bytes, startup.o(.text.Reset_Handler))
-<BR><BR>[Stack]<UL><LI>Max Depth = 48<LI>Call Chain = Reset_Handler &rArr; SystemInit &rArr; bsp_irq_cfg &rArr; R_BSP_RegisterProtectDisable
+<BR><BR>[Stack]<UL><LI>Max Depth = 152<LI>Call Chain = Reset_Handler &rArr; main &rArr; hal_entry &rArr; ArmControl_EndPositionSet &rArr; Kinematics_InverseKinematicsCalc &rArr; __hardfp_atan2f
 </UL>
-<BR>[Calls]<UL><LI><a href="#[1c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
-<LI><a href="#[1b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
+<BR>[Calls]<UL><LI><a href="#[25]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+<LI><a href="#[24]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> startup.o(.fixed_vectors)
 </UL>
-<P><STRONG><a name="[20]"></a>SystemCoreClockUpdate</STRONG> (Thumb, 44 bytes, Stack size 0 bytes, bsp_clocks.o(.text.SystemCoreClockUpdate))
-<BR><BR>[Called By]<UL><LI><a href="#[1b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
+<P><STRONG><a name="[26]"></a>Servo_CmdFrameSend</STRONG> (Thumb, 86 bytes, Stack size 8 bytes, serial_servo.o(.text.Servo_CmdFrameSend))
+<BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = Servo_CmdFrameSend &rArr; R_SCI_UART_Write
+</UL>
+<BR>[Calls]<UL><LI><a href="#[27]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_SCI_UART_Write
+</UL>
+<BR>[Called By]<UL><LI><a href="#[17]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Servo_PositionSet
 </UL>
 
-<P><STRONG><a name="[1b]"></a>SystemInit</STRONG> (Thumb, 162 bytes, Stack size 8 bytes, system.o(.text.SystemInit))
+<P><STRONG><a name="[19]"></a>Servo_Init</STRONG> (Thumb, 10 bytes, Stack size 8 bytes, serial_servo.o(.text.Servo_Init))
+<BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = Servo_Init
+</UL>
+<BR>[Calls]<UL><LI><a href="#[11]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memclr
+</UL>
+<BR>[Called By]<UL><LI><a href="#[18]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ArmControl_Init
+</UL>
+
+<P><STRONG><a name="[17]"></a>Servo_PositionSet</STRONG> (Thumb, 62 bytes, Stack size 0 bytes, serial_servo.o(.text.Servo_PositionSet))
+<BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = Servo_PositionSet &rArr; Servo_CmdFrameSend &rArr; R_SCI_UART_Write
+</UL>
+<BR>[Calls]<UL><LI><a href="#[26]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Servo_CmdFrameSend
+</UL>
+<BR>[Called By]<UL><LI><a href="#[14]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ArmControl_EndPositionSet
+</UL>
+
+<P><STRONG><a name="[2b]"></a>SystemCoreClockUpdate</STRONG> (Thumb, 44 bytes, Stack size 0 bytes, bsp_clocks.o(.text.SystemCoreClockUpdate))
+<BR><BR>[Called By]<UL><LI><a href="#[24]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
+</UL>
+
+<P><STRONG><a name="[24]"></a>SystemInit</STRONG> (Thumb, 162 bytes, Stack size 8 bytes, system.o(.text.SystemInit))
 <BR><BR>[Stack]<UL><LI>Max Depth = 48<LI>Call Chain = SystemInit &rArr; bsp_irq_cfg &rArr; R_BSP_RegisterProtectDisable
 </UL>
-<BR>[Calls]<UL><LI><a href="#[22]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_init
-<LI><a href="#[21]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_irq_cfg
-<LI><a href="#[17]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectEnable
-<LI><a href="#[16]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectDisable
-<LI><a href="#[14]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_Init_RTC
-<LI><a href="#[20]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemCoreClockUpdate
-<LI><a href="#[1e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_clock_init
-<LI><a href="#[1f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemRuntimeInit
-<LI><a href="#[1d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_WarmStart
+<BR>[Calls]<UL><LI><a href="#[2d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_init
+<LI><a href="#[2c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_irq_cfg
+<LI><a href="#[20]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectEnable
+<LI><a href="#[1f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectDisable
+<LI><a href="#[1e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_Init_RTC
+<LI><a href="#[2b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemCoreClockUpdate
+<LI><a href="#[29]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_clock_init
+<LI><a href="#[2a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemRuntimeInit
+<LI><a href="#[28]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_WarmStart
 </UL>
 <BR>[Called By]<UL><LI><a href="#[0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Reset_Handler
 </UL>
 
-<P><STRONG><a name="[1e]"></a>bsp_clock_init</STRONG> (Thumb, 316 bytes, Stack size 24 bytes, bsp_clocks.o(.text.bsp_clock_init))
+<P><STRONG><a name="[29]"></a>bsp_clock_init</STRONG> (Thumb, 316 bytes, Stack size 24 bytes, bsp_clocks.o(.text.bsp_clock_init))
 <BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = bsp_clock_init
 </UL>
-<BR>[Calls]<UL><LI><a href="#[25]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_SubClockStabilizeWaitAfterReset
-<LI><a href="#[15]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_SoftwareDelay
+<BR>[Calls]<UL><LI><a href="#[2f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_SubClockStabilizeWaitAfterReset
+<LI><a href="#[16]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_SoftwareDelay
 </UL>
-<BR>[Called By]<UL><LI><a href="#[1b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
-</UL>
-
-<P><STRONG><a name="[22]"></a>bsp_init</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, bsp_common.o(.text.bsp_init_internal))
-<BR><BR>[Called By]<UL><LI><a href="#[1b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
+<BR>[Called By]<UL><LI><a href="#[24]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
 </UL>
 
-<P><STRONG><a name="[2f]"></a>bsp_init_internal</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, bsp_common.o(.text.bsp_init_internal), UNUSED)
+<P><STRONG><a name="[2d]"></a>bsp_init</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, bsp_common.o(.text.bsp_init_internal))
+<BR><BR>[Called By]<UL><LI><a href="#[24]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
+</UL>
 
-<P><STRONG><a name="[21]"></a>bsp_irq_cfg</STRONG> (Thumb, 138 bytes, Stack size 32 bytes, bsp_irq.o(.text.bsp_irq_cfg))
+<P><STRONG><a name="[42]"></a>bsp_init_internal</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, bsp_common.o(.text.bsp_init_internal), UNUSED)
+
+<P><STRONG><a name="[2c]"></a>bsp_irq_cfg</STRONG> (Thumb, 138 bytes, Stack size 32 bytes, bsp_irq.o(.text.bsp_irq_cfg))
 <BR><BR>[Stack]<UL><LI>Max Depth = 40<LI>Call Chain = bsp_irq_cfg &rArr; R_BSP_RegisterProtectDisable
 </UL>
-<BR>[Calls]<UL><LI><a href="#[17]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectEnable
-<LI><a href="#[16]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectDisable
+<BR>[Calls]<UL><LI><a href="#[20]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectEnable
+<LI><a href="#[1f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectDisable
 </UL>
-<BR>[Called By]<UL><LI><a href="#[1b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
-</UL>
-
-<P><STRONG><a name="[18]"></a>bsp_prv_software_delay_loop</STRONG> (Thumb, 8 bytes, Stack size 0 bytes, bsp_delay.o(.text.bsp_prv_software_delay_loop))
-<BR><BR>[Calls]<UL><LI><a href="#[18]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_prv_software_delay_loop
-</UL>
-<BR>[Called By]<UL><LI><a href="#[18]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_prv_software_delay_loop
-<LI><a href="#[15]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_SoftwareDelay
+<BR>[Called By]<UL><LI><a href="#[24]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
 </UL>
 
-<P><STRONG><a name="[27]"></a>hal_entry</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, hal_entry.o(.text.hal_entry))
-<BR><BR>[Calls]<UL><LI><a href="#[27]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;hal_entry
+<P><STRONG><a name="[21]"></a>bsp_prv_software_delay_loop</STRONG> (Thumb, 8 bytes, Stack size 0 bytes, bsp_delay.o(.text.bsp_prv_software_delay_loop))
+<BR><BR>[Calls]<UL><LI><a href="#[21]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_prv_software_delay_loop
 </UL>
-<BR>[Called By]<UL><LI><a href="#[1c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
-<LI><a href="#[27]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;hal_entry
+<BR>[Called By]<UL><LI><a href="#[21]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_prv_software_delay_loop
+<LI><a href="#[16]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_SoftwareDelay
 </UL>
 
-<P><STRONG><a name="[1c]"></a>main</STRONG> (Thumb, 10 bytes, Stack size 8 bytes, main.o(.text.main))
-<BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = main
+<P><STRONG><a name="[31]"></a>hal_entry</STRONG> (Thumb, 96 bytes, Stack size 0 bytes, hal_entry.o(.text.hal_entry))
+<BR><BR>[Stack]<UL><LI>Max Depth = 144<LI>Call Chain = hal_entry &rArr; ArmControl_EndPositionSet &rArr; Kinematics_InverseKinematicsCalc &rArr; __hardfp_atan2f
 </UL>
-<BR>[Calls]<UL><LI><a href="#[27]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;hal_entry
+<BR>[Calls]<UL><LI><a href="#[14]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ArmControl_EndPositionSet
+<LI><a href="#[16]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_SoftwareDelay
+<LI><a href="#[18]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ArmControl_Init
+<LI><a href="#[32]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_SCI_UART_Open
+</UL>
+<BR>[Called By]<UL><LI><a href="#[25]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+</UL>
+
+<P><STRONG><a name="[25]"></a>main</STRONG> (Thumb, 10 bytes, Stack size 8 bytes, main.o(.text.main))
+<BR><BR>[Stack]<UL><LI>Max Depth = 152<LI>Call Chain = main &rArr; hal_entry &rArr; ArmControl_EndPositionSet &rArr; Kinematics_InverseKinematicsCalc &rArr; __hardfp_atan2f
+</UL>
+<BR>[Calls]<UL><LI><a href="#[31]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;hal_entry
 </UL>
 <BR>[Called By]<UL><LI><a href="#[0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Reset_Handler
 </UL>
@@ -240,59 +322,115 @@ Global Symbols
 <P><STRONG><a name="[e]"></a>sci_uart_eri_isr</STRONG> (Thumb, 106 bytes, Stack size 16 bytes, r_sci_uart.o(.text.sci_uart_eri_isr))
 <BR><BR>[Stack]<UL><LI>Max Depth = 48<LI>Call Chain = sci_uart_eri_isr &rArr; r_sci_uart_call_callback
 </UL>
-<BR>[Calls]<UL><LI><a href="#[28]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;r_sci_uart_call_callback
+<BR>[Calls]<UL><LI><a href="#[33]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;r_sci_uart_call_callback
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> vector_data.o(.application_vectors)
 </UL>
 <P><STRONG><a name="[b]"></a>sci_uart_rxi_isr</STRONG> (Thumb, 136 bytes, Stack size 16 bytes, r_sci_uart.o(.text.sci_uart_rxi_isr))
 <BR><BR>[Stack]<UL><LI>Max Depth = 48<LI>Call Chain = sci_uart_rxi_isr &rArr; r_sci_uart_call_callback
 </UL>
-<BR>[Calls]<UL><LI><a href="#[29]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memcpy
-<LI><a href="#[28]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;r_sci_uart_call_callback
+<BR>[Calls]<UL><LI><a href="#[34]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memcpy
+<LI><a href="#[33]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;r_sci_uart_call_callback
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> vector_data.o(.application_vectors)
 </UL>
 <P><STRONG><a name="[d]"></a>sci_uart_tei_isr</STRONG> (Thumb, 74 bytes, Stack size 8 bytes, r_sci_uart.o(.text.sci_uart_tei_isr))
 <BR><BR>[Stack]<UL><LI>Max Depth = 40<LI>Call Chain = sci_uart_tei_isr &rArr; r_sci_uart_call_callback
 </UL>
-<BR>[Calls]<UL><LI><a href="#[28]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;r_sci_uart_call_callback
+<BR>[Calls]<UL><LI><a href="#[33]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;r_sci_uart_call_callback
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> vector_data.o(.application_vectors)
 </UL>
 <P><STRONG><a name="[c]"></a>sci_uart_txi_isr</STRONG> (Thumb, 136 bytes, Stack size 0 bytes, r_sci_uart.o(.text.sci_uart_txi_isr))
 <BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = sci_uart_txi_isr &rArr; r_sci_uart_call_callback
 </UL>
-<BR>[Calls]<UL><LI><a href="#[28]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;r_sci_uart_call_callback
+<BR>[Calls]<UL><LI><a href="#[33]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;r_sci_uart_call_callback
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> vector_data.o(.application_vectors)
-</UL><P>
+</UL>
+<P><STRONG><a name="[39]"></a>__ARM_fpclassifyf</STRONG> (Thumb, 38 bytes, Stack size 0 bytes, fpclassifyf.o(i.__ARM_fpclassifyf))
+<BR><BR>[Called By]<UL><LI><a href="#[1c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__hardfp_atan2f
+</UL>
+
+<P><STRONG><a name="[1d]"></a>__hardfp_acosf</STRONG> (Thumb, 234 bytes, Stack size 16 bytes, acosf.o(i.__hardfp_acosf))
+<BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = __hardfp_acosf &rArr; sqrtf
+</UL>
+<BR>[Calls]<UL><LI><a href="#[37]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__set_errno
+<LI><a href="#[35]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;sqrtf
+<LI><a href="#[38]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__mathlib_flt_invalid
+<LI><a href="#[36]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__mathlib_flt_infnan
+</UL>
+<BR>[Called By]<UL><LI><a href="#[15]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Kinematics_InverseKinematicsCalc
+</UL>
+
+<P><STRONG><a name="[1c]"></a>__hardfp_atan2f</STRONG> (Thumb, 594 bytes, Stack size 32 bytes, atan2f.o(i.__hardfp_atan2f))
+<BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = __hardfp_atan2f
+</UL>
+<BR>[Calls]<UL><LI><a href="#[37]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__set_errno
+<LI><a href="#[3a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__mathlib_flt_underflow
+<LI><a href="#[3b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__mathlib_flt_infnan2
+<LI><a href="#[39]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__ARM_fpclassifyf
+</UL>
+<BR>[Called By]<UL><LI><a href="#[15]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Kinematics_InverseKinematicsCalc
+</UL>
+
+<P><STRONG><a name="[36]"></a>__mathlib_flt_infnan</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, funder.o(i.__mathlib_flt_infnan))
+<BR><BR>[Called By]<UL><LI><a href="#[1d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__hardfp_acosf
+</UL>
+
+<P><STRONG><a name="[3b]"></a>__mathlib_flt_infnan2</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, funder.o(i.__mathlib_flt_infnan2))
+<BR><BR>[Called By]<UL><LI><a href="#[1c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__hardfp_atan2f
+</UL>
+
+<P><STRONG><a name="[38]"></a>__mathlib_flt_invalid</STRONG> (Thumb, 10 bytes, Stack size 0 bytes, funder.o(i.__mathlib_flt_invalid))
+<BR><BR>[Called By]<UL><LI><a href="#[1d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__hardfp_acosf
+</UL>
+
+<P><STRONG><a name="[3a]"></a>__mathlib_flt_underflow</STRONG> (Thumb, 10 bytes, Stack size 0 bytes, funder.o(i.__mathlib_flt_underflow))
+<BR><BR>[Called By]<UL><LI><a href="#[1c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__hardfp_atan2f
+</UL>
+
+<P><STRONG><a name="[37]"></a>__set_errno</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, errno.o(i.__set_errno))
+<BR><BR>[Called By]<UL><LI><a href="#[35]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;sqrtf
+<LI><a href="#[1c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__hardfp_atan2f
+<LI><a href="#[1d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__hardfp_acosf
+</UL>
+
+<P><STRONG><a name="[35]"></a>sqrtf</STRONG> (Thumb, 62 bytes, Stack size 16 bytes, sqrtf.o(i.sqrtf))
+<BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = sqrtf
+</UL>
+<BR>[Calls]<UL><LI><a href="#[37]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__set_errno
+</UL>
+<BR>[Called By]<UL><LI><a href="#[1d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__hardfp_acosf
+</UL>
+<P>
 <H3>
 Local Symbols
 </H3>
-<P><STRONG><a name="[1f]"></a>SystemRuntimeInit</STRONG> (Thumb, 90 bytes, Stack size 24 bytes, system.o(.text.SystemRuntimeInit))
+<P><STRONG><a name="[2a]"></a>SystemRuntimeInit</STRONG> (Thumb, 90 bytes, Stack size 24 bytes, system.o(.text.SystemRuntimeInit))
 <BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = SystemRuntimeInit
 </UL>
-<BR>[Calls]<UL><LI><a href="#[23]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memclr4
-<LI><a href="#[24]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memcpy4
+<BR>[Calls]<UL><LI><a href="#[1b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memclr4
+<LI><a href="#[2e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memcpy4
 </UL>
-<BR>[Called By]<UL><LI><a href="#[1b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
-</UL>
-
-<P><STRONG><a name="[1a]"></a>r_ioport_pins_config</STRONG> (Thumb, 192 bytes, Stack size 16 bytes, r_ioport.o(.text.r_ioport_pins_config), UNUSED)
-<BR><BR>[Calls]<UL><LI><a href="#[26]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_vbatt_init
-</UL>
-<BR>[Called By]<UL><LI><a href="#[19]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_IOPORT_Open
+<BR>[Called By]<UL><LI><a href="#[24]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemInit
 </UL>
 
-<P><STRONG><a name="[26]"></a>bsp_vbatt_init</STRONG> (Thumb, 204 bytes, Stack size 40 bytes, r_ioport.o(.text.bsp_vbatt_init), UNUSED)
-<BR><BR>[Calls]<UL><LI><a href="#[17]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectEnable
-<LI><a href="#[16]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectDisable
-<LI><a href="#[15]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_SoftwareDelay
+<P><STRONG><a name="[23]"></a>r_ioport_pins_config</STRONG> (Thumb, 192 bytes, Stack size 16 bytes, r_ioport.o(.text.r_ioport_pins_config), UNUSED)
+<BR><BR>[Calls]<UL><LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bsp_vbatt_init
 </UL>
-<BR>[Called By]<UL><LI><a href="#[1a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;r_ioport_pins_config
+<BR>[Called By]<UL><LI><a href="#[22]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_IOPORT_Open
 </UL>
 
-<P><STRONG><a name="[28]"></a>r_sci_uart_call_callback</STRONG> (Thumb, 64 bytes, Stack size 32 bytes, r_sci_uart.o(.text.r_sci_uart_call_callback))
+<P><STRONG><a name="[30]"></a>bsp_vbatt_init</STRONG> (Thumb, 204 bytes, Stack size 40 bytes, r_ioport.o(.text.bsp_vbatt_init), UNUSED)
+<BR><BR>[Calls]<UL><LI><a href="#[20]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectEnable
+<LI><a href="#[1f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_RegisterProtectDisable
+<LI><a href="#[16]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;R_BSP_SoftwareDelay
+</UL>
+<BR>[Called By]<UL><LI><a href="#[23]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;r_ioport_pins_config
+</UL>
+
+<P><STRONG><a name="[33]"></a>r_sci_uart_call_callback</STRONG> (Thumb, 64 bytes, Stack size 32 bytes, r_sci_uart.o(.text.r_sci_uart_call_callback))
 <BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = r_sci_uart_call_callback
 </UL>
 <BR>[Called By]<UL><LI><a href="#[e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;sci_uart_eri_isr

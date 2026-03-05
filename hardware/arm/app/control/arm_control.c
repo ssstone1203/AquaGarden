@@ -11,11 +11,10 @@
  */
 void ArmControl_Init(arm_control_t* arm_ctrl)
 {
-    if (arm_ctrl == NULL)
+	if (arm_ctrl == NULL)
     {
         return;
     }
-    
     // 初始化舵机控制
     Servo_Init(&arm_ctrl->servo_ctrl);
     
@@ -238,8 +237,36 @@ void ArmControl_Reset(arm_control_t* arm_ctrl, uint16_t duration)
         Servo_PositionSet(&arm_ctrl->servo_ctrl, servo_ids[i], reset_positions[i], duration);
     }
     
+    // 复位夹爪到初始位置
+    Servo_PositionSet(&arm_ctrl->servo_ctrl, SERVO_ID_GRIPPER, SERIAL_SERVO5_RESET_DUTY, duration);
+    
     // 更新运动学对象到复位位置
     Kinematics_Init(&arm_ctrl->kin_obj);
     // 通过逆运动学计算复位位置对应的关节角度（用于后续计算）
     Kinematics_InverseKinematicsCalc(&arm_ctrl->kin_obj);
+}
+
+void ArmControl_GripperControl(arm_control_t* arm_ctrl, bool open, uint16_t duration)
+{
+    if (arm_ctrl == NULL)
+    {
+        return;
+    }
+    
+    // 定义夹爪打开和关闭的位置值
+    // 这些值可能需要根据实际硬件进行调整
+    uint16_t position;
+    if (open)
+    {
+        // 打开夹爪：较大的位置值
+        position = 700;
+    }
+    else
+    {
+        // 关闭夹爪：较小的位置值
+        position = 300;
+    }
+    
+    // 控制夹爪舵机
+    Servo_PositionSet(&arm_ctrl->servo_ctrl, SERVO_ID_GRIPPER, position, duration);
 }

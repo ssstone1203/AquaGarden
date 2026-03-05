@@ -10,6 +10,7 @@
 #define SERVO_ID_SHOULDER   2   // 肩部俯仰舵机（关节1）
 #define SERVO_ID_ELBOW      3   // 肘部俯仰舵机（关节2）
 #define SERVO_ID_WRIST      4   // 腕部俯仰舵机（关节3）
+#define SERVO_ID_GRIPPER    5   // 夹爪舵机（关节4）
 
 // 舵机角度范围定义（使用global.h中的定义）
 #define SERVO_MIN_POSITION  PS2_SET_MIN_DUTY      // 舵机最小位置值
@@ -74,5 +75,13 @@ void ArmControl_AllJointsSet(arm_control_t* arm_ctrl, float angles[4], uint16_t 
  * @param duration 运动时间（毫秒）
  */
 void ArmControl_Reset(arm_control_t* arm_ctrl, uint16_t duration);
+
+/**
+ * @brief 控制夹爪开合
+ * @param arm_ctrl 机械臂控制对象指针
+ * @param open true表示打开夹爪，false表示关闭夹爪
+ * @param duration 运动时间（毫秒）
+ */
+void ArmControl_GripperControl(arm_control_t* arm_ctrl, bool open, uint16_t duration);
 
 #endif

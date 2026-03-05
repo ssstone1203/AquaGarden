@@ -42,5 +42,5 @@
   ra_cfg\fsp_cfg\r_sci_i2c_cfg.h ra\fsp\inc\api\r_i2c_master_api.h \
   ra\fsp\inc\api\r_transfer_api.h ra\fsp\inc\instances\r_sci_uart.h \
   ra\fsp\inc\api\r_uart_api.h ra_cfg\fsp_cfg\r_sci_uart_cfg.h \
-  app\global.h app\device\serial_servo.h app\control\arm_control.h \
-  app\algorithm\kinematics.h app\device\stepper_slideway.h
+  app\control\arm_control.h app\algorithm\kinematics.h \
+  app\device\serial_servo.h app\global.h

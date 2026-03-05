@@ -4,6 +4,7 @@
 #include "stdint.h"
 #include "math.h"
 #include "string.h"
+#include "stdbool.h"
 
 #define PI 3.1415926f
  
@@ -14,14 +15,16 @@
 #define LINKAGE_4	 					17.7f
 
 // 关节角度限制定义（与joint[4]数组索引对应）
-#define MIN_JOINT0_ANGLE							-90.0f	// 关节0（基座旋转）最小角度
-#define MAX_JOINT0_ANGLE							 90.0f	// 关节0（基座旋转）最大角度
-#define MIN_JOINT1_ANGLE							  0.0f	// 关节1（肩部俯仰）最小角度
-#define MAX_JOINT1_ANGLE							180.0f	// 关节1（肩部俯仰）最大角度
-#define MIN_JOINT2_ANGLE							-90.0f	// 关节2（肘部俯仰）最小角度
-#define MAX_JOINT2_ANGLE							 90.0f	// 关节2（肘部俯仰）最大角度
-#define MIN_JOINT3_ANGLE							-90.0f	// 关节3（腕部俯仰）最小角度
-#define MAX_JOINT3_ANGLE							 90.0f	// 关节3（腕部俯仰）最大角度
+// 注意：串口舵机本身约有 240° 机械行程（映射到 125~875），这里先放宽限制，便于调试逆运动学。
+// 后续可以根据实际舵机机械极限再收紧。
+#define MIN_JOINT0_ANGLE                           -150.0f // 关节0（基座旋转）最小角度
+#define MAX_JOINT0_ANGLE                            150.0f // 关节0（基座旋转）最大角度
+#define MIN_JOINT1_ANGLE                             -10.0f // 关节1（肩部俯仰）最小角度（略放宽到复位以下）
+#define MAX_JOINT1_ANGLE                             190.0f // 关节1（肩部俯仰）最大角度
+#define MIN_JOINT2_ANGLE                           -150.0f // 关节2（肘部俯仰）最小角度
+#define MAX_JOINT2_ANGLE                            150.0f // 关节2（肘部俯仰）最大角度
+#define MIN_JOINT3_ANGLE                           -150.0f // 关节3（腕部俯仰）最小角度
+#define MAX_JOINT3_ANGLE                            150.0f // 关节3（腕部俯仰）最大角度
 
 // 运动学解算状态枚举
 typedef enum
