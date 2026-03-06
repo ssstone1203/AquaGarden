@@ -14,17 +14,16 @@
 #define LINKAGE_3		 				8.9f
 #define LINKAGE_4	 					17.7f
 
-// 关节角度限制定义（与joint[4]数组索引对应）
-// 注意：串口舵机本身约有 240° 机械行程（映射到 125~875），这里先放宽限制，便于调试逆运动学。
-// 后续可以根据实际舵机机械极限再收紧。
-#define MIN_JOINT0_ANGLE                           -150.0f // 关节0（基座旋转）最小角度
-#define MAX_JOINT0_ANGLE                            150.0f // 关节0（基座旋转）最大角度
-#define MIN_JOINT1_ANGLE                             -10.0f // 关节1（肩部俯仰）最小角度（略放宽到复位以下）
-#define MAX_JOINT1_ANGLE                             190.0f // 关节1（肩部俯仰）最大角度
-#define MIN_JOINT2_ANGLE                           -150.0f // 关节2（肘部俯仰）最小角度
-#define MAX_JOINT2_ANGLE                            150.0f // 关节2（肘部俯仰）最大角度
-#define MIN_JOINT3_ANGLE                           -150.0f // 关节3（腕部俯仰）最小角度
-#define MAX_JOINT3_ANGLE                            150.0f // 关节3（腕部俯仰）最大角度
+// 关节角度限制定义（与joint[4]数组索引对应，对应LeArm中的KNOT6~KNOT3）
+// 根据实际机械臂结构调整，允许向后倾斜
+#define MIN_JOINT0_ANGLE                           -90.0f // 关节0（基座旋转）最小角度
+#define MAX_JOINT0_ANGLE                            90.0f // 关节0（基座旋转）最大角度
+#define MIN_JOINT1_ANGLE                           -90.0f // 关节1（肩部俯仰）最小角度（允许向后倾斜）
+#define MAX_JOINT1_ANGLE                           180.0f // 关节1（肩部俯仰）最大角度
+#define MIN_JOINT2_ANGLE                           -150.0f // 关节2（肘部俯仰）最小角度（放宽到-150）
+#define MAX_JOINT2_ANGLE                            150.0f // 关节2（肘部俯仰）最大角度（放宽到150）
+#define MIN_JOINT3_ANGLE                           -150.0f // 关节3（腕部俯仰）最小角度（放宽到-150）
+#define MAX_JOINT3_ANGLE                            150.0f // 关节3（腕部俯仰）最大角度（放宽到150）
 
 // 运动学解算状态枚举
 typedef enum
@@ -78,5 +77,18 @@ kin_vec_t Kinematics_ForwardKinematicsCalc(float joint0_theta, float joint1_thet
  * @return kin_status_t KIN_STATUS_OK表示有解，KIN_STATUS_INVALID表示无解
  */
 kin_status_t Kinematics_InverseKinematicsCalc(kin_obj_t* kin_obj);
+
+/**
+ * @brief 设置机械臂俯仰角范围并求解逆运动学
+ * 尝试在给定的俯仰角范围内求解逆运动学，优先选择最接近目标俯仰角的解
+ * 
+ * @param kin_obj 运动学对象指针（输出解算结果）
+ * @param target_vec 目标位置向量（x, y, z）
+ * @param pitch 目标俯仰角（度）
+ * @param min_pitch 最小俯仰角限制（度）
+ * @param max_pitch 最大俯仰角限制（度）
+ * @return kin_status_t KIN_STATUS_OK表示有解，KIN_STATUS_INVALID表示无解
+ */
+kin_status_t Kinematics_SetPitchRange(kin_obj_t* kin_obj, kin_vec_t* target_vec, float pitch, float min_pitch, float max_pitch);
 
 #endif

@@ -41,7 +41,9 @@ void Kinematics_Init(kin_obj_t* kin_obj)
 	}
 	
 	// 初始化位置向量（默认位置）
-	kin_obj->vector.x = 15.0f;  // 默认X坐标
+	// 使用在工作空间内的坐标 (18, 0, 2)
+	// d = sqrt(18^2 + (2-2.89)^2) = 18.02cm > min_reach (16.17cm)
+	kin_obj->vector.x = 18.0f;  // 默认X坐标
 	kin_obj->vector.y = 0.0f;   // 默认Y坐标
 	kin_obj->vector.z = 2.0f;   // 默认Z坐标
 	
@@ -160,7 +162,7 @@ kin_status_t Kinematics_InverseKinematicsCalc(kin_obj_t* kin_obj)
 	// 检查是否在工作空间内
 	float max_reach = L2 + L3 + L4;
 	float min_reach = fabsf(L2 - L3 - L4);
-	
+
 	if (d > max_reach || d < min_reach)
 	{
 		return KIN_STATUS_INVALID;  // 超出工作空间
@@ -173,7 +175,7 @@ kin_status_t Kinematics_InverseKinematicsCalc(kin_obj_t* kin_obj)
 	// 检查是否有解
 	if (cos_theta2 > 1.0f || cos_theta2 < -1.0f)
 	{
-		return KIN_STATUS_INVALID;
+		return KIN_STATUS_INVALID;  // cos值超出范围
 	}
 	
 	// 选择肘部向上或向下的解（这里选择向上）
@@ -183,7 +185,14 @@ kin_status_t Kinematics_InverseKinematicsCalc(kin_obj_t* kin_obj)
 	
 	// 计算关节1的角度
 	float alpha = atan2f(z_adj, r);
-	float beta = acosf((L2 * L2 + d * d - L3 * L3) / (2.0f * L2 * d));
+	float cos_beta = (L2 * L2 + d * d - L3 * L3) / (2.0f * L2 * d);
+
+	if (cos_beta > 1.0f || cos_beta < -1.0f)
+	{
+		return KIN_STATUS_INVALID;  // beta的cos值超出范围
+	}
+
+	float beta = acosf(cos_beta);
 	float theta1_rad = alpha - beta;
 	
 	kin_obj->joint[1].rad = theta1_rad;
@@ -203,10 +212,128 @@ kin_status_t Kinematics_InverseKinematicsCalc(kin_obj_t* kin_obj)
 		kin_obj->joint[2].theta < MIN_JOINT2_ANGLE || kin_obj->joint[2].theta > MAX_JOINT2_ANGLE ||
 		kin_obj->joint[3].theta < MIN_JOINT3_ANGLE || kin_obj->joint[3].theta > MAX_JOINT3_ANGLE)
 	{
-		return KIN_STATUS_INVALID;
+		return KIN_STATUS_INVALID;  // 角度超出限制
 	}
 	
-	return KIN_STATUS_OK;
+    return KIN_STATUS_OK;
+}
+
+/**
+ * @brief 设置机械臂俯仰角范围并求解逆运动学
+ * 在俯仰角范围内尝试求解逆运动学，优先选择最接近目标俯仰角的解
+ * 移植自 LeArm 的 set_pitch_range 函数，按 AquaGarden 代码风格重写
+ *
+ * @param kin_obj 运动学对象指针（输出解算结果）
+ * @param target_vec 目标位置向量（x, y, z）
+ * @param pitch 目标俯仰角（度）
+ * @param min_pitch 最小俯仰角限制（度）
+ * @param max_pitch 最大俯仰角限制（度）
+ * @return kin_status_t KIN_STATUS_OK表示有解，KIN_STATUS_INVALID表示无解
+ */
+kin_status_t Kinematics_SetPitchRange(kin_obj_t* kin_obj, kin_vec_t* target_vec, float pitch, float min_pitch, float max_pitch)
+{
+    // 参数有效性检查
+    if (kin_obj == NULL || target_vec == NULL)
+    {
+        return KIN_STATUS_INVALID;
+    }
+
+    kin_obj_t result1;
+    kin_obj_t result2;
+    bool result1_valid;
+    bool result2_valid;
+
+    // 复制目标位置到临时对象
+    result1.vector.x = target_vec->x;
+    result1.vector.y = target_vec->y;
+    result1.vector.z = target_vec->z;
+
+    result2.vector.x = target_vec->x;
+    result2.vector.y = target_vec->y;
+    result2.vector.z = target_vec->z;
+
+    // 确保 min_pitch < max_pitch
+    if (min_pitch > max_pitch)
+    {
+        float temp = min_pitch;
+        min_pitch = max_pitch;
+        max_pitch = temp;
+    }
+
+    // 尝试在 min_pitch 处求解
+    result1.alpha_pitch = min_pitch;
+    result1_valid = (Kinematics_InverseKinematicsCalc(&result1) == KIN_STATUS_OK);
+
+    // 尝试在 max_pitch 处求解
+    result2.alpha_pitch = max_pitch;
+    result2_valid = (Kinematics_InverseKinematicsCalc(&result2) == KIN_STATUS_OK);
+
+    // 根据求解结果选择最优解
+    if (result1_valid)
+    {
+        // 先保存 result1 的结果到 kin_obj
+        kin_obj->alpha_pitch = result1.alpha_pitch;
+        kin_obj->vector.x = result1.vector.x;
+        kin_obj->vector.y = result1.vector.y;
+        kin_obj->vector.z = result1.vector.z;
+        for (uint8_t i = 0; i < 4; i++)
+        {
+            kin_obj->joint[i].theta = result1.joint[i].theta;
+            kin_obj->joint[i].rad = result1.joint[i].rad;
+        }
+
+        // 如果 result2 也有效，比较哪个更接近目标 pitch
+        if (result2_valid)
+        {
+            float diff1 = fabsf(result1.alpha_pitch - pitch);
+            float diff2 = fabsf(result2.alpha_pitch - pitch);
+
+            if (diff2 < diff1)
+            {
+                // result2 更接近目标，使用 result2
+                kin_obj->alpha_pitch = result2.alpha_pitch;
+                kin_obj->vector.x = result2.vector.x;
+                kin_obj->vector.y = result2.vector.y;
+                kin_obj->vector.z = result2.vector.z;
+                for (uint8_t i = 0; i < 4; i++)
+                {
+                    kin_obj->joint[i].theta = result2.joint[i].theta;
+                    kin_obj->joint[i].rad = result2.joint[i].rad;
+                }
+            }
+        }
+    }
+    else
+    {
+        // result1 无效，尝试使用 result2
+        if (result2_valid)
+        {
+            kin_obj->alpha_pitch = result2.alpha_pitch;
+            kin_obj->vector.x = result2.vector.x;
+            kin_obj->vector.y = result2.vector.y;
+            kin_obj->vector.z = result2.vector.z;
+            for (uint8_t i = 0; i < 4; i++)
+            {
+                kin_obj->joint[i].theta = result2.joint[i].theta;
+                kin_obj->joint[i].rad = result2.joint[i].rad;
+            }
+        }
+        else
+        {
+            // 两个边界都无解，尝试目标 pitch 本身
+            kin_obj->vector.x = target_vec->x;
+            kin_obj->vector.y = target_vec->y;
+            kin_obj->vector.z = target_vec->z;
+            kin_obj->alpha_pitch = pitch;
+
+            if (Kinematics_InverseKinematicsCalc(kin_obj) != KIN_STATUS_OK)
+            {
+                return KIN_STATUS_INVALID;
+            }
+        }
+    }
+
+    return KIN_STATUS_OK;
 }
 
 

@@ -47,31 +47,61 @@ uint16_t ArmControl_ServoPositionFromAngle(float joint_angle, uint8_t joint_inde
     uint16_t position;
     float angle_offset;
     
-    // 复位位置对应的舵机位置值（从global.h）
+    // 复位位置对应的舵机位置值（与LeArm ID映射保持一致）
+    // 关节0(基座)→ID6, 关节1(肩部)→ID5, 关节2(肘部)→ID4, 关节3(腕部)→ID3
     static const uint16_t reset_positions[4] = {
-        SERIAL_SERVO1_RESET_DUTY,  // 关节0（基座）
-        SERIAL_SERVO2_RESET_DUTY,  // 关节1（肩部）
-        SERIAL_SERVO3_RESET_DUTY,  // 关节2（肘部）
-        SERIAL_SERVO4_RESET_DUTY   // 关节3（腕部）
+        SERIAL_SERVO6_RESET_DUTY,  // 关节0（基座，ID 6）
+        SERIAL_SERVO5_RESET_DUTY,  // 关节1（肩部，ID 5）
+        SERIAL_SERVO4_RESET_DUTY,  // 关节2（肘部，ID 4）
+        SERIAL_SERVO3_RESET_DUTY   // 关节3（腕部，ID 3）
     };
     
-    // 复位位置对应的关节角度（需要通过逆运动学计算得到，这里使用估算值）
-    // 实际使用时，应该通过Kinematics_InverseKinematicsCalc计算复位位置的关节角度
-    // 然后根据实际测量值调整这些角度
+    // 复位位置对应的关节角度（根据LeArm坐标系反推）
+    // 复位舵机位置：ID6=500, ID5=408, ID4=129, ID3=177
+    // 公式：position = 500 + SERIAL_ANGLE_FACTOR * target_angle
+    // 公式：knot_theta = 90 - target_angle (仅肩部)
+    // 计算：
+    // ID6=500 → target=0° → knot0=0°
+    // ID5=408 → target=-22° → knot1=90-(-22)=112°
+    // ID4=129 → target=-89° → knot2=-89°
+    // ID3=177 → target=-77° → knot3=-77°
     static const float reset_angles[4] = {
-        0.0f,   // 关节0在复位位置的角度（度）
-        90.0f,  // 关节1在复位位置的角度（度）
-        0.0f,   // 关节2在复位位置的角度（度）
-        0.0f    // 关节3在复位位置的角度（度）
+        0.0f,    // 关节0：基座0度
+        112.0f,  // 关节1：肩部112度（向后倾斜）
+        -89.0f,  // 关节2：肘部-89度（接近下限）
+        -77.0f   // 关节3：腕部-77度
     };
     
+    // LeArm 角度转换（参考 robot_arm.c 中的 theta2servo 函数）
+    // 关节0,2,3：直接使用角度
+    // 关节1（肩部）：90° - theta（方向相反）
+    float converted_angle;
+    if (joint_index == 1)
+    {
+        converted_angle = 90.0f - joint_angle;  // 肩部反向
+    }
+    else
+    {
+        converted_angle = joint_angle;  // 其他关节直接使用
+    }
+
+    // 同样转换复位角度
+    float converted_reset_angle;
+    if (joint_index == 1)
+    {
+        converted_reset_angle = 90.0f - reset_angles[joint_index];
+    }
+    else
+    {
+        converted_reset_angle = reset_angles[joint_index];
+    }
+
     // 计算角度偏移量（相对于复位位置）
-    angle_offset = joint_angle - reset_angles[joint_index];
-    
+    angle_offset = converted_angle - converted_reset_angle;
+
     // 将角度偏移转换为位置偏移
-    // 假设舵机角度范围是240度，对应位置范围是750（875-125）
-    // 即：1度角度变化 ≈ 750/240 ≈ 3.125 位置单位
-    float position_offset = angle_offset * (PS2_SET_MAX_DUTY - PS2_SET_MIN_DUTY) / 240.0f;
+    // 使用 SERIAL_ANGLE_FACTOR = 4.1667 (与LeArm一致)
+    float position_offset = angle_offset * SERIAL_ANGLE_FACTOR;
     
     // 计算最终位置
     position = (uint16_t)(reset_positions[joint_index] + position_offset);
@@ -132,21 +162,21 @@ kin_status_t ArmControl_EndPositionSet(arm_control_t* arm_ctrl, float x, float y
     {
         return KIN_STATUS_INVALID;
     }
-    
+
     // 设置目标位置和俯仰角
     arm_ctrl->kin_obj.vector.x = x;
     arm_ctrl->kin_obj.vector.y = y;
     arm_ctrl->kin_obj.vector.z = z;
     arm_ctrl->kin_obj.alpha_pitch = pitch;
-    
+
     // 执行逆运动学解算
     kin_status_t status = Kinematics_InverseKinematicsCalc(&arm_ctrl->kin_obj);
-    
+
     if (status != KIN_STATUS_OK)
     {
         return status; // 无解或超出工作空间
     }
-    
+
     // 将解算得到的关节角度应用到舵机
     for (uint8_t i = 0; i < 4; i++)
     {
@@ -155,7 +185,7 @@ kin_status_t ArmControl_EndPositionSet(arm_control_t* arm_ctrl, float x, float y
             R_BSP_SoftwareDelay(SERVO_FRAME_INTERVAL_MS, BSP_DELAY_UNITS_MILLISECONDS);
         }
         uint16_t position = ArmControl_ServoPositionFromAngle(arm_ctrl->kin_obj.joint[i].theta, i);
-        
+
         uint8_t servo_id;
         switch (i)
         {
@@ -165,10 +195,60 @@ kin_status_t ArmControl_EndPositionSet(arm_control_t* arm_ctrl, float x, float y
             case 3: servo_id = SERVO_ID_WRIST; break;
             default: continue;
         }
-        
+
         Servo_PositionSet(&arm_ctrl->servo_ctrl, servo_id, position, duration);
     }
-    
+
+    return KIN_STATUS_OK;
+}
+
+/**
+ * @brief 通过逆运动学设置末端位置（带俯仰角范围限制）
+ * 移植自 LeArm 的 robot_arm_coordinate_set 函数逻辑
+ */
+kin_status_t ArmControl_EndPositionSetWithPitchRange(arm_control_t* arm_ctrl, float x, float y, float z, float pitch, float min_pitch, float max_pitch, uint16_t duration)
+{
+    if (arm_ctrl == NULL)
+    {
+        return KIN_STATUS_INVALID;
+    }
+
+    // 使用目标位置向量
+    kin_vec_t target_vec;
+    target_vec.x = x;
+    target_vec.y = y;
+    target_vec.z = z;
+
+    // 调用带俯仰角范围的逆运动学解算
+    kin_status_t status = Kinematics_SetPitchRange(&arm_ctrl->kin_obj, &target_vec, pitch, min_pitch, max_pitch);
+
+    if (status != KIN_STATUS_OK)
+    {
+        return status; // 无解或超出工作空间
+    }
+
+    // 将解算得到的关节角度应用到舵机
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        if (i > 0)
+        {
+            R_BSP_SoftwareDelay(SERVO_FRAME_INTERVAL_MS, BSP_DELAY_UNITS_MILLISECONDS);
+        }
+        uint16_t position = ArmControl_ServoPositionFromAngle(arm_ctrl->kin_obj.joint[i].theta, i);
+
+        uint8_t servo_id;
+        switch (i)
+        {
+            case 0: servo_id = SERVO_ID_BASE; break;
+            case 1: servo_id = SERVO_ID_SHOULDER; break;
+            case 2: servo_id = SERVO_ID_ELBOW; break;
+            case 3: servo_id = SERVO_ID_WRIST; break;
+            default: continue;
+        }
+
+        Servo_PositionSet(&arm_ctrl->servo_ctrl, servo_id, position, duration);
+    }
+
     return KIN_STATUS_OK;
 }
 
@@ -212,23 +292,28 @@ void ArmControl_Reset(arm_control_t* arm_ctrl, uint16_t duration)
         return;
     }
     
-    // 复位位置对应的舵机位置值（从global.h）
-    uint8_t servo_ids[4] = {
-        SERVO_ID_BASE,
-        SERVO_ID_SHOULDER,
-        SERVO_ID_ELBOW,
-        SERVO_ID_WRIST
+    // 复位位置对应的舵机ID和位置值（与LeArm硬件保持一致）
+    // ID映射：6=基座, 5=肩部, 4=肘部, 3=腕部, 2=旋转, 1=夹爪
+    uint8_t servo_ids[6] = {
+        SERVO_ID_BASE,      // 6 - 基座旋转（关节0）
+        SERVO_ID_SHOULDER,  // 5 - 肩部俯仰（关节1）
+        SERVO_ID_ELBOW,     // 4 - 肘部俯仰（关节2）
+        SERVO_ID_WRIST,     // 3 - 腕部俯仰（关节3）
+        SERVO_ID_ROTATION,  // 2 - 腕部旋转
+        SERVO_ID_GRIPPER    // 1 - 夹爪
     };
-    
-    uint16_t reset_positions[4] = {
-        SERIAL_SERVO1_RESET_DUTY,  // 关节0（基座）
-        SERIAL_SERVO2_RESET_DUTY,  // 关节1（肩部）
-        SERIAL_SERVO3_RESET_DUTY,  // 关节2（肘部）
-        SERIAL_SERVO4_RESET_DUTY   // 关节3（腕部）
+
+    uint16_t reset_positions[6] = {
+        SERIAL_SERVO6_RESET_DUTY,  // ID 6 基座复位值
+        SERIAL_SERVO5_RESET_DUTY,  // ID 5 肩部复位值
+        SERIAL_SERVO4_RESET_DUTY,  // ID 4 肘部复位值
+        SERIAL_SERVO3_RESET_DUTY,  // ID 3 腕部复位值
+        SERIAL_SERVO2_RESET_DUTY,  // ID 2 旋转复位值
+        SERIAL_SERVO1_RESET_DUTY   // ID 1 夹爪复位值
     };
-    
-    // 直接使用复位位置值控制舵机
-    for (uint8_t i = 0; i < 4; i++)
+
+    // 控制所有6个舵机复位
+    for (uint8_t i = 0; i < 6; i++)
     {
         if (i > 0)
         {
@@ -236,9 +321,6 @@ void ArmControl_Reset(arm_control_t* arm_ctrl, uint16_t duration)
         }
         Servo_PositionSet(&arm_ctrl->servo_ctrl, servo_ids[i], reset_positions[i], duration);
     }
-    
-    // 复位夹爪到初始位置
-    Servo_PositionSet(&arm_ctrl->servo_ctrl, SERVO_ID_GRIPPER, SERIAL_SERVO5_RESET_DUTY, duration);
     
     // 更新运动学对象到复位位置
     Kinematics_Init(&arm_ctrl->kin_obj);
