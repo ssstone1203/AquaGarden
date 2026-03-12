@@ -152,7 +152,7 @@ FSP Configuration
       AVSSUSBHS G14 USB_HS0_AVSS_USBHS - - - - - - - - IO "Read only" - 
       P000 R12 - - - - Disabled - - "ADC0: AN000; ADC1: AN100; ICU0: IRQ06" - None - - 
       P001 N11 - - - - Disabled - - "ADC0: AN001; ADC1: AN101; ICU0: IRQ07" - None - - 
-      P002 R11 - - - - Disabled - - "ADC0: AN002; ADC1: AN102; ICU0: IRQ08" - None - - 
+      P002 R11 GPIO BUS_EN - None "Output mode (Initial Low)" CMOS - "ADC0: AN002; ADC1: AN102; ICU0: IRQ08" - IO - - 
       P003 M5 - - - - Disabled - - "ADC0: AN003" - None - - 
       P004 P11 - - - - Disabled - - "ADC0: AN004; ICU0: IRQ09" - None - - 
       P005 R10 - - - - Disabled - - "ADC0: AN005; ICU0: IRQ10" - None - - 
@@ -195,8 +195,8 @@ FSP Configuration
       P213 H14 - BUS_TXD - - Disabled - - "ADC1: ADTRG1; AGT2: AGTEE2; CGC0: XTAL; GPT_POEG2: GTETRGC; GPT0: GTIOC0A; ICU0: IRQ02; SCI1: SDA1; SCI1: TXD1" - None - - 
       P214 A10 - - - - Disabled - - "AGT5: AGTO5; DEBUG_TRACE0: TCLK; ETHERC_MII0: ET0_MDC; ETHERC_RMII0: ET0_MDC; GPT_OPS0: GTIU; QSPI0: QSPCLK; SDHI0: SD0CLK" - None - - 
       P300 C4 DEBUG0_SWCLK - Low - "Peripheral mode" CMOS None "DEBUG0: SWCLK; DEBUG0: TCK; GPT_OPS0: GTOUUP; GPT0: GTIOC0A; SPI0: SSLA1" - IO - - 
-      P301 A2 SCI2_RXD2 - Low None "Peripheral mode" CMOS None "AGT0: AGTIO0; BUS_ASYNCH0: A06; GPT_OPS0: GTOULO; GPT4: GTIOC4B; ICU0: IRQ06; SCI2: RXD2; SCI2: SCL2; SCI9: CTSRTS9; SPI0: SSLA2" - IO - - 
-      P302 B3 SCI2_TXD2 - Low None "Peripheral mode" CMOS None "BUS_ASYNCH0: A07; GPT_OPS0: GTOUUP; GPT4: GTIOC4A; ICU0: IRQ05; SCI2: SDA2; SCI2: TXD2; SPI0: SSLA3" - IO - - 
+      P301 A2 - - - - Disabled - - "AGT0: AGTIO0; BUS_ASYNCH0: A06; GPT_OPS0: GTOULO; GPT4: GTIOC4B; ICU0: IRQ06; SCI2: RXD2; SCI2: SCL2; SCI9: CTSRTS9; SPI0: SSLA2" - None - - 
+      P302 B3 - - - - Disabled - - "BUS_ASYNCH0: A07; GPT_OPS0: GTOUUP; GPT4: GTIOC4A; ICU0: IRQ05; SCI2: SDA2; SCI2: TXD2; SPI0: SSLA3" - None - - 
       P303 A3 - - - - Disabled - - "BUS_ASYNCH0: A08; GPT7: GTIOC7B; SCI9: CTS9" - None - - 
       P304 B4 - - - - Disabled - - "AGT2: AGTEE2; BUS_ASYNCH0: A09; GPT_OPS0: GTOWLO; GPT7: GTIOC7A; ICU0: IRQ09; SCI6: RXD6; SCI6: SCL6" - None - - 
       P305 B5 - - - - Disabled - - "AGT2: AGTOB2; BUS_ASYNCH0: A10; GPT_OPS0: GTOWUP; ICU0: IRQ08; QSPI0: QSPCLK; SCI6: SDA6; SCI6: TXD6" - None - - 
@@ -235,8 +235,8 @@ FSP Configuration
       P506 R5 - - - - Disabled - - "ADC1: AN122; ICU0: IRQ15; SCI6: SDA6; SCI6: TXD6" - None - - 
       P507 N6 - - - - Disabled - - "ADC1: AN123; SCI5: SCK5; SCI6: SCK6" - None - - 
       P508 R6 - - - - Disabled - - "ADC1: AN124; SCI5: CTSRTS5" - None - - 
-      P511 P13 - - - - Disabled - - "CAN1: CRX1; GPT0: GTIOC0B; ICU0: IRQ15; IIC1: SDA1; SCI4: RXD4; SCI4: SCL4" - None - - 
-      P512 R14 - - - - Disabled - - "CAN1: CTX1; GPT0: GTIOC0A; ICU0: IRQ14; IIC1: SCL1; SCI4: SDA4; SCI4: TXD4" - None - - 
+      P511 P13 SCI4_RXD4 - Low None "Peripheral mode" CMOS None "CAN1: CRX1; GPT0: GTIOC0B; ICU0: IRQ15; IIC1: SDA1; SCI4: RXD4; SCI4: SCL4" - IO - - 
+      P512 R14 SCI4_TXD4 - Low None "Peripheral mode" CMOS None "CAN1: CTX1; GPT0: GTIOC0A; ICU0: IRQ14; IIC1: SCL1; SCI4: SDA4; SCI4: TXD4" - IO - - 
       P513 N12 - - - - Disabled - - "SCI5: RXD5; SCI5: SCL5" - None - - 
       P600 L1 - - - - Disabled - - "AGT3: AGTIO3; BUS_ASYNCH0: RD; CAC0: CACREF; CGC0: CLKOUT; GPT6: GTIOC6B; OSPI0: OMSIO4; SCI9: SCK9" - None - - 
       P601 K2 - - - - Disabled - - "AGT3: AGTEE3; BUS_ASYNCH0: WR; GPT6: GTIOC6A; OSPI0: OMSIO2; SCI9: RXD9; SCI9: SCL9" - None - - 
@@ -355,11 +355,11 @@ FSP Configuration
       
     Instance "g_serial_servo_uart UART (r_sci_uart)"
       General: Name: g_serial_servo_uart
-      General: Channel: 2
+      General: Channel: 4
       General: Data Bits: 8bits
       General: Parity: None
       General: Stop Bits: 1bit
-      Baud: Baud Rate: 115200
+      Baud: Baud Rate: 9600
       Baud: Baud Rate Modulation: Disabled
       Baud: Max Error (%): 5
       Flow Control: CTS/RTS Selection: Hardware RTS

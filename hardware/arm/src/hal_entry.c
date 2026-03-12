@@ -5,19 +5,21 @@
 //#define SERVO_TEST
 //#define ARM_SINGLE_JOINT_TEST
 //#define ARM_ALL_JOINT_TEST
-#define ARM_IKINE_TEST
+//#define ARM_IKINE_TEST
 
-
+servo_ctrl_t g_servo_ctrl;
 // 机械臂控制对象（全局变量）
 arm_control_t g_arm_ctrl;
 kin_status_t g_kin_status;
 
 void hal_entry(void)
 {
+	R_IOPORT_Open(&g_ioport_ctrl, &g_bsp_pin_cfg);
     // 1. 打开串口（舵机通信）
     R_SCI_UART_Open(&g_serial_servo_uart_ctrl, &g_serial_servo_uart_cfg);
     
     // 2. 初始化机械臂控制
+	R_IOPORT_PinWrite(&g_ioport_ctrl, BUS_EN, BSP_IO_LEVEL_LOW);
     ArmControl_Init(&g_arm_ctrl);
     
     // 等待系统稳定
@@ -25,10 +27,27 @@ void hal_entry(void)
     
     // 3. 先复位到初始位置（坐标 15, 0, 2）
     ArmControl_Reset(&g_arm_ctrl, 2000);
-    R_BSP_SoftwareDelay(1000, BSP_DELAY_UNITS_MILLISECONDS);
+    R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
 
 	while(1)
 	{
+//		g_kin_status = ArmControl_JointAngleSet(&g_arm_ctrl, 1, 120.0f, 1000);  // 向前
+//		R_BSP_SoftwareDelay(1200, BSP_DELAY_UNITS_MILLISECONDS);
+//		g_kin_status = ArmControl_JointAngleSet(&g_arm_ctrl, 1, 60.0f, 1000);   // 向后
+//		R_BSP_SoftwareDelay(1200, BSP_DELAY_UNITS_MILLISECONDS);
+		g_kin_status = ArmControl_JointAngleSet(&g_arm_ctrl, 0, 90.0f, 1000);
+		R_BSP_SoftwareDelay(1200, BSP_DELAY_UNITS_MILLISECONDS);
+		g_kin_status = ArmControl_JointAngleSet(&g_arm_ctrl, 0, 0, 1000);
+		R_BSP_SoftwareDelay(1200, BSP_DELAY_UNITS_MILLISECONDS);
+		Servo_PositionSet(&g_servo_ctrl, 1, 1000, 1000);
+		R_BSP_SoftwareDelay(1500, BSP_DELAY_UNITS_MILLISECONDS);
+		g_kin_status = ArmControl_JointAngleSet(&g_arm_ctrl, 1, 120.0f, 1000);
+		R_BSP_SoftwareDelay(1200, BSP_DELAY_UNITS_MILLISECONDS);
+		g_kin_status = ArmControl_JointAngleSet(&g_arm_ctrl, 1, 90.0f, 1000);
+		R_BSP_SoftwareDelay(1200, BSP_DELAY_UNITS_MILLISECONDS);
+		Servo_PositionSet(&g_servo_ctrl, 1, 0, 1000);
+		R_BSP_SoftwareDelay(1500, BSP_DELAY_UNITS_MILLISECONDS);
+		
 		#ifdef ARM_SINGLE_JOINT_TEST
 		// ========== 测试1：单个关节角度控制 ==========
 		// 关节索引：0=基座旋转, 1=肩部俯仰, 2=肘部俯仰, 3=腕部俯仰

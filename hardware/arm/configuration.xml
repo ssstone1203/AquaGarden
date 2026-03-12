@@ -261,11 +261,11 @@
     </module>
     <module id="module.driver.uart_on_sci_uart.510958668">
       <property id="module.driver.uart.name" value="g_serial_servo_uart"/>
-      <property id="module.driver.uart.channel" value="2"/>
+      <property id="module.driver.uart.channel" value="4"/>
       <property id="module.driver.uart.data_bits" value="module.driver.uart.data_bits.data_bits_8"/>
       <property id="module.driver.uart.parity" value="module.driver.uart.parity.parity_off"/>
       <property id="module.driver.uart.stop_bits" value="module.driver.uart.stop_bits.stop_bits_1"/>
-      <property id="module.driver.uart.baud" value="115200"/>
+      <property id="module.driver.uart.baud" value="9600"/>
       <property id="module.driver.uart.baudrate_modulation" value="module.driver.uart.baudrate_modulation.disabled"/>
       <property id="module.driver.uart.baudrate_max_err" value="5"/>
       <property id="module.driver.uart.flow_control" value="module.driver.uart.flow_control.rts"/>
@@ -326,33 +326,36 @@
     </config>
   </raModuleConfiguration>
   <raPinConfiguration>
+    <symbolicName propertyId="p002.symbolic_name" value="BUS_EN"/>
     <symbolicName propertyId="p212.symbolic_name" value="BUS_RXD"/>
     <symbolicName propertyId="p213.symbolic_name" value="BUS_TXD"/>
     <pincfg active="true" name="R7FA6M5BF2CBG.pincfg" selected="true" symbol="g_bsp_pin_cfg">
       <configSetting altId="debug0.mode.swd" configurationId="debug0.mode"/>
       <configSetting altId="debug0.swclk.p300" configurationId="debug0.swclk"/>
       <configSetting altId="debug0.swdio.p108" configurationId="debug0.swdio"/>
+      <configSetting altId="p002.output.low" configurationId="p002"/>
+      <configSetting altId="p002.gpio_mode.gpio_mode_out.low" configurationId="p002.gpio_mode"/>
       <configSetting altId="p108.debug0.swdio" configurationId="p108"/>
       <configSetting altId="p108.gpio_mode.gpio_mode_peripheral" configurationId="p108.gpio_mode"/>
       <configSetting altId="p300.debug0.swclk" configurationId="p300"/>
       <configSetting altId="p300.gpio_mode.gpio_mode_peripheral" configurationId="p300.gpio_mode"/>
-      <configSetting altId="p301.sci2.rxd" configurationId="p301"/>
-      <configSetting altId="p301.gpio_mode.gpio_mode_peripheral" configurationId="p301.gpio_mode"/>
-      <configSetting altId="p302.sci2.txd" configurationId="p302"/>
-      <configSetting altId="p302.gpio_mode.gpio_mode_peripheral" configurationId="p302.gpio_mode"/>
+      <configSetting altId="p511.sci4.rxd" configurationId="p511"/>
+      <configSetting altId="p511.gpio_mode.gpio_mode_peripheral" configurationId="p511.gpio_mode"/>
+      <configSetting altId="p512.sci4.txd" configurationId="p512"/>
+      <configSetting altId="p512.gpio_mode.gpio_mode_peripheral" configurationId="p512.gpio_mode"/>
       <configSetting altId="p706.sci3.scl" configurationId="p706"/>
       <configSetting altId="p706.gpio_mode.gpio_mode_peripheral" configurationId="p706.gpio_mode"/>
       <configSetting altId="p706.gpio_otype.gpio_otype_n_ch_od" configurationId="p706.gpio_otype"/>
       <configSetting altId="p707.sci3.sda" configurationId="p707"/>
       <configSetting altId="p707.gpio_mode.gpio_mode_peripheral" configurationId="p707.gpio_mode"/>
       <configSetting altId="p707.gpio_otype.gpio_otype_n_ch_od" configurationId="p707.gpio_otype"/>
-      <configSetting altId="sci2.mode.asynchronous.free" configurationId="sci2.mode"/>
-      <configSetting altId="sci2.rxd.p301" configurationId="sci2.rxd"/>
-      <configSetting altId="sci2.txd.p302" configurationId="sci2.txd"/>
       <configSetting altId="sci3.mode.iic.b" configurationId="sci3.mode"/>
       <configSetting altId="sci3.pairing.b" configurationId="sci3.pairing"/>
       <configSetting altId="sci3.scl.p706" configurationId="sci3.scl"/>
       <configSetting altId="sci3.sda.p707" configurationId="sci3.sda"/>
+      <configSetting altId="sci4.mode.asynchronous.free" configurationId="sci4.mode"/>
+      <configSetting altId="sci4.rxd.p511" configurationId="sci4.rxd"/>
+      <configSetting altId="sci4.txd.p512" configurationId="sci4.txd"/>
     </pincfg>
   </raPinConfiguration>
 </raConfiguration>

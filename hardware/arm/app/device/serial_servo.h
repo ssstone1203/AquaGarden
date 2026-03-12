@@ -37,35 +37,41 @@
 
 #define CMD_SERVO_MOVE 0x03
 
-#pragma pack(1)		//设置结构体成员按1字节对齐，也就是让这个结构体严格占13个字节
+#pragma pack(1)		//设置结构体成员按1字节对齐
 
-typedef struct  	//舵机指令包帧格式
+/**
+ * @brief 新协议舵机控制参数（CMD_SERVO_MOVE，指令0x03）
+ * 支持一帧控制多个舵机，每个舵机占用3字节（ID+位置低+位置高）
+ */
+typedef struct
 {
-	uint8_t servo_header[2];
-	union
-	{
-		struct
-		{
-			uint8_t servo_id;
-			uint8_t servo_length;
-			uint8_t servo_cmd;
-			uint8_t servo_args[8];
-		}servo_element;
-		uint8_t servo_data_raw[11];
-	};
-}servo_frame_t;
+	uint8_t servo_id;           // 舵机ID号
+	uint16_t position;          // 目标位置（0-1000）
+} servo_move_param_t;
+
+/**
+ * @brief 新协议帧结构（CMD_SERVO_MOVE，指令0x03）
+ * 帧头(2B) + 长度(1B) + 指令(1B) + 个数(1B) + 时间(2B) + 参数(N×3B)
+ */
+typedef struct
+{
+	uint8_t header[2];           // 帧头：0x55 0x55
+	uint8_t length;              // 数据长度：个数×3 + 5
+	uint8_t cmd;                 // 指令：0x03（CMD_SERVO_MOVE）
+	uint8_t count;               // 控制舵机的个数
+	uint16_t duration;           // 运动时间（毫秒）
+	servo_move_param_t params[6]; // 最多支持6个舵机参数
+} servo_frame_t;
 
 #pragma pack()		//恢复原来的对齐方式
 
-typedef struct 
+typedef struct
 {
 	servo_frame_t servo_ctrl_tx;
 	servo_frame_t servo_ctrl_rx;
 }servo_ctrl_t;
 
 void Servo_Init(servo_ctrl_t* servo_ctrl);
-void Servo_CmdFrameFill(servo_frame_t* servo_frame, uint8_t id, uint8_t length, uint8_t cmd);
-uint8_t Servo_ChecksumCalc(servo_frame_t* servo_frame);
 void Servo_CmdFrameSend(servo_frame_t* servo_frame);
 void Servo_PositionSet(servo_ctrl_t* servo_ctrl, uint8_t servo_id, uint16_t position, uint16_t duration);
 

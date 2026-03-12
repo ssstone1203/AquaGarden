@@ -57,7 +57,7 @@ sci_uart_instance_ctrl_t     g_serial_servo_uart_ctrl;
 
             baud_setting_t               g_serial_servo_uart_baud_setting =
             {
-                /* Baud rate calculated with 0.469% error. */ .semr_baudrate_bits_b.abcse = 0, .semr_baudrate_bits_b.abcs = 0, .semr_baudrate_bits_b.bgdm = 1, .cks = 0, .brr = 53, .mddr = (uint8_t) 256, .semr_baudrate_bits_b.brme = false
+                /* Baud rate calculated with 0.469% error. */ .semr_baudrate_bits_b.abcse = 0, .semr_baudrate_bits_b.abcs = 0, .semr_baudrate_bits_b.bgdm = 1, .cks = 1, .brr = 161, .mddr = (uint8_t) 256, .semr_baudrate_bits_b.brme = false
             };
 
             /** UART extended configuration for UARTonSCI HAL driver */
@@ -93,7 +93,7 @@ sci_uart_instance_ctrl_t     g_serial_servo_uart_ctrl;
             /** UART interface configuration */
             const uart_cfg_t g_serial_servo_uart_cfg =
             {
-                .channel             = 2,
+                .channel             = 4,
                 .data_bits           = UART_DATA_BITS_8,
                 .parity              = UART_PARITY_OFF,
                 .stop_bits           = UART_STOP_BITS_1,
@@ -116,23 +116,23 @@ sci_uart_instance_ctrl_t     g_serial_servo_uart_ctrl;
                 .txi_ipl             = (12),
                 .tei_ipl             = (12),
                 .eri_ipl             = (12),
-#if defined(VECTOR_NUMBER_SCI2_RXI)
-                .rxi_irq             = VECTOR_NUMBER_SCI2_RXI,
+#if defined(VECTOR_NUMBER_SCI4_RXI)
+                .rxi_irq             = VECTOR_NUMBER_SCI4_RXI,
 #else
                 .rxi_irq             = FSP_INVALID_VECTOR,
 #endif
-#if defined(VECTOR_NUMBER_SCI2_TXI)
-                .txi_irq             = VECTOR_NUMBER_SCI2_TXI,
+#if defined(VECTOR_NUMBER_SCI4_TXI)
+                .txi_irq             = VECTOR_NUMBER_SCI4_TXI,
 #else
                 .txi_irq             = FSP_INVALID_VECTOR,
 #endif
-#if defined(VECTOR_NUMBER_SCI2_TEI)
-                .tei_irq             = VECTOR_NUMBER_SCI2_TEI,
+#if defined(VECTOR_NUMBER_SCI4_TEI)
+                .tei_irq             = VECTOR_NUMBER_SCI4_TEI,
 #else
                 .tei_irq             = FSP_INVALID_VECTOR,
 #endif
-#if defined(VECTOR_NUMBER_SCI2_ERI)
-                .eri_irq             = VECTOR_NUMBER_SCI2_ERI,
+#if defined(VECTOR_NUMBER_SCI4_ERI)
+                .eri_irq             = VECTOR_NUMBER_SCI4_ERI,
 #else
                 .eri_irq             = FSP_INVALID_VECTOR,
 #endif

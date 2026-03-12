@@ -3,8 +3,8 @@
 #include "bsp_api.h"
 #include <math.h>
 
-/* 每帧约 10 字节 @ 115200 bps ≈ 0.9 ms，帧间留 2 ms 避免覆盖 servo_frame_buf */
-#define SERVO_FRAME_INTERVAL_MS  2
+/* 每帧约 10 字节 @ 9600 bps ≈ 10.4 ms，帧间留 20 ms 避免覆盖 servo_frame_buf */
+#define SERVO_FRAME_INTERVAL_MS  20
 
 /**
  * @brief 机械臂控制初始化

@@ -6,6 +6,7 @@
 /* Common macro for FSP header files. There is also a corresponding FSP_FOOTER macro at the end of this file. */
 FSP_HEADER
 
+#define BUS_EN (BSP_IO_PORT_00_PIN_02)
 #define BUS_RXD (BSP_IO_PORT_02_PIN_12)
 #define BUS_TXD (BSP_IO_PORT_02_PIN_13)
 
