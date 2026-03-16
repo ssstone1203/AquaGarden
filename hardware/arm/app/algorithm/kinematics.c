@@ -1,7 +1,7 @@
 #include "kinematics.h"
 
 /**
- * @brief 角度转弧度（内部辅助函数）
+ * @brief 角度转弧度
  * 
  * @param theta 角度值（度）
  * @return float 弧度值
@@ -12,7 +12,7 @@ static float Theta_To_Rad(float theta)
 }
 
 /**
- * @brief 弧度转角度（内部辅助函数）
+ * @brief 弧度转角度
  * 
  * @param rad 弧度值
  * @return float 角度值（度）
@@ -22,318 +22,246 @@ static float Rad_To_Theta(float rad)
 	return rad * 180.0f / PI;
 }
 
-void Kinematics_Init(kin_obj_t* kin_obj)
+void Kin_Init(kin_obj_t* kin_obj)
 {
-	// 参数有效性检查
-	if (kin_obj == NULL)
+	if(kin_obj ==NULL)
 	{
 		return;
 	}
 	
-	// 清零整个结构体
 	memset(kin_obj, 0, sizeof(kin_obj_t));
 	
 	// 初始化关节角度为0
-	for (uint8_t i = 0; i < 4; i++) 
+	for(uint8_t i = 0; i < 4; i++)
 	{
 		kin_obj->joint[i].theta = 0.0f;
 		kin_obj->joint[i].rad = 0.0f;
 	}
 	
 	// 初始化位置向量（默认位置）
-	// 使用在工作空间内的坐标 (18, 0, 2)
-	// d = sqrt(18^2 + (2-2.89)^2) = 18.02cm > min_reach (16.17cm)
-	kin_obj->vector.x = 18.0f;  // 默认X坐标
-	kin_obj->vector.y = 0.0f;   // 默认Y坐标
-	kin_obj->vector.z = 2.0f;   // 默认Z坐标
+    kin_obj->vector.x = 15.0f;  // 默认X坐标
+    kin_obj->vector.y = 0.0f;   // 默认Y坐标
+    kin_obj->vector.z = 2.0f;   // 默认Z坐标
 	
 	// 初始化俯仰角
-	kin_obj->alpha_pitch = 0.0f;
+    kin_obj->alpha_pitch = 0.0f;
 }
 
-/**
- * @brief 正运动学解算（Forward Kinematics）
- * 根据4个关节角度计算末端执行器位置
- * 
- * @param joint0_theta 从下至上第1个关节角度（度）- 基座旋转
- * @param joint1_theta 从下至上第2个关节角度（度）- 肩部俯仰
- * @param joint2_theta 从下至上第3个关节角度（度）- 肘部俯仰
- * @param joint3_theta 从下至上第4个关节角度（度）- 腕部俯仰
- * @return kin_vec_t 末端位置向量 (x, y, z)
- */
-kin_vec_t Kinematics_ForwardKinematicsCalc(float joint0_theta, float joint1_theta, float joint2_theta, float joint3_theta)
+//几何法
+//顺运动学解算
+kin_vec_t Kin_Forward(float joint0_theta, float joint1_theta, float joint2_theta, float joint3_theta)
 {
-	kin_vec_t result;
-	float theta0, theta1, theta2, theta3;  // 弧度值
-	float x, y, z;
+	kin_vec_t kin_vec_result;
+	float rad0, rad1, rad2, rad3;
+	float end_x, end_y, end_z;
+	float L1,L2,L3,L4;
 	
 	// 角度转弧度
-	theta0 = Theta_To_Rad(joint0_theta);
-	theta1 = Theta_To_Rad(joint1_theta);
-	theta2 = Theta_To_Rad(joint2_theta);
-	theta3 = Theta_To_Rad(joint3_theta);
+    rad0 = Theta_To_Rad(joint0_theta);
+    rad1 = Theta_To_Rad(joint1_theta);
+    rad2 = Theta_To_Rad(joint2_theta);
+    rad3 = Theta_To_Rad(joint3_theta);
 	
 	// 正运动学计算（基于几何法）
-	// 机械臂结构说明：
-	// - 关节0：基座旋转（绕Z轴）
-	// - 关节1：肩部俯仰（绕Y轴）
-	// - 关节2：肘部俯仰（绕Y轴）
-	// - 关节3：腕部俯仰（绕Y轴）
+    // 假设机械臂结构：
+    // - 关节0：基座旋转（绕Z轴）
+    // - 关节1：肩部俯仰（绕Y轴）
+    // - 关节2：肘部俯仰（绕Y轴）
+    // - 关节3：腕部俯仰（绕Y轴）
 	
-	// 获取各连杆长度
-	float L1 = LINKAGE_1;
-	float L2 = LINKAGE_2;
-	float L3 = LINKAGE_3;
-	float L4 = LINKAGE_4;
+	// 计算各关节在XY平面的投影
+    L1 = LINKAGE_1;
+    L2 = LINKAGE_2;
+    L3 = LINKAGE_3;
+	L4 = LINKAGE_4;
 	
-	// 基座旋转后的X方向
-	float base_x = L1;
+	//从基座坐标系原点到第1个关节（肩关节）的水平距离为L1
+	float base_x;
+	base_x = L1;
 	
 	// 肩部关节后的位置
-	float shoulder_x = base_x + L2 * cosf(theta1);
-	float shoulder_z = L1 + L2 * sinf(theta1);
+	float shoulder_x, shoulder_z;
+	shoulder_x = base_x + L2 * cosf(rad1);
+	shoulder_z = L1 + L2 * sinf(rad1);
 	
 	// 肘部关节后的位置
-	float elbow_x = shoulder_x + L3 * cosf(theta1 + theta2);
-	float elbow_z = shoulder_z + L3 * sinf(theta1 + theta2);
-	
+	float elbow_x,elbow_z;
+	elbow_x = shoulder_x + L3 * cosf(rad1 + rad2);
+	elbow_z = shoulder_z + L3 * sinf(rad1 + rad2);
+
 	// 腕部关节后的位置（末端）
-	float wrist_x = elbow_x + L4 * cosf(theta1 + theta2 + theta3);
-	float wrist_z = elbow_z + L4 * sinf(theta1 + theta2 + theta3);
+	float wrist_x,wrist_z;
+	wrist_x = elbow_x + L4 * cosf(rad1 + rad2 + rad3);
+	wrist_z = elbow_z + L4 * sinf(rad1 + rad2 + rad3);
 	
-	// 考虑基座旋转，计算最终末端位置
-	x = wrist_x * cosf(theta0);
-	y = wrist_x * sinf(theta0);
-	z = wrist_z;
+	// 考虑基座旋转
+    end_x = wrist_x * cosf(rad0);
+    end_y = wrist_x * sinf(rad0);
+    end_z = wrist_z;
 	
-	// 赋值结果
-	result.x = x;
-	result.y = y;
-	result.z = z;
+	kin_vec_result.x = end_x;
+	kin_vec_result.y = end_y;
+	kin_vec_result.z = end_z;
 	
-	return result;
+	return kin_vec_result;
 }
 
-/**
- * @brief 逆运动学解算（Inverse Kinematics）
- * 根据末端位置和俯仰角计算4个关节角度
- * 
- * @param kin_obj 运动学对象指针（输入：vector和alpha_pitch，输出：joint[0..3]）
- * @return kin_status_t KIN_STATUS_OK表示有解，KIN_STATUS_INVALID表示无解
- */
-kin_status_t Kinematics_InverseKinematicsCalc(kin_obj_t* kin_obj)
+//逆运动学解算
+kin_status_t Kin_Inverse(kin_obj_t* kin_obj)
 {
-	// 参数有效性检查
-	if (kin_obj == NULL)
-	{
+	if(kin_obj == NULL){
 		return KIN_STATUS_INVALID;
 	}
 	
-	float x = kin_obj->vector.x;
-	float y = kin_obj->vector.y;
-	float z = kin_obj->vector.z;
+	float end_x, end_y, end_z;
+	end_x = kin_obj->vector.x;
+	end_y = kin_obj->vector.y;
+	end_z = kin_obj->vector.z;
 	
-	// 获取各连杆长度
-	float L1 = LINKAGE_1;
-	float L2 = LINKAGE_2;
-	float L3 = LINKAGE_3;
-	float L4 = LINKAGE_4;
+	float L1,L2,L3,L4;
+	L1 = LINKAGE_1;
+	L2 = LINKAGE_2;
+	L3 = LINKAGE_3;
+	L4 = LINKAGE_4;
 	
 	// 计算基座旋转角（关节0）
-	float r = sqrtf(x * x + y * y);
-	if (r < 0.001f)
-	{
-		// 如果r太小，基座角度设为0
+	float r;
+	r = sqrtf(end_x * end_x + end_y * end_y);
+	
+	// 如果r太小，基座角度设为0
+	if(r < 0.001f){
 		kin_obj->joint[0].rad = 0.0f;
-		kin_obj->joint[0].theta = 0.0f;
-	}
-	else
-	{
-		kin_obj->joint[0].rad = atan2f(y, x);
-		kin_obj->joint[0].theta = Rad_To_Theta(kin_obj->joint[0].rad);
+        kin_obj->joint[0].theta = 0.0f;
+	}else{
+		kin_obj->joint[0].rad = atan2f(end_y, end_x);
+        kin_obj->joint[0].theta = Rad_To_Theta(kin_obj->joint[0].rad);
 	}
 	
 	// 调整z坐标（减去基座高度）
-	float z_adj = z - L1;
+	float z_adj;
+    z_adj = end_z - L1;
 	
-	// 计算目标点到基座的距离
-	float d = sqrtf(r * r + z_adj * z_adj);
+	// 计算腕部位置：腕部 = 目标点 - L4沿俯仰方向
+	// 俯仰角alpha_pitch为末端执行器相对水平面的角度（弧度）
+	float alpha_rad = Theta_To_Rad(kin_obj->alpha_pitch);
+	float wrist_r = r - L4 * cosf(alpha_rad);
+	float wrist_z = z_adj - L4 * sinf(alpha_rad);
 	
-	// 检查是否在工作空间内
-	float max_reach = L2 + L3 + L4;
-	float min_reach = fabsf(L2 - L3 - L4);
-
-	if (d > max_reach || d < min_reach)
-	{
-		return KIN_STATUS_INVALID;  // 超出工作空间
-	}
+	// 计算肩部到腕部的距离（用于L2-L3三角形的余弦定理）
+	float d;
+    d = sqrtf(wrist_r * wrist_r + wrist_z * wrist_z);
+	
+	// 检查是否在工作空间内（L2+L3需能到达腕部）
+	float max_reach,min_reach;
+    max_reach = L2 + L3;
+    min_reach = fabsf(L2 - L3);
+	
+	if (d > max_reach || d < min_reach) {
+        return KIN_STATUS_INVALID;  // 超出工作空间
+    }
 	
 	// 使用余弦定理计算关节角度
-	// 计算关节2的角度
-	float cos_theta2 = (L2 * L2 + L3 * L3 - d * d) / (2.0f * L2 * L3);
+    // 计算关节2的角度（肘部角度）
+	float cos_theta2;
+    cos_theta2 = (L2 * L2 + L3 * L3 - d * d) / (2.0f * L2 * L3);
 	
 	// 检查是否有解
-	if (cos_theta2 > 1.0f || cos_theta2 < -1.0f)
-	{
-		return KIN_STATUS_INVALID;  // cos值超出范围
-	}
+    if (cos_theta2 > 1.0f || cos_theta2 < -1.0f) {
+        return KIN_STATUS_INVALID;
+    }
 	
 	// 选择肘部向上或向下的解（这里选择向上）
-	float theta2_rad = acosf(cos_theta2);
-	kin_obj->joint[2].rad = theta2_rad;
-	kin_obj->joint[2].theta = Rad_To_Theta(theta2_rad);
+	float theta2_rad;
+    theta2_rad = acosf(cos_theta2);
+    kin_obj->joint[2].rad = theta2_rad;
+    kin_obj->joint[2].theta = Rad_To_Theta(theta2_rad);
 	
-	// 计算关节1的角度
-	float alpha = atan2f(z_adj, r);
-	float cos_beta = (L2 * L2 + d * d - L3 * L3) / (2.0f * L2 * d);
-
-	if (cos_beta > 1.0f || cos_beta < -1.0f)
-	{
-		return KIN_STATUS_INVALID;  // beta的cos值超出范围
-	}
-
-	float beta = acosf(cos_beta);
-	float theta1_rad = alpha - beta;
+	// 计算关节1的角度（使用腕部方向）
+	float alpha,beta,theta1_rad;
+    alpha = atan2f(wrist_z, wrist_r);
+    beta = acosf((L2 * L2 + d * d - L3 * L3) / (2.0f * L2 * d));
+    theta1_rad = alpha - beta;
 	
 	kin_obj->joint[1].rad = theta1_rad;
-	kin_obj->joint[1].theta = Rad_To_Theta(theta1_rad);
+    kin_obj->joint[1].theta = Rad_To_Theta(theta1_rad);
 	
 	// 计算关节3的角度（腕部角度）
-	// 目标俯仰角减去前面关节的角度
-	float target_pitch_rad = Theta_To_Rad(kin_obj->alpha_pitch);
-	float theta3_rad = target_pitch_rad - theta1_rad - theta2_rad;
+    // 目标俯仰角减去前面关节的角度
+	float target_pitch_rad,theta3_rad;
+	target_pitch_rad = Theta_To_Rad(kin_obj->alpha_pitch);
+    theta3_rad = target_pitch_rad - theta1_rad - theta2_rad;
+    
+    kin_obj->joint[3].rad = theta3_rad;
+    kin_obj->joint[3].theta = Rad_To_Theta(theta3_rad);
 	
-	kin_obj->joint[3].rad = theta3_rad;
-	kin_obj->joint[3].theta = Rad_To_Theta(theta3_rad);
-	
-	// 检查角度限制（与joint数组索引对应）
-	if (kin_obj->joint[0].theta < MIN_JOINT0_ANGLE || kin_obj->joint[0].theta > MAX_JOINT0_ANGLE ||
-		kin_obj->joint[1].theta < MIN_JOINT1_ANGLE || kin_obj->joint[1].theta > MAX_JOINT1_ANGLE ||
-		kin_obj->joint[2].theta < MIN_JOINT2_ANGLE || kin_obj->joint[2].theta > MAX_JOINT2_ANGLE ||
-		kin_obj->joint[3].theta < MIN_JOINT3_ANGLE || kin_obj->joint[3].theta > MAX_JOINT3_ANGLE)
-	{
-		return KIN_STATUS_INVALID;  // 角度超出限制
-	}
-	
+	// 检查角度限制
+    if (kin_obj->joint[0].theta < MIN_JOINT0_ANGLE || kin_obj->joint[0].theta > MAX_JOINT0_ANGLE ||
+        kin_obj->joint[1].theta < MIN_JOINT1_ANGLE || kin_obj->joint[1].theta > MAX_JOINT1_ANGLE ||
+        kin_obj->joint[2].theta < MIN_JOINT2_ANGLE || kin_obj->joint[2].theta > MAX_JOINT2_ANGLE ||
+        kin_obj->joint[3].theta < MIN_JOINT3_ANGLE || kin_obj->joint[3].theta > MAX_JOINT3_ANGLE) {
+        return KIN_STATUS_INVALID;
+    }
+    
     return KIN_STATUS_OK;
 }
 
 /**
- * @brief 设置机械臂俯仰角范围并求解逆运动学
- * 在俯仰角范围内尝试求解逆运动学，优先选择最接近目标俯仰角的解
- * 移植自 LeArm 的 set_pitch_range 函数，按 AquaGarden 代码风格重写
- *
- * @param kin_obj 运动学对象指针（输出解算结果）
- * @param target_vec 目标位置向量（x, y, z）
- * @param pitch 目标俯仰角（度）
- * @param min_pitch 最小俯仰角限制（度）
- * @param max_pitch 最大俯仰角限制（度）
- * @return kin_status_t KIN_STATUS_OK表示有解，KIN_STATUS_INVALID表示无解
+ * @brief 设置机械臂pitch可转动的范围
+ * 尝试在给定的俯仰角范围内求解逆运动学
  */
-kin_status_t Kinematics_SetPitchRange(kin_obj_t* kin_obj, kin_vec_t* target_vec, float pitch, float min_pitch, float max_pitch)
+kin_status_t g_kin_inverse1, g_kin_inverse2,g_kin_inverse_mid;
+bool PitchRange_Set(kin_obj_t* kin_obj,kin_vec_t* kin_vec, float alpha1, float alpha2)
 {
-    // 参数有效性检查
-    if (kin_obj == NULL || target_vec == NULL)
-    {
-        return KIN_STATUS_INVALID;
+	if (kin_obj == NULL || kin_vec == NULL) {
+        return false;
     }
-
-    kin_obj_t result1;
-    kin_obj_t result2;
-    bool result1_valid;
-    bool result2_valid;
-
-    // 复制目标位置到临时对象
-    result1.vector.x = target_vec->x;
-    result1.vector.y = target_vec->y;
-    result1.vector.z = target_vec->z;
-
-    result2.vector.x = target_vec->x;
-    result2.vector.y = target_vec->y;
-    result2.vector.z = target_vec->z;
-
-    // 确保 min_pitch < max_pitch
-    if (min_pitch > max_pitch)
-    {
-        float temp = min_pitch;
-        min_pitch = max_pitch;
-        max_pitch = temp;
+	
+	// 复制目标位置
+    kin_obj->vector.x = kin_vec->x;
+    kin_obj->vector.y = kin_vec->y;
+    kin_obj->vector.z = kin_vec->z;
+	
+	// 确保alpha1 < alpha2
+	float temp;
+    if (alpha1 > alpha2) {
+        temp = alpha1;
+        alpha1 = alpha2;
+        alpha2 = temp;
     }
-
-    // 尝试在 min_pitch 处求解
-    result1.alpha_pitch = min_pitch;
-    result1_valid = (Kinematics_InverseKinematicsCalc(&result1) == KIN_STATUS_OK);
-
-    // 尝试在 max_pitch 处求解
-    result2.alpha_pitch = max_pitch;
-    result2_valid = (Kinematics_InverseKinematicsCalc(&result2) == KIN_STATUS_OK);
-
-    // 根据求解结果选择最优解
-    if (result1_valid)
-    {
-        // 先保存 result1 的结果到 kin_obj
-        kin_obj->alpha_pitch = result1.alpha_pitch;
-        kin_obj->vector.x = result1.vector.x;
-        kin_obj->vector.y = result1.vector.y;
-        kin_obj->vector.z = result1.vector.z;
-        for (uint8_t i = 0; i < 4; i++)
-        {
-            kin_obj->joint[i].theta = result1.joint[i].theta;
-            kin_obj->joint[i].rad = result1.joint[i].rad;
-        }
-
-        // 如果 result2 也有效，比较哪个更接近目标 pitch
-        if (result2_valid)
-        {
-            float diff1 = fabsf(result1.alpha_pitch - pitch);
-            float diff2 = fabsf(result2.alpha_pitch - pitch);
-
-            if (diff2 < diff1)
-            {
-                // result2 更接近目标，使用 result2
-                kin_obj->alpha_pitch = result2.alpha_pitch;
-                kin_obj->vector.x = result2.vector.x;
-                kin_obj->vector.y = result2.vector.y;
-                kin_obj->vector.z = result2.vector.z;
-                for (uint8_t i = 0; i < 4; i++)
-                {
-                    kin_obj->joint[i].theta = result2.joint[i].theta;
-                    kin_obj->joint[i].rad = result2.joint[i].rad;
-                }
-            }
-        }
-    }
-    else
-    {
-        // result1 无效，尝试使用 result2
-        if (result2_valid)
-        {
-            kin_obj->alpha_pitch = result2.alpha_pitch;
-            kin_obj->vector.x = result2.vector.x;
-            kin_obj->vector.y = result2.vector.y;
-            kin_obj->vector.z = result2.vector.z;
-            for (uint8_t i = 0; i < 4; i++)
-            {
-                kin_obj->joint[i].theta = result2.joint[i].theta;
-                kin_obj->joint[i].rad = result2.joint[i].rad;
-            }
-        }
-        else
-        {
-            // 两个边界都无解，尝试目标 pitch 本身
-            kin_obj->vector.x = target_vec->x;
-            kin_obj->vector.y = target_vec->y;
-            kin_obj->vector.z = target_vec->z;
-            kin_obj->alpha_pitch = pitch;
-
-            if (Kinematics_InverseKinematicsCalc(kin_obj) != KIN_STATUS_OK)
-            {
-                return KIN_STATUS_INVALID;
-            }
-        }
-    }
-
-    return KIN_STATUS_OK;
+	
+	// 尝试在范围内求解
+    // 先尝试alpha1
+    kin_obj->alpha_pitch = alpha1;
+	
+	g_kin_inverse1 = Kin_Inverse(kin_obj);
+	if(g_kin_inverse1 == KIN_STATUS_OK){
+		return true;
+	}
+//    if (Kin_Inverse(kin_obj) == KIN_STATUS_OK) {
+//        return true;
+//    }
+	// 再尝试alpha2
+    kin_obj->alpha_pitch = alpha2;
+	
+	g_kin_inverse2 = Kin_Inverse(kin_obj);
+	if(g_kin_inverse2 == KIN_STATUS_OK){
+		return true;
+	}
+//    if (Kin_Inverse(kin_obj) == KIN_STATUS_OK) {
+//        return true;
+//    }
+	
+	// 如果两个边界都无解，尝试中间值
+	float alpha_mid;
+    alpha_mid = (alpha1 + alpha2) / 2.0f;
+    kin_obj->alpha_pitch = alpha_mid;
+	g_kin_inverse_mid = Kin_Inverse(kin_obj);
+	if(g_kin_inverse_mid == KIN_STATUS_OK){
+		return true;
+	}
+//    if (Kin_Inverse(kin_obj) == KIN_STATUS_OK) {
+//        return true;
+//    }
+    
+    return false;
 }
-
-

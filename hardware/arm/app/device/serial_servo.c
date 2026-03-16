@@ -1,6 +1,8 @@
 #include "serial_servo.h"
 #include "global.h"
 
+servo_ctrl_t g_servo_ctrl;
+
 void Servo_Init(servo_ctrl_t* servo_ctrl)
 {
 	// 打开串口（用于舵机通信）

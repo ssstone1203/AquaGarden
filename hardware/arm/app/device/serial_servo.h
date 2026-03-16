@@ -75,4 +75,6 @@ void Servo_Init(servo_ctrl_t* servo_ctrl);
 void Servo_CmdFrameSend(servo_frame_t* servo_frame);
 void Servo_PositionSet(servo_ctrl_t* servo_ctrl, uint8_t servo_id, uint16_t position, uint16_t duration);
 
+extern servo_ctrl_t g_servo_ctrl;
+
 #endif

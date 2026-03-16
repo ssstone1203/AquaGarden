@@ -59,9 +59,8 @@ typedef struct
 
 /**
  * @brief 机械臂控制初始化
- * @param arm_ctrl 机械臂控制对象指针
  */
-void ArmControl_Init(arm_control_t* arm_ctrl);
+bool ArmControl_Init(void);
 
 /**
  * @brief 将关节角度转换为舵机位置值
@@ -80,35 +79,6 @@ uint16_t ArmControl_ServoPositionFromAngle(float joint_angle, uint8_t joint_inde
  * @return kin_status_t 状态码
  */
 kin_status_t ArmControl_JointAngleSet(arm_control_t* arm_ctrl, uint8_t joint_index, float angle, uint16_t duration);
-
-/**
- * @brief 通过逆运动学设置末端位置
- * @param arm_ctrl 机械臂控制对象指针
- * @param x 目标X坐标（cm）
- * @param y 目标Y坐标（cm）
- * @param z 目标Z坐标（cm）
- * @param pitch 目标俯仰角（度）
- * @param duration 运动时间（毫秒）
- * @return kin_status_t KIN_STATUS_OK表示成功，KIN_STATUS_INVALID表示无解
- */
-kin_status_t ArmControl_EndPositionSet(arm_control_t* arm_ctrl, float x, float y, float z, float pitch, uint16_t duration);
-
-/**
- * @brief 通过逆运动学设置末端位置（带俯仰角范围限制）
- * 在指定的俯仰角范围内尝试求解逆运动学，优先选择最接近目标俯仰角的解
- * 移植自 LeArm 的 robot_arm_coordinate_set 函数逻辑
- *
- * @param arm_ctrl 机械臂控制对象指针
- * @param x 目标X坐标（cm）
- * @param y 目标Y坐标（cm）
- * @param z 目标Z坐标（cm）
- * @param pitch 目标俯仰角（度）
- * @param min_pitch 最小俯仰角限制（度）
- * @param max_pitch 最大俯仰角限制（度）
- * @param duration 运动时间（毫秒）
- * @return kin_status_t KIN_STATUS_OK表示成功，KIN_STATUS_INVALID表示无解
- */
-kin_status_t ArmControl_EndPositionSetWithPitchRange(arm_control_t* arm_ctrl, float x, float y, float z, float pitch, float min_pitch, float max_pitch, uint16_t duration);
 
 /**
  * @brief 设置所有关节角度（直接控制）
@@ -132,5 +102,10 @@ void ArmControl_Reset(arm_control_t* arm_ctrl, uint16_t duration);
  * @param duration 运动时间（毫秒）
  */
 void ArmControl_GripperControl(arm_control_t* arm_ctrl, bool open, uint16_t duration);
+
+//末端坐标控制
+uint8_t ArmControl_CoordinateSet(float target_x, float target_y, float target_z, 
+								 float pitch, float min_pitch, float max_pitch,
+								 uint16_t time);
 
 #endif

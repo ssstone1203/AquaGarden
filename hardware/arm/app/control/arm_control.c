@@ -4,27 +4,47 @@
 #include <math.h>
 
 /* 每帧约 10 字节 @ 9600 bps ≈ 10.4 ms，帧间留 20 ms 避免覆盖 servo_frame_buf */
-#define SERVO_FRAME_INTERVAL_MS  20
+#define SERVO_FRAME_INTERVAL_MS  30
+
+kin_obj_t g_kin_obj;
+arm_control_t g_arm_ctrl;
+
+static void Theta_To_Servo(kin_obj_t* kin_obj, uint16_t time)
+{
+	float target_angle[4] = {0};
+
+	target_angle[0] = kin_obj->joint[0].theta;
+	target_angle[1] = 90.0f - kin_obj->joint[1].theta;
+	target_angle[2] = kin_obj->joint[2].theta;
+	target_angle[3] = kin_obj->joint[3].theta;
+	for (uint8_t i = 0; i < 4; i++)
+	{	
+		Servo_PositionSet(&g_servo_ctrl, 6 - i, 500 + (SERIAL_ANGLE_FACTOR * target_angle[i]), time);
+//		serial_servo_set_position(&serial_servo_controller, 6 - i, 500 + (int)(SERIAL_ANGLE_FACTOR * target_angle[i]), time);
+		R_BSP_SoftwareDelay(SERVO_FRAME_INTERVAL_MS, BSP_DELAY_UNITS_MILLISECONDS);
+	}
+}
+
 
 /**
  * @brief 机械臂控制初始化
  */
-void ArmControl_Init(arm_control_t* arm_ctrl)
+bool ArmControl_Init(void)
 {
-	if (arm_ctrl == NULL)
-    {
-        return;
-    }
-    // 初始化舵机控制
-    Servo_Init(&arm_ctrl->servo_ctrl);
-    
-    // 初始化运动学对象
-    Kinematics_Init(&arm_ctrl->kin_obj);
-    
-    // 打开串口（如果还未打开）
-    // R_SCI_UART_Open(&g_serial_servo_uart_ctrl, &g_serial_servo_uart_cfg);
-    
-    arm_ctrl->initialized = 1;
+//	int8_t read_offset[6];
+	
+	Servo_Init(&g_servo_ctrl);
+	
+	Kin_Init(&g_kin_obj);
+	
+//	kinematics_init(&kinematics);
+	memset(&g_arm_ctrl, 0, sizeof(arm_control_t));
+	
+	R_BSP_SoftwareDelay(200, BSP_DELAY_UNITS_MILLISECONDS);
+	ArmControl_Reset(&g_arm_ctrl, 2000);
+	
+//	robot_arm_offset_read(read_offset);
+	return true;
 }
 
 /**
@@ -154,105 +174,6 @@ kin_status_t ArmControl_JointAngleSet(arm_control_t* arm_ctrl, uint8_t joint_ind
 }
 
 /**
- * @brief 通过逆运动学设置末端位置
- */
-kin_status_t ArmControl_EndPositionSet(arm_control_t* arm_ctrl, float x, float y, float z, float pitch, uint16_t duration)
-{
-    if (arm_ctrl == NULL)
-    {
-        return KIN_STATUS_INVALID;
-    }
-
-    // 设置目标位置和俯仰角
-    arm_ctrl->kin_obj.vector.x = x;
-    arm_ctrl->kin_obj.vector.y = y;
-    arm_ctrl->kin_obj.vector.z = z;
-    arm_ctrl->kin_obj.alpha_pitch = pitch;
-
-    // 执行逆运动学解算
-    kin_status_t status = Kinematics_InverseKinematicsCalc(&arm_ctrl->kin_obj);
-
-    if (status != KIN_STATUS_OK)
-    {
-        return status; // 无解或超出工作空间
-    }
-
-    // 将解算得到的关节角度应用到舵机
-    for (uint8_t i = 0; i < 4; i++)
-    {
-        if (i > 0)
-        {
-            R_BSP_SoftwareDelay(SERVO_FRAME_INTERVAL_MS, BSP_DELAY_UNITS_MILLISECONDS);
-        }
-        uint16_t position = ArmControl_ServoPositionFromAngle(arm_ctrl->kin_obj.joint[i].theta, i);
-
-        uint8_t servo_id;
-        switch (i)
-        {
-            case 0: servo_id = SERVO_ID_BASE; break;
-            case 1: servo_id = SERVO_ID_SHOULDER; break;
-            case 2: servo_id = SERVO_ID_ELBOW; break;
-            case 3: servo_id = SERVO_ID_WRIST; break;
-            default: continue;
-        }
-
-        Servo_PositionSet(&arm_ctrl->servo_ctrl, servo_id, position, duration);
-    }
-
-    return KIN_STATUS_OK;
-}
-
-/**
- * @brief 通过逆运动学设置末端位置（带俯仰角范围限制）
- * 移植自 LeArm 的 robot_arm_coordinate_set 函数逻辑
- */
-kin_status_t ArmControl_EndPositionSetWithPitchRange(arm_control_t* arm_ctrl, float x, float y, float z, float pitch, float min_pitch, float max_pitch, uint16_t duration)
-{
-    if (arm_ctrl == NULL)
-    {
-        return KIN_STATUS_INVALID;
-    }
-
-    // 使用目标位置向量
-    kin_vec_t target_vec;
-    target_vec.x = x;
-    target_vec.y = y;
-    target_vec.z = z;
-
-    // 调用带俯仰角范围的逆运动学解算
-    kin_status_t status = Kinematics_SetPitchRange(&arm_ctrl->kin_obj, &target_vec, pitch, min_pitch, max_pitch);
-
-    if (status != KIN_STATUS_OK)
-    {
-        return status; // 无解或超出工作空间
-    }
-
-    // 将解算得到的关节角度应用到舵机
-    for (uint8_t i = 0; i < 4; i++)
-    {
-        if (i > 0)
-        {
-            R_BSP_SoftwareDelay(SERVO_FRAME_INTERVAL_MS, BSP_DELAY_UNITS_MILLISECONDS);
-        }
-        uint16_t position = ArmControl_ServoPositionFromAngle(arm_ctrl->kin_obj.joint[i].theta, i);
-
-        uint8_t servo_id;
-        switch (i)
-        {
-            case 0: servo_id = SERVO_ID_BASE; break;
-            case 1: servo_id = SERVO_ID_SHOULDER; break;
-            case 2: servo_id = SERVO_ID_ELBOW; break;
-            case 3: servo_id = SERVO_ID_WRIST; break;
-            default: continue;
-        }
-
-        Servo_PositionSet(&arm_ctrl->servo_ctrl, servo_id, position, duration);
-    }
-
-    return KIN_STATUS_OK;
-}
-
-/**
  * @brief 设置所有关节角度（直接控制）
  */
 void ArmControl_AllJointsSet(arm_control_t* arm_ctrl, float angles[4], uint16_t duration)
@@ -321,11 +242,7 @@ void ArmControl_Reset(arm_control_t* arm_ctrl, uint16_t duration)
         }
         Servo_PositionSet(&arm_ctrl->servo_ctrl, servo_ids[i], reset_positions[i], duration);
     }
-    
-    // 更新运动学对象到复位位置
-    Kinematics_Init(&arm_ctrl->kin_obj);
-    // 通过逆运动学计算复位位置对应的关节角度（用于后续计算）
-    Kinematics_InverseKinematicsCalc(&arm_ctrl->kin_obj);
+	
 }
 
 void ArmControl_GripperControl(arm_control_t* arm_ctrl, bool open, uint16_t duration)
@@ -352,3 +269,81 @@ void ArmControl_GripperControl(arm_control_t* arm_ctrl, bool open, uint16_t dura
     // 控制夹爪舵机
     Servo_PositionSet(&arm_ctrl->servo_ctrl, SERVO_ID_GRIPPER, position, duration);
 }
+
+bool g_result1_state, g_result2_state;	//debug
+uint8_t ArmControl_CoordinateSet(float target_x, float target_y, float target_z, 
+								 float pitch, float min_pitch, float max_pitch,
+								 uint16_t time)
+{
+	bool result1_state, result2_state;
+	kin_obj_t kin_obj_result1, kin_obj_result2;
+	kin_vec_t vec;
+	
+	vec.x = target_x;
+	vec.y = target_y;
+	vec.z = target_z;
+	
+	result1_state = PitchRange_Set(&kin_obj_result1, &vec, pitch, min_pitch);
+	g_result1_state = result1_state;
+	result2_state = PitchRange_Set(&kin_obj_result2, &vec, pitch, max_pitch);
+	g_result2_state = result2_state;
+	
+	if(result1_state) 
+	{
+		g_kin_obj.alpha_pitch = kin_obj_result1.alpha_pitch;
+		g_kin_obj.vector.x = kin_obj_result1.vector.x;
+		g_kin_obj.vector.y = kin_obj_result1.vector.y;
+		g_kin_obj.vector.z = kin_obj_result1.vector.z;
+		
+		for (uint8_t i = 0; i < 4; i++) 
+		{
+			g_kin_obj.joint[i].theta = kin_obj_result1.joint[i].theta;
+		}
+		
+		if (result2_state)
+		{
+			if (fabs(kin_obj_result2.alpha_pitch - pitch) < fabs(kin_obj_result1.alpha_pitch - pitch))
+			{
+				g_kin_obj.alpha_pitch = kin_obj_result2.alpha_pitch;
+				g_kin_obj.vector.x = kin_obj_result2.vector.x;
+				g_kin_obj.vector.y = kin_obj_result2.vector.y;
+				g_kin_obj.vector.z = kin_obj_result2.vector.z;
+				for (uint8_t i = 0; i< 4; i++)
+				{
+					g_kin_obj.joint[i].theta = kin_obj_result2.joint[i].theta;
+				}			
+			}
+		}
+	}
+	else
+	{
+		if (result2_state)
+		{
+			g_kin_obj.alpha_pitch = kin_obj_result2.alpha_pitch;
+			g_kin_obj.vector.x = kin_obj_result2.vector.x;
+			g_kin_obj.vector.y = kin_obj_result2.vector.y;
+			g_kin_obj.vector.z = kin_obj_result2.vector.z;
+			for (uint8_t i = 0; i< 4; i++)
+			{
+				g_kin_obj.joint[i].theta = kin_obj_result2.joint[i].theta;
+			}
+		}
+		else
+		{
+			return false;
+		}
+	}		
+	result1_state = 0;
+	result2_state = 0;
+	
+	Theta_To_Servo(&g_kin_obj, time);
+	
+	return true;
+}
+
+
+
+
+
+
+

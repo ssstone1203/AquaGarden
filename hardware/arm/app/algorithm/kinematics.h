@@ -14,16 +14,16 @@
 #define LINKAGE_3		 				8.9f
 #define LINKAGE_4	 					17.7f
 
-// 关节角度限制定义（与joint[4]数组索引对应，对应LeArm中的KNOT6~KNOT3）
+// 关节角度限制定义（与joint[4]数组索引对应）
 // 根据实际机械臂结构调整，允许向后倾斜
-#define MIN_JOINT0_ANGLE                           -90.0f // 关节0（基座旋转）最小角度
-#define MAX_JOINT0_ANGLE                            90.0f // 关节0（基座旋转）最大角度
-#define MIN_JOINT1_ANGLE                           -90.0f // 关节1（肩部俯仰）最小角度（允许向后倾斜）
-#define MAX_JOINT1_ANGLE                           180.0f // 关节1（肩部俯仰）最大角度
-#define MIN_JOINT2_ANGLE                           -150.0f // 关节2（肘部俯仰）最小角度（放宽到-150）
-#define MAX_JOINT2_ANGLE                            150.0f // 关节2（肘部俯仰）最大角度（放宽到150）
-#define MIN_JOINT3_ANGLE                           -150.0f // 关节3（腕部俯仰）最小角度（放宽到-150）
-#define MAX_JOINT3_ANGLE                            150.0f // 关节3（腕部俯仰）最大角度（放宽到150）
+#define MIN_JOINT0_ANGLE                           -90.0f// 关节0（基座旋转）最小角度
+#define MAX_JOINT0_ANGLE                            90.0f// 关节0（基座旋转）最大角度
+#define MIN_JOINT1_ANGLE                           -90.0f// 关节1（肩部俯仰）最小角度（允许向下伸展）
+#define MAX_JOINT1_ANGLE                           180.0f// 关节1（肩部俯仰）最大角度
+#define MIN_JOINT2_ANGLE                           -90.0f // 关节2（肘部俯仰）最小角度（放宽到-150）
+#define MAX_JOINT2_ANGLE                            90.0f // 关节2（肘部俯仰）最大角度（放宽到150）
+#define MIN_JOINT3_ANGLE                           -90.0f // 关节3（腕部俯仰）最小角度（放宽到-150）
+#define MAX_JOINT3_ANGLE                            90.0f // 关节3（腕部俯仰）最大角度（放宽到150）
 
 // 运动学解算状态枚举
 typedef enum
@@ -54,41 +54,9 @@ typedef struct
 	
 }kin_obj_t;
 
-
-void Kinematics_Init(kin_obj_t* kin_obj);
-
-/**
- * @brief 正运动学解算
- * 根据4个关节角度计算末端执行器位置
- * 
- * @param joint0_theta 从下至上第1个关节角度（度）- 基座旋转
- * @param joint1_theta 从下至上第2个关节角度（度）- 肩部俯仰
- * @param joint2_theta 从下至上第3个关节角度（度）- 肘部俯仰
- * @param joint3_theta 从下至上第4个关节角度（度）- 腕部俯仰
- * @return kin_vec_t 末端位置向量 (x, y, z)
- */
-kin_vec_t Kinematics_ForwardKinematicsCalc(float joint0_theta, float joint1_theta, float joint2_theta, float joint3_theta);
-
-/**
- * @brief 逆运动学解算（Inverse Kinematics）
- * 根据末端位置和俯仰角计算4个关节角度
- * 
- * @param kin_obj 运动学对象指针（输入：vector和alpha_pitch，输出：joint[0..3]）
- * @return kin_status_t KIN_STATUS_OK表示有解，KIN_STATUS_INVALID表示无解
- */
-kin_status_t Kinematics_InverseKinematicsCalc(kin_obj_t* kin_obj);
-
-/**
- * @brief 设置机械臂俯仰角范围并求解逆运动学
- * 尝试在给定的俯仰角范围内求解逆运动学，优先选择最接近目标俯仰角的解
- * 
- * @param kin_obj 运动学对象指针（输出解算结果）
- * @param target_vec 目标位置向量（x, y, z）
- * @param pitch 目标俯仰角（度）
- * @param min_pitch 最小俯仰角限制（度）
- * @param max_pitch 最大俯仰角限制（度）
- * @return kin_status_t KIN_STATUS_OK表示有解，KIN_STATUS_INVALID表示无解
- */
-kin_status_t Kinematics_SetPitchRange(kin_obj_t* kin_obj, kin_vec_t* target_vec, float pitch, float min_pitch, float max_pitch);
+void Kin_Init(kin_obj_t* kin_obj);
+kin_vec_t Kin_Forward(float joint0_theta, float joint1_theta, float joint2_theta, float joint3_theta);
+kin_status_t Kin_Inverse(kin_obj_t* kin_obj);
+bool PitchRange_Set(kin_obj_t* kin_obj,kin_vec_t* kin_vec, float alpha1, float alpha2);
 
 #endif
