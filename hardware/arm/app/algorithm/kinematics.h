@@ -20,10 +20,10 @@
 #define MAX_JOINT0_ANGLE                            90.0f// 关节0（基座旋转）最大角度
 #define MIN_JOINT1_ANGLE                           -90.0f// 关节1（肩部俯仰）最小角度（允许向下伸展）
 #define MAX_JOINT1_ANGLE                           180.0f// 关节1（肩部俯仰）最大角度
-#define MIN_JOINT2_ANGLE                           -90.0f // 关节2（肘部俯仰）最小角度（放宽到-150）
-#define MAX_JOINT2_ANGLE                            90.0f // 关节2（肘部俯仰）最大角度（放宽到150）
-#define MIN_JOINT3_ANGLE                           -90.0f // 关节3（腕部俯仰）最小角度（放宽到-150）
-#define MAX_JOINT3_ANGLE                            90.0f // 关节3（腕部俯仰）最大角度（放宽到150）
+#define MIN_JOINT2_ANGLE                           -150.0f // 关节2（肘部俯仰）最小角度（放宽到-150）
+#define MAX_JOINT2_ANGLE                            150.0f // 关节2（肘部俯仰）最大角度（放宽到150）
+#define MIN_JOINT3_ANGLE                           -150.0f // 关节3（腕部俯仰）最小角度（放宽到-150）
+#define MAX_JOINT3_ANGLE                            150.0f // 关节3（腕部俯仰）最大角度（放宽到150）
 
 // 运动学解算状态枚举
 typedef enum

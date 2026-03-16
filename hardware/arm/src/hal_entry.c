@@ -32,9 +32,9 @@ void hal_entry(void)
 //		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
 //		g_status = ArmControl_CoordinateSet(18,3,5,0,-90,90,1000);
 //		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
-		g_status = ArmControl_CoordinateSet(17,0,10,0,-90,90,1000);
+		g_status = ArmControl_CoordinateSet(20,-10,5,0,-90,90,1000);
 		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
-		g_status = ArmControl_CoordinateSet(20,-6,5,0,-90,90,1000);
+		g_status = ArmControl_CoordinateSet(20,-10,9,0,-90,90,1000);
 		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
     }
 	
