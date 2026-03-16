@@ -4,282 +4,551 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AquaGarden - 历史数据</title>
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/history.css">
+    <link rel="stylesheet" href="/css/main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .history-page {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 10px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 180px;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .filter-actions {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            background: var(--bg-gradient);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .filter-btn.secondary {
+            background: var(--bg-main);
+            color: var(--text-primary);
+        }
+
+        .data-card {
+            background: var(--bg-card);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table thead {
+            background: var(--bg-main);
+        }
+
+        .data-table th {
+            padding: 16px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .data-table td {
+            padding: 16px;
+            font-size: 14px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--bg-main);
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--bg-main);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-badge.normal {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--status-success);
+        }
+
+        .status-badge.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--status-warning);
+        }
+
+        .status-badge.danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--status-danger);
+        }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-top: 1px solid var(--bg-main);
+        }
+
+        .pagination-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .page-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .page-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .page-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .chart-section {
+            background: var(--bg-card);
+            border-radius: var(--border-radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-header h3 {
+            font-size: 18px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-header h3 i {
+            color: var(--primary-color);
+        }
+
+        .chart-container {
+            height: 300px;
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            padding: 20px 0;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: var(--bg-gradient);
+            border-radius: 4px 4px 0 0;
+            min-height: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .chart-bar:hover {
+            opacity: 0.8;
+        }
+
+        .chart-bar::after {
+            content: attr(data-value);
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: var(--text-secondary);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .chart-bar:hover::after {
+            opacity: 1;
+        }
+    </style>
 </head>
 <body>
-    <!-- 顶部导航栏 -->
-    <nav class="navbar">
-        <div class="navbar-left">
+    <!-- 左侧边栏 -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
             <div class="logo">
                 <i class="fas fa-fish"></i>
-                <span class="logo-text">AquaGarden</span>
+                <span>AquaGarden</span>
             </div>
-            <div class="nav-subtitle">智能水族箱管理系统</div>
         </div>
         
-        <div class="navbar-center">
-            <div class="time-display" id="currentTime"></div>
-        </div>
+        <nav class="sidebar-nav">
+            <a href="/index.html" class="nav-item">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>仪表板</span>
+            </a>
+            <a href="/cameras.html" class="nav-item">
+                <i class="fas fa-video"></i>
+                <span>视频监控</span>
+            </a>
+            <a href="/history.html" class="nav-item active">
+                <i class="fas fa-chart-line"></i>
+                <span>历史数据</span>
+            </a>
+            <a href="/robot.html" class="nav-item">
+                <i class="fas fa-robot"></i>
+                <span>机械臂控制</span>
+            </a>
+            <a href="/alerts.html" class="nav-item">
+                <i class="fas fa-bell"></i>
+                <span>警报设置</span>
+            </a>
+            <a href="/settings.html" class="nav-item">
+                <i class="fas fa-cog"></i>
+                <span>系统设置</span>
+            </a>
+        </nav>
         
-        <div class="navbar-right">
-            <div class="nav-links">
-                <a href="index.html" class="nav-link">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>控制面板</span>
-                </a>
-                <a href="history.html" class="nav-link active">
-                    <i class="fas fa-chart-line"></i>
-                    <span>历史数据</span>
-                </a>
-                <a href="cameras.html" class="nav-link">
-                    <i class="fas fa-camera"></i>
-                    <span>摄像头管理</span>
-                </a>
-                <a href="settings.html" class="nav-link">
-                    <i class="fas fa-cog"></i>
-                    <span>系统设置</span>
-                </a>
-            </div>
-            
-            <div class="user-menu">
+        <div class="sidebar-footer">
+            <div class="user-info">
                 <i class="fas fa-user-circle"></i>
-                <span>Admin</span>
+                <div class="user-details">
+                    <div class="user-name">管理员</div>
+                    <div class="user-role">Admin</div>
+                </div>
             </div>
-            
-            <button id="logoutBtn" class="logout-btn">
+            <button class="logout-btn" id="logoutBtn">
                 <i class="fas fa-sign-out-alt"></i>
-                <span>退出</span>
             </button>
         </div>
-    </nav>
+    </aside>
     
-    <!-- 主容器 -->
-    <div class="dashboard-container">
-        <!-- 页面标题 -->
-        <div class="page-header">
-            <h1><i class="fas fa-chart-line"></i> 历史数据分析</h1>
-            <p>查看传感器历史数据趋势和统计分析</p>
-        </div>
-        
-        <!-- 时间范围选择 -->
-        <div class="time-range-selector">
-            <div class="time-range-card">
-                <h3>选择时间范围</h3>
-                <div class="time-options">
-                    <button class="time-btn active" data-range="1h">1小时</button>
-                    <button class="time-btn" data-range="6h">6小时</button>
-                    <button class="time-btn" data-range="24h">24小时</button>
-                    <button class="time-btn" data-range="7d">7天</button>
-                    <button class="time-btn" data-range="30d">30天</button>
-                </div>
-                <div class="custom-range">
-                    <label>自定义范围:</label>
-                    <input type="datetime-local" id="startTime">
-                    <span>至</span>
-                    <input type="datetime-local" id="endTime">
-                    <button class="apply-btn">应用</button>
-                </div>
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <!-- 顶部栏 -->
+        <header class="top-header">
+            <div class="header-left">
+                <h1>历史数据</h1>
+                <p class="subtitle">查看和分析历史监控数据</p>
             </div>
-        </div>
-        
-        <!-- 图表区域 -->
-        <div class="charts-grid">
-            <!-- 温度趋势图 -->
-            <div class="chart-card-large">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i class="fas fa-thermometer-half"></i>
-                        <span>温度趋势</span>
-                    </div>
-                    <div class="chart-stats">
-                        <div class="stat-mini">
-                            <span class="label">最高</span>
-                            <span class="value" id="maxTemp">--°C</span>
-                        </div>
-                        <div class="stat-mini">
-                            <span class="label">最低</span>
-                            <span class="value" id="minTemp">--°C</span>
-                        </div>
-                        <div class="stat-mini">
-                            <span class="label">平均</span>
-                            <span class="value" id="avgTemp">--°C</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <canvas id="temperatureChart"></canvas>
-                </div>
-            </div>
-            
-            <!-- pH值趋势图 -->
-            <div class="chart-card-large">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i class="fas fa-flask"></i>
-                        <span>pH值趋势</span>
-                    </div>
-                    <div class="chart-stats">
-                        <div class="stat-mini">
-                            <span class="label">最高</span>
-                            <span class="value" id="maxPh">--</span>
-                        </div>
-                        <div class="stat-mini">
-                            <span class="label">最低</span>
-                            <span class="value" id="minPh">--</span>
-                        </div>
-                        <div class="stat-mini">
-                            <span class="label">平均</span>
-                            <span class="value" id="avgPh">--</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <canvas id="phChart"></canvas>
-                </div>
-            </div>
-            
-            <!-- 溶解氧趋势图 -->
-            <div class="chart-card-large">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i class="fas fa-wind"></i>
-                        <span>溶解氧趋势</span>
-                    </div>
-                    <div class="chart-stats">
-                        <div class="stat-mini">
-                            <span class="label">最高</span>
-                            <span class="value" id="maxOxygen">-- mg/L</span>
-                        </div>
-                        <div class="stat-mini">
-                            <span class="label">最低</span>
-                            <span class="value" id="minOxygen">-- mg/L</span>
-                        </div>
-                        <div class="stat-mini">
-                            <span class="label">平均</span>
-                            <span class="value" id="avgOxygen">-- mg/L</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <canvas id="oxygenChart"></canvas>
-                </div>
-            </div>
-            
-            <!-- 浊度趋势图 -->
-            <div class="chart-card-large">
-                <div class="card-header">
-                    <div class="card-title">
+            <div class="header-right">
+                <div class="mode-selector">
+                    <button class="mode-btn active" data-mode="demo">
                         <i class="fas fa-eye"></i>
-                        <span>浊度趋势</span>
-                    </div>
-                    <div class="chart-stats">
-                        <div class="stat-mini">
-                            <span class="label">最高</span>
-                            <span class="value" id="maxTurbidity">-- NTU</span>
-                        </div>
-                        <div class="stat-mini">
-                            <span class="label">最低</span>
-                            <span class="value" id="minTurbidity">-- NTU</span>
-                        </div>
-                        <div class="stat-mini">
-                            <span class="label">平均</span>
-                            <span class="value" id="avgTurbidity">-- NTU</span>
-                        </div>
-                    </div>
+                        演示模式
+                    </button>
+                    <button class="mode-btn" data-mode="service">
+                        <i class="fas fa-tools"></i>
+                        服务模式
+                    </button>
                 </div>
-                <div class="card-body">
-                    <canvas id="turbidityChart"></canvas>
+                <div class="time-display">
+                    <i class="fas fa-clock"></i>
+                    <span id="timeText">--:--:--</span>
                 </div>
             </div>
-        </div>
-        
-        <!-- 数据统计 -->
-        <div class="stats-section">
-            <h2><i class="fas fa-chart-bar"></i> 数据统计</h2>
-            <div class="stats-grid-detailed">
-                <div class="stat-card-detailed">
-                    <div class="stat-icon-detailed temp">
-                        <i class="fas fa-temperature-high"></i>
-                    </div>
-                    <div class="stat-content-detailed">
-                        <div class="stat-label">温度统计</div>
-                        <div class="stat-value-detailed" id="statTempDetailed">--</div>
-                        <div class="stat-range">
-                            <span>正常范围: 22-28°C</span>
-                            <span class="status-badge success">正常</span>
-                        </div>
-                    </div>
+        </header>
+
+        <!-- 历史数据内容 -->
+        <div class="history-page">
+            <!-- 筛选栏 -->
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>开始时间</label>
+                    <input type="datetime-local" id="startTime">
                 </div>
-                
-                <div class="stat-card-detailed">
-                    <div class="stat-icon-detailed ph">
-                        <i class="fas fa-vial"></i>
-                    </div>
-                    <div class="stat-content-detailed">
-                        <div class="stat-label">pH值统计</div>
-                        <div class="stat-value-detailed" id="statPhDetailed">--</div>
-                        <div class="stat-range">
-                            <span>正常范围: 6.5-8.0</span>
-                            <span class="status-badge success">正常</span>
-                        </div>
-                    </div>
+                <div class="filter-group">
+                    <label>结束时间</label>
+                    <input type="datetime-local" id="endTime">
                 </div>
-                
-                <div class="stat-card-detailed">
-                    <div class="stat-icon-detailed oxygen">
-                        <i class="fas fa-lungs"></i>
-                    </div>
-                    <div class="stat-content-detailed">
-                        <div class="stat-label">溶解氧统计</div>
-                        <div class="stat-value-detailed" id="statOxygenDetailed">--</div>
-                        <div class="stat-range">
-                            <span>正常范围: >6.0 mg/L</span>
-                            <span class="status-badge success">良好</span>
-                        </div>
-                    </div>
+                <div class="filter-group">
+                    <label>数据类型</label>
+                    <select id="dataType">
+                        <option value="">全部</option>
+                        <option value="temperature">温度</option>
+                        <option value="ph">pH值</option>
+                        <option value="oxygen">溶解氧</option>
+                        <option value="turbidity">浊度</option>
+                    </select>
                 </div>
-                
-                <div class="stat-card-detailed">
-                    <div class="stat-icon-detailed turbidity">
-                        <i class="fas fa-smog"></i>
-                    </div>
-                    <div class="stat-content-detailed">
-                        <div class="stat-label">浊度统计</div>
-                        <div class="stat-value-detailed" id="statTurbidityDetailed">--</div>
-                        <div class="stat-range">
-                            <span>正常范围: <20 NTU</span>
-                            <span class="status-badge success">清澈</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 数据导出 -->
-        <div class="export-section">
-            <div class="export-card">
-                <h3><i class="fas fa-download"></i> 数据导出</h3>
-                <p>导出历史数据用于进一步分析</p>
-                <div class="export-options">
-                    <button class="export-btn csv">
-                        <i class="fas fa-file-csv"></i>
-                        <span>导出CSV</span>
+                <div class="filter-actions">
+                    <button class="filter-btn" onclick="queryData()">
+                        <i class="fas fa-search"></i>
+                        查询
                     </button>
-                    <button class="export-btn excel">
-                        <i class="fas fa-file-excel"></i>
-                        <span>导出Excel</span>
-                    </button>
-                    <button class="export-btn pdf">
-                        <i class="fas fa-file-pdf"></i>
-                        <span>导出PDF报告</span>
+                    <button class="filter-btn secondary" onclick="exportData()">
+                        <i class="fas fa-download"></i>
+                        导出
                     </button>
                 </div>
             </div>
+
+            <!-- 数据表格 -->
+            <div class="data-card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>时间</th>
+                            <th>水温 (°C)</th>
+                            <th>pH值</th>
+                            <th>溶解氧 (mg/L)</th>
+                            <th>浊度 (NTU)</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody">
+                        <!-- 动态生成数据行 -->
+                    </tbody>
+                </table>
+                <div class="pagination">
+                    <div class="pagination-info">
+                        共 <span id="totalRecords">0</span> 条记录，当前第 <span id="currentPage">1</span> 页
+                    </div>
+                    <div class="pagination-controls" id="paginationControls">
+                        <!-- 动态生成分页按钮 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 图表区域 -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <h3><i class="fas fa-chart-area"></i> 数据趋势分析</h3>
+                    <div class="filter-group" style="flex-direction: row; gap: 12px;">
+                        <select id="timeRange" style="padding: 8px 12px;">
+                            <option value="24h">最近24小时</option>
+                            <option value="7d">最近7天</option>
+                            <option value="30d">最近30天</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chart-container" id="chartContainer">
+                    <!-- 动态生成图表柱状图 -->
+                </div>
+            </div>
         </div>
-    </div>
-    
-    <script src="static/js/history.js"></script>
+    </main>
+
+    <script>
+        // 全局变量
+        const API_BASE_URL = 'http://localhost:8000';
+        let authToken = localStorage.getItem('token');
+        let currentPage = 1;
+        const pageSize = 20;
+        let allData = [];
+
+        // 时间更新
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('zh-CN', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+            const timeElement = document.getElementById('timeText');
+            if (timeElement) {
+                timeElement.textContent = timeString;
+            }
+        }
+
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // 生成模拟历史数据
+        function generateHistoricalData(count = 100) {
+            const data = [];
+            const now = new Date();
+            for (let i = 0; i < count; i++) {
+                const timestamp = new Date(now - i * 3600000);
+                data.push({
+                    time: timestamp.toLocaleString('zh-CN'),
+                    temperature: (25 + Math.random() * 3).toFixed(1),
+                    ph: (6.8 + Math.random() * 0.5).toFixed(1),
+                    oxygen: (7.5 + Math.random() * 1.5).toFixed(1),
+                    turbidity: Math.floor(10 + Math.random() * 10)
+                });
+            }
+            return data;
+        }
+
+        // 渲染数据表格
+        function renderTable() {
+            const tbody = document.getElementById('dataTableBody');
+            if (!tbody) return;
+
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageData = allData.slice(start, end);
+
+            tbody.innerHTML = pageData.map(row => `
+                <tr>
+                    <td>${row.time}</td>
+                    <td>${row.temperature}</td>
+                    <td>${row.ph}</td>
+                    <td>${row.oxygen}</td>
+                    <td>${row.turbidity}</td>
+                    <td><span class="status-badge normal">正常</span></td>
+                </tr>
+            `).join('');
+
+            document.getElementById('totalRecords').textContent = allData.length;
+            document.getElementById('currentPage').textContent = currentPage;
+            renderPagination();
+        }
+
+        // 渲染分页控件
+        function renderPagination() {
+            const totalPages = Math.ceil(allData.length / pageSize);
+            const container = document.getElementById('paginationControls');
+            if (!container) return;
+
+            let html = '';
+            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+            container.innerHTML = html;
+        }
+
+        // 跳转到指定页
+        function goToPage(page) {
+            currentPage = page;
+            renderTable();
+        }
+
+        // 查询数据
+        function queryData() {
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            
+            allData = generateHistoricalData(100);
+            currentPage = 1;
+            renderTable();
+            renderChart();
+        }
+
+        // 导出数据
+        function exportData() {
+            alert('数据导出功能');
+        }
+
+        // 渲染图表
+        function renderChart() {
+            const container = document.getElementById('chartContainer');
+            if (!container) return;
+
+            const chartData = allData.slice(0, 24);
+            const maxVal = Math.max(...chartData.map(d => parseFloat(d.temperature)));
+
+            container.innerHTML = chartData.map((row, idx) => {
+                const height = (parseFloat(row.temperature) / maxVal) * 100;
+                return `<div class="chart-bar" style="height: ${height}%" data-value="${row.temperature}°C" title="${row.time}: ${row.temperature}°C"></div>`;
+            }).join('');
+        }
+
+        // 登出功能
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                if (confirm('确定要退出系统吗？')) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login.html';
+                }
+            });
+        }
+
+        // 模式切换
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // 页面加载完成
+        document.addEventListener('DOMContentLoaded', () => {
+            allData = generateHistoricalData(100);
+            renderTable();
+            renderChart();
+        });
+    </script>
 </body>
 </html>

@@ -6,21 +6,79 @@ from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field, validator
 from typing import Optional, List, Dict, Any
+from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
 import asyncio
 import json
 import cv2
 import numpy as np
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
 import random
 import logging
 import time
 from contextlib import asynccontextmanager
+import os
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# 数据库配置
+DATABASE_URL = "sqlite:///./aquagarden.db"
+
+# 创建数据库引擎
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# 数据库模型
+class User(Base):
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), unique=True, index=True, nullable=False)
+    email = Column(String(100), unique=True, index=True, nullable=True)
+    hashed_password = Column(String(200), nullable=False)
+    role = Column(String(20), default="user")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+# 创建表
+Base.metadata.create_all(bind=engine)
+
+def hash_password(password: str) -> str:
+   return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+ 
+# 创建默认管理员账号（如果不存在）
+def create_default_admin():
+    db = SessionLocal()
+    try:
+        existing_admin = db.query(User).filter(User.username == "admin").first()
+        if not existing_admin:
+            admin_user = User(
+                username="admin",
+                email="admin@aquagarden.com",
+                hashed_password=hash_password("admin123"),
+                role="admin"
+            )
+            db.add(admin_user)
+            db.commit()
+            logger.info("默认管理员账号已创建: admin / admin123")
+    finally:
+        db.close()
+
+# 启动时创建默认管理员
+create_default_admin()
+
+# 获取数据库会话
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # 配置常量
 class Config:
@@ -32,7 +90,10 @@ class Config:
     WEBSOCKET_PING_INTERVAL = 30  # 秒
 
 # 密码加密
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# 密码哈希函数（使用 bcrypt）
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 security = HTTPBearer()
 
 app = FastAPI(title="AquaGarden API")
@@ -46,19 +107,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 静态文件
-app.mount("/static", StaticFiles(directory="../client"), name="static")
+# 静态文件：前端目录（相对 main.py 所在目录）
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONT_DIR = os.path.join(BASE_DIR, "..", "front")
 
-# 模拟用户数据库
-fake_users_db = {
-    "admin": {
-        "username": "admin",
-        "hashed_password": pwd_context.hash("admin123"),
-        "role": "admin"
-    }
-}
+# 挂载 /css 和 /js，使 login.html 等页面中的 css/login.css、js/login.js 能正确访问
+app.mount("/css", StaticFiles(directory=os.path.join(FRONT_DIR, "css")), name="css")
+app.mount("/js", StaticFiles(directory=os.path.join(FRONT_DIR, "js")), name="js")
+app.mount("/static", StaticFiles(directory=FRONT_DIR), name="static")
 
 # Pydantic模型
+class RegisterRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50, description="用户名")
+    email: Optional[str] = Field(None, description="邮箱")
+    password: str = Field(..., min_length=6, max_length=100, description="密码")
+
 class LoginRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, description="用户名")
     password: str = Field(..., min_length=6, max_length=100, description="密码")
@@ -151,7 +214,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
             detail="无法创建认证令牌"
         )
 
-async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
     try:
         token = credentials.credentials
         payload = jwt.decode(token, Config.SECRET_KEY, algorithms=[Config.ALGORITHM])
@@ -162,15 +225,16 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(secur
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="无效的认证凭据"
             )
-        
-        # 检查用户是否存在
-        if username not in fake_users_db:
+
+        # 检查用户是否存在于数据库
+        user = db.query(User).filter(User.username == username).first()
+        if not user:
             logger.warning(f"JWT令牌中的用户不存在: {username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="用户不存在"
             )
-        
+
         return username
     except JWTError as e:
         logger.warning(f"JWT令牌验证失败: {e}")
@@ -188,22 +252,160 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(secur
 # API路由
 @app.get("/")
 async def root():
-    return FileResponse("../client/login.html")
+    """根路径 - 重定向到登录页面"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/login.html")
 
-@app.post("/api/login", response_model=Token)
-async def login(login_data: LoginRequest):
-    user = fake_users_db.get(login_data.username)
-    if not user or not pwd_context.verify(login_data.password, user["hashed_password"]):
+@app.get("/login")
+async def login_page():
+    """登录页面"""
+    return FileResponse(os.path.join(FRONT_DIR, "login.html"))
+
+@app.get("/login.html")
+async def login_html_page():
+    """登录页面（.html后缀）"""
+    return FileResponse(os.path.join(FRONT_DIR, "login.html"))
+
+@app.get("/register")
+async def register_page():
+    """注册页面"""
+    return FileResponse(os.path.join(FRONT_DIR, "register.html"))
+
+@app.get("/register.html")
+async def register_html_page():
+    """注册页面（.html后缀）"""
+    return FileResponse(os.path.join(FRONT_DIR, "register.html"))
+
+@app.get("/index")
+async def index_page():
+    """主页/仪表板"""
+    return FileResponse(os.path.join(FRONT_DIR, "index.html"))
+
+@app.get("/index.html")
+async def index_html_page():
+    """主页/仪表板（.html后缀）"""
+    return FileResponse(os.path.join(FRONT_DIR, "index.html"))
+
+@app.get("/cameras")
+async def cameras_page():
+    """视频监控页面"""
+    return FileResponse(os.path.join(FRONT_DIR, "cameras.html"))
+
+@app.get("/cameras.html")
+async def cameras_html_page():
+    """视频监控页面（.html后缀）"""
+    return FileResponse(os.path.join(FRONT_DIR, "cameras.html"))
+
+@app.get("/history")
+async def history_page():
+    """历史数据页面"""
+    return FileResponse(os.path.join(FRONT_DIR, "history.html"))
+
+@app.get("/history.html")
+async def history_html_page():
+    """历史数据页面（.html后缀）"""
+    return FileResponse(os.path.join(FRONT_DIR, "history.html"))
+
+@app.get("/robot")
+async def robot_page():
+    """机械臂控制页面"""
+    return FileResponse(os.path.join(FRONT_DIR, "robot.html"))
+
+@app.get("/robot.html")
+async def robot_html_page():
+    """机械臂控制页面（.html后缀）"""
+    return FileResponse(os.path.join(FRONT_DIR, "robot.html"))
+
+@app.get("/alerts")
+async def alerts_page():
+    """警报设置页面"""
+    return FileResponse(os.path.join(FRONT_DIR, "alerts.html"))
+
+@app.get("/alerts.html")
+async def alerts_html_page():
+    """警报设置页面（.html后缀）"""
+    return FileResponse(os.path.join(FRONT_DIR, "alerts.html"))
+
+@app.get("/settings")
+async def settings_page():
+    """系统设置页面"""
+    return FileResponse(os.path.join(FRONT_DIR, "settings.html"))
+
+@app.get("/settings.html")
+async def settings_html_page():
+    """系统设置页面（.html后缀）"""
+    return FileResponse(os.path.join(FRONT_DIR, "settings.html"))
+
+@app.post("/api/register")
+async def register(register_data: RegisterRequest, db: Session = Depends(get_db)):
+    """用户注册API"""
+    # 检查用户名是否已存在
+    existing_user = db.query(User).filter(User.username == register_data.username).first()
+    if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="用户名已存在"
         )
     
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user["username"]}, expires_delta=access_token_expires
+    # 如果提供了邮箱，检查邮箱是否已存在
+    if register_data.email:
+        existing_email = db.query(User).filter(User.email == register_data.email).first()
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="邮箱已被注册"
+            )
+    
+    # 加密密码
+    hashed_password = hash_password(register_data.password)
+    
+    # 创建新用户
+    new_user = User(
+        username=register_data.username,
+        email=register_data.email,
+        hashed_password=hashed_password,
+        role="user"
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    logger.info(f"新用户注册: {register_data.username}")
+    
+    return {
+        "success": True,
+        "message": "注册成功",
+        "user": {
+            "username": new_user.username,
+            "email": new_user.email,
+            "role": new_user.role
+        }
+    }
+
+@app.post("/api/login", response_model=Token)
+async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
+    """用户登录API"""
+    # 从数据库查询用户
+    user = db.query(User).filter(User.username == login_data.username).first()
+    
+    if not user or not verify_password(login_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="用户名或密码错误",
+        )
+    
+    access_token_expires = timedelta(minutes=Config.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer", "expires_in": Config.ACCESS_TOKEN_EXPIRE_MINUTES * 60}
+
+@app.get("/api/users")
+async def get_users(db: Session = Depends(get_db)):
+    """获取所有用户（仅管理员）"""
+    users = db.query(User).all()
+    return [{"id": u.id, "username": u.username, "email": u.email, "role": u.role, "created_at": u.created_at.isoformat() if u.created_at else None} for u in users]
 
 @app.get("/api/sensors")
 async def get_sensors(username: str = Depends(verify_token)):
@@ -376,4 +578,4 @@ async def video_tank(username: str = Depends(verify_token)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="localhost", port=8090)
