@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AquaGarden - 历史数据</title>
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="/css/main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .history-page {
@@ -262,27 +262,27 @@
         </div>
         
         <nav class="sidebar-nav">
-            <a href="index.html" class="nav-item">
+            <a href="/index.html" class="nav-item">
                 <i class="fas fa-tachometer-alt"></i>
                 <span>仪表板</span>
             </a>
-            <a href="cameras.html" class="nav-item">
+            <a href="/cameras.html" class="nav-item">
                 <i class="fas fa-video"></i>
                 <span>视频监控</span>
             </a>
-            <a href="history.html" class="nav-item active">
+            <a href="/history.html" class="nav-item active">
                 <i class="fas fa-chart-line"></i>
                 <span>历史数据</span>
             </a>
-            <a href="robot.html" class="nav-item">
+            <a href="/robot.html" class="nav-item">
                 <i class="fas fa-robot"></i>
                 <span>机械臂控制</span>
             </a>
-            <a href="alerts.html" class="nav-item">
+            <a href="/alerts.html" class="nav-item">
                 <i class="fas fa-bell"></i>
                 <span>警报设置</span>
             </a>
-            <a href="settings.html" class="nav-item">
+            <a href="/settings.html" class="nav-item">
                 <i class="fas fa-cog"></i>
                 <span>系统设置</span>
             </a>
@@ -530,7 +530,7 @@
             logoutBtn.addEventListener('click', () => {
                 if (confirm('确定要退出系统吗？')) {
                     localStorage.removeItem('token');
-                    window.location.href = 'login.html';
+                    window.location.href = '/login.html';
                 }
             });
         }

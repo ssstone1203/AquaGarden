@@ -21,7 +21,7 @@ const loginForm = document.getElementById('loginForm');
 const errorMessage = document.getElementById('errorMessage');
 
 // API基础URL
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8090';
 
 if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
@@ -64,7 +64,7 @@ if (loginForm) {
                 
                 // 延迟跳转，让用户看到成功提示
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    window.location.href = '/index.html';
                 }, 1000);
             } else {
                 // 登录失败
@@ -85,7 +85,7 @@ if (loginForm) {
                 
                 // 延迟跳转，让用户看到成功提示
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    window.location.href = '/index.html';
                 }, 1000);
             } else {
                 // 登录失败

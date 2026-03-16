@@ -1,5 +1,5 @@
 // API配置
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8090';
 
 // 密码强度检查
 function checkPasswordStrength(password) {
@@ -136,7 +136,7 @@ if (registerForm) {
                 
                 // 延迟跳转
                 setTimeout(() => {
-                    window.location.href = 'login.html';
+                    window.location.href = '/login.html';
                 }, 2000);
             } else {
                 // 注册失败

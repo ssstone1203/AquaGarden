@@ -1,5 +1,5 @@
 // API配置
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8090';
 let authToken = localStorage.getItem('token');
 
 // 时间显示更新
@@ -51,7 +51,7 @@ async function updateSensorData() {
             addLog('数据更新', `温度: ${data.temperature}°C, pH: ${data.ph}, 溶解氧: ${data.oxygen}mg/L, 浊度: ${data.turbidity}NTU`);
         } else if (response.status === 401) {
             addLog('错误', '登录已过期，请重新登录');
-            setTimeout(() => window.location.href = 'login.html', 2000);
+                setTimeout(() => window.location.href = '/login.html', 2000);
         }
     } catch (error) {
         console.error('获取传感器数据失败:', error);
@@ -236,7 +236,7 @@ if (logoutBtn) {
         if (confirm('确定要退出系统吗？')) {
             addLog('系统', '用户已登出');
             setTimeout(() => {
-                window.location.href = 'login.html';
+                    window.location.href = '/login.html';
             }, 500);
         }
     });
