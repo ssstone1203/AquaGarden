@@ -6,4 +6,5 @@ passlib[bcrypt]==1.7.4
 websockets==12.0
 opencv-python==4.8.1.78
 numpy==1.24.3
+sqlalchemy==2.0.23
 

@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaGarden - 机械臂控制</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .robot-page {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .control-panel {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+        }
+
+        .joystick-section {
+            background: var(--bg-card);
+            border-radius: var(--border-radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .joystick-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .joystick-container {
+            width: 280px;
+            height: 280px;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .joystick-base {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            position: relative;
+        }
+
+        .joystick-base::before,
+        .joystick-base::after {
+            content: '';
+            position: absolute;
+            background: rgba(139, 92, 246, 0.2);
+        }
+
+        .joystick-base::before {
+            width: 2px;
+            height: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .joystick-base::after {
+            width: 100%;
+            height: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .joystick-handle {
+            width: 80px;
+            height: 80px;
+            background: var(--bg-gradient);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: grab;
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .joystick-handle:hover {
+            box-shadow: 0 12px 35px rgba(139, 92, 246, 0.7);
+        }
+
+        .joystick-handle:active {
+            cursor: grabbing;
+        }
+
+        .direction-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 8px;
+        }
+
+        .dir-btn {
+            border: none;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .dir-btn:hover {
+            background: var(--bg-gradient);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .dir-btn:active {
+            transform: scale(0.95);
+        }
+
+        .dir-btn.empty {
+            background: transparent;
+            box-shadow: none;
+            cursor: default;
+        }
+
+        .dir-btn.empty:hover {
+            transform: none;
+            background: transparent;
+        }
+
+        .current-position {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 20px;
+            background: var(--bg-main);
+            border-radius: 12px;
+            width: 100%;
+        }
+
+        .current-position i {
+            color: var(--primary-color);
+            font-size: 20px;
+        }
+
+        .position-values {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            justify-content: space-around;
+        }
+
+        .pos-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .pos-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .pos-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .status-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .preset-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 16px;
+            background: var(--bg-main);
+            border: 1px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .preset-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .preset-btn i {
+            font-size: 16px;
+        }
+
+        .status-card {
+            background: var(--bg-card);
+            border-radius: var(--border-radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .status-card h3 {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-card h3 i {
+            color: var(--primary-color);
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--bg-main);
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .status-val {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .status-val.online {
+            color: var(--status-success);
+        }
+
+        .emergency-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+        }
+
+        .emergency-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .operation-logs {
+            background: var(--bg-card);
+            border-radius: var(--border-radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .log-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            display: flex;
+            gap: 12px;
+            padding: 10px 12px;
+            background: var(--bg-main);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .log-entry:last-child {
+            margin-bottom: 0;
+        }
+
+        .log-time {
+            color: var(--primary-color);
+            font-weight: 600;
+            min-width: 70px;
+        }
+
+        .log-content {
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        @media (max-width: 1024px) {
+            .control-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 左侧边栏 -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-fish"></i>
+                <span>AquaGarden</span>
+            </div>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-item">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>仪表板</span>
+            </a>
+            <a href="cameras.html" class="nav-item">
+                <i class="fas fa-video"></i>
+                <span>视频监控</span>
+            </a>
+            <a href="history.html" class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>历史数据</span>
+            </a>
+            <a href="robot.html" class="nav-item active">
+                <i class="fas fa-robot"></i>
+                <span>机械臂控制</span>
+            </a>
+            <a href="alerts.html" class="nav-item">
+                <i class="fas fa-bell"></i>
+                <span>警报设置</span>
+            </a>
+            <a href="settings.html" class="nav-item">
+                <i class="fas fa-cog"></i>
+                <span>系统设置</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <i class="fas fa-user-circle"></i>
+                <div class="user-details">
+                    <div class="user-name">管理员</div>
+                    <div class="user-role">Admin</div>
+                </div>
+            </div>
+            <button class="logout-btn" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </aside>
+    
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <!-- 顶部栏 -->
+        <header class="top-header">
+            <div class="header-left">
+                <h1>机械臂控制</h1>
+                <p class="subtitle">实时控制机械臂进行各种操作</p>
+            </div>
+            <div class="header-right">
+                <div class="mode-selector">
+                    <button class="mode-btn active" data-mode="demo">
+                        <i class="fas fa-eye"></i>
+                        演示模式
+                    </button>
+                    <button class="mode-btn" data-mode="service">
+                        <i class="fas fa-tools"></i>
+                        服务模式
+                    </button>
+                </div>
+                <div class="time-display">
+                    <i class="fas fa-clock"></i>
+                    <span id="timeText">--:--:--</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 机械臂控制内容 -->
+        <div class="robot-page">
+            <!-- 控制面板 -->
+            <div class="control-panel">
+                <!-- 方向控制区 -->
+                <div class="joystick-section">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-gamepad"></i>
+                            <span>方向控制</span>
+                        </div>
+                        <div class="card-badge badge-online">
+                            <span class="badge-dot"></span>
+                            在线
+                        </div>
+                    </div>
+                    <div class="joystick-area" style="padding: 20px;">
+                        <div class="joystick-container">
+                            <div class="joystick-base">
+                                <div class="joystick-handle" id="joystickHandle"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="direction-buttons">
+                            <div class="dir-btn empty"></div>
+                            <button class="dir-btn" data-dir="forward">
+                                <i class="fas fa-chevron-up"></i>
+                            </button>
+                            <div class="dir-btn empty"></div>
+                            <button class="dir-btn" data-dir="left">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                            <button class="dir-btn" id="centerBtn">
+                                <i class="fas fa-crosshairs"></i>
+                            </button>
+                            <button class="dir-btn" data-dir="right">
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <div class="dir-btn empty"></div>
+                            <button class="dir-btn" data-dir="backward">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="dir-btn empty"></div>
+                        </div>
+                        
+                        <!-- Z轴控制 -->
+                        <div style="display: flex; gap: 12px; width: 100%; margin-top: 8px;">
+                            <button class="dir-btn" data-dir="up" style="flex: 1; height: 50px;">
+                                <i class="fas fa-arrow-up"></i>
+                                <span style="margin-left: 8px;">Z+</span>
+                            </button>
+                            <button class="dir-btn" data-dir="down" style="flex: 1; height: 50px;">
+                                <i class="fas fa-arrow-down"></i>
+                                <span style="margin-left: 8px;">Z-</span>
+                            </button>
+                        </div>
+
+                        <div class="current-position">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <div class="position-values">
+                                <div class="pos-item">
+                                    <span class="pos-label">X</span>
+                                    <span class="pos-value" id="posX">0</span>
+                                </div>
+                                <div class="pos-item">
+                                    <span class="pos-label">Y</span>
+                                    <span class="pos-value" id="posY">0</span>
+                                </div>
+                                <div class="pos-item">
+                                    <span class="pos-label">Z</span>
+                                    <span class="pos-value" id="posZ">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧状态区 -->
+                <div class="status-section">
+                    <!-- 预设位置 -->
+                    <div class="status-card">
+                        <h3><i class="fas fa-bookmark"></i> 预设位置</h3>
+                        <div class="preset-buttons">
+                            <button class="preset-btn" data-pos="feed">
+                                <i class="fas fa-utensils"></i>
+                                <span>喂食位置</span>
+                            </button>
+                            <button class="preset-btn" data-pos="clean">
+                                <i class="fas fa-broom"></i>
+                                <span>清洁位置</span>
+                            </button>
+                            <button class="preset-btn" data-pos="monitor">
+                                <i class="fas fa-eye"></i>
+                                <span>监控位置</span>
+                            </button>
+                            <button class="preset-btn" data-pos="home">
+                                <i class="fas fa-home"></i>
+                                <span>原点位置</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 状态信息 -->
+                    <div class="status-card">
+                        <h3><i class="fas fa-server"></i> 状态信息</h3>
+                        <div class="status-item">
+                            <span class="status-label">电机状态</span>
+                            <span class="status-val online">● 运行正常</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">电池电量</span>
+                            <span class="status-val" id="batteryLevel">87%</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">运行时间</span>
+                            <span class="status-val" id="runningTime">3h 24m</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">任务队列</span>
+                            <span class="status-val" id="taskQueue">2 个任务</span>
+                        </div>
+                    </div>
+
+                    <!-- 紧急停止 -->
+                    <button class="emergency-btn" id="emergencyStop">
+                        <i class="fas fa-hand-paper"></i>
+                        紧急停止
+                    </button>
+                </div>
+            </div>
+
+            <!-- 操作日志 -->
+            <div class="operation-logs">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-list"></i>
+                        <span>操作日志</span>
+                    </div>
+                </div>
+                <div class="log-list" id="logList">
+                    <div class="log-entry">
+                        <span class="log-time">15:12:30</span>
+                        <span class="log-content">机械臂已连接就绪</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 全局变量
+        let posX = 0, posY = 0, posZ = 0;
+        let authToken = localStorage.getItem('token');
+
+        // 时间更新
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('zh-CN', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+            const timeElement = document.getElementById('timeText');
+            if (timeElement) {
+                timeElement.textContent = timeString;
+            }
+        }
+
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // 添加日志
+        function addLog(message) {
+            const logList = document.getElementById('logList');
+            if (!logList) return;
+
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('zh-CN');
+
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `
+                <span class="log-time">${timeString}</span>
+                <span class="log-content">${message}</span>
+            `;
+
+            logList.insertBefore(logEntry, logList.firstChild);
+
+            while (logList.children.length > 20) {
+                logList.removeChild(logList.lastChild);
+            }
+        }
+
+        // 更新位置显示
+        function updatePosition() {
+            document.getElementById('posX').textContent = posX;
+            document.getElementById('posY').textContent = posY;
+            document.getElementById('posZ').textContent = posZ;
+        }
+
+        // 机械臂控制函数
+        async function controlRobot(direction) {
+            const directionMap = {
+                'up': 'up',
+                'down': 'down', 
+                'left': 'left',
+                'right': 'right',
+                'forward': 'forward',
+                'backward': 'backward'
+            };
+
+            const dir = directionMap[direction] || direction;
+            
+            try {
+                const response = await fetch('/api/robot/control', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ direction: dir })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    posX = data.position.x;
+                    posY = data.position.y;
+                    posZ = data.position.z;
+                    updatePosition();
+                    addLog(`移动到位置 X:${posX} Y:${posY} Z:${posZ}`);
+                } else if (response.status === 401) {
+                    addLog('登录已过期，请重新登录');
+                    setTimeout(() => window.location.href = 'login.html', 2000);
+                }
+            } catch (error) {
+                console.error('控制请求失败:', error);
+                // 演示模式下的本地模拟
+                simulateMovement(direction);
+            }
+        }
+
+        // 演示模式下的本地模拟移动
+        function simulateMovement(direction) {
+            const step = 1;
+            switch(direction) {
+                case 'forward': posY += step; break;
+                case 'backward': posY -= step; break;
+                case 'left': posX -= step; break;
+                case 'right': posX += step; break;
+                case 'up': posZ += step; break;
+                case 'down': posZ -= step; break;
+            }
+            
+            posX = Math.max(-10, Math.min(10, posX));
+            posY = Math.max(-10, Math.min(10, posY));
+            posZ = Math.max(0, Math.min(20, posZ));
+            
+            updatePosition();
+            addLog(`移动到位置 X:${posX} Y:${posY} Z:${posZ}`);
+        }
+
+        // 预设位置移动
+        function moveToPreset(position) {
+            const presets = {
+                'feed': { x: 5, y: 5, z: 10 },
+                'clean': { x: -5, y: 5, z: 5 },
+                'monitor': { x: 0, y: 8, z: 12 },
+                'home': { x: 0, y: 0, z: 0 }
+            };
+
+            const preset = presets[position];
+            if (preset) {
+                posX = preset.x;
+                posY = preset.y;
+                posZ = preset.z;
+                updatePosition();
+                addLog(`移动到预设位置: ${position === 'feed' ? '喂食' : position === 'clean' ? '清洁' : position === 'monitor' ? '监控' : '原点'}`);
+            }
+        }
+
+        // 居中/归零
+        function centerPosition() {
+            posX = 0;
+            posY = 0;
+            posZ = 0;
+            updatePosition();
+            addLog('机械臂已复位到原点');
+        }
+
+        // 紧急停止
+        function emergencyStop() {
+            addLog('紧急停止已触发！');
+            if (confirm('确定要执行紧急停止吗？')) {
+                addLog('机械臂已紧急停止');
+            }
+        }
+
+        // 绑定方向按钮事件
+        document.querySelectorAll('.dir-btn[data-dir]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const direction = btn.dataset.dir;
+                controlRobot(direction);
+            });
+        });
+
+        // 绑定居中按钮
+        const centerBtn = document.getElementById('centerBtn');
+        if (centerBtn) {
+            centerBtn.addEventListener('click', centerPosition);
+        }
+
+        // 绑定预设位置按钮
+        document.querySelectorAll('.preset-btn[data-pos]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const position = btn.dataset.pos;
+                moveToPreset(position);
+            });
+        });
+
+        // 绑定紧急停止按钮
+        const emergencyStopBtn = document.getElementById('emergencyStop');
+        if (emergencyStopBtn) {
+            emergencyStopBtn.addEventListener('click', emergencyStop);
+        }
+
+        // 简单的摇杆控制
+        const joystickHandle = document.getElementById('joystickHandle');
+        if (joystickHandle) {
+            let isDragging = false;
+            let startX, startY;
+
+            joystickHandle.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                joystickHandle.style.cursor = 'grabbing';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                const maxDist = 60;
+                
+                const dist = Math.min(Math.sqrt(dx * dx + dy * dy), maxDist);
+                const angle = Math.atan2(dy, dx);
+
+                const newX = Math.cos(angle) * dist;
+                const newY = Math.sin(angle) * dist;
+
+                joystickHandle.style.transform = `translate(calc(-50% + ${newX}px), calc(-50% + ${newY}px))`;
+
+                // 根据摇杆方向控制机械臂
+                if (Math.abs(newX) > 30 || Math.abs(newY) > 30) {
+                    if (newX > 15 && Math.abs(newY) < 15) controlRobot('right');
+                    else if (newX < -15 && Math.abs(newY) < 15) controlRobot('left');
+                    else if (newY > 15 && Math.abs(newX) < 15) controlRobot('backward');
+                    else if (newY < -15 && Math.abs(newX) < 15) controlRobot('forward');
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                joystickHandle.style.transform = 'translate(-50%, -50%)';
+                joystickHandle.style.cursor = 'grab';
+            });
+        }
+
+        // 键盘控制
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    controlRobot('forward');
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    controlRobot('backward');
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    controlRobot('left');
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    controlRobot('right');
+                    break;
+                case 'q':
+                case 'Q':
+                    controlRobot('up');
+                    break;
+                case 'e':
+                case 'E':
+                    controlRobot('down');
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    centerPosition();
+                    break;
+            }
+        });
+
+        // 登出功能
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                if (confirm('确定要退出系统吗？')) {
+                    localStorage.removeItem('token');
+                    window.location.href = 'login.html';
+                }
+            });
+        }
+
+        // 模式切换
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const mode = btn.dataset.mode;
+                addLog(`切换到${mode === 'demo' ? '演示' : '服务'}模式`);
+            });
+        });
+
+        // 页面加载完成
+        document.addEventListener('DOMContentLoaded', () => {
+            addLog('机械臂控制页面已加载');
+            addLog('可使用键盘方向键或WASD控制机械臂');
+            addLog('Q/E键控制Z轴，空格键归零');
+        });
+    </script>
+</body>
+</html>

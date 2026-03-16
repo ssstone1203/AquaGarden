@@ -1,3 +1,7 @@
+// API配置
+const API_BASE_URL = 'http://localhost:8000';
+let authToken = localStorage.getItem('token');
+
 // 时间显示更新
 function updateTime() {
     const now = new Date();
@@ -16,13 +20,53 @@ function updateTime() {
 setInterval(updateTime, 1000);
 updateTime();
 
-// 传感器数据模拟
+// 传感器数据更新
+async function updateSensorData() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/sensors`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // 更新温度
+            document.getElementById('temperature').textContent = data.temperature;
+            document.getElementById('tempValue').textContent = data.temperature;
+            
+            // 更新pH值
+            document.getElementById('ph').textContent = data.ph;
+            document.getElementById('phValue').textContent = data.ph;
+            
+            // 更新溶解氧
+            document.getElementById('oxygen').textContent = data.oxygen;
+            document.getElementById('oxygenValue').textContent = data.oxygen;
+            
+            // 更新浊度
+            document.getElementById('turbidity').textContent = data.turbidity;
+            document.getElementById('turbidityValue').textContent = data.turbidity;
+            
+            addLog('数据更新', `温度: ${data.temperature}°C, pH: ${data.ph}, 溶解氧: ${data.oxygen}mg/L, 浊度: ${data.turbidity}NTU`);
+        } else if (response.status === 401) {
+            addLog('错误', '登录已过期，请重新登录');
+            setTimeout(() => window.location.href = 'login.html', 2000);
+        }
+    } catch (error) {
+        console.error('获取传感器数据失败:', error);
+        // 演示模式下的本地模拟
+        generateLocalSensorData();
+    }
+}
+
+// 演示模式下的本地模拟数据
 function generateRandomData(min, max, decimals = 1) {
     const value = Math.random() * (max - min) + min;
     return decimals === 0 ? Math.round(value) : parseFloat(value.toFixed(decimals));
 }
 
-function updateSensorData() {
+function generateLocalSensorData() {
     // 更新温度
     const temp = generateRandomData(24, 27);
     document.getElementById('temperature').textContent = temp;
@@ -99,11 +143,31 @@ if (clearLogBtn) {
 // 模式切换
 const modeBtns = document.querySelectorAll('.mode-btn');
 modeBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
         modeBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const mode = btn.dataset.mode;
-        addLog('系统', `切换到${mode === 'demo' ? '演示' : '服务'}模式`);
+        
+        // 尝试调用后端API
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/mode`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ mode: mode })
+            });
+            
+            if (response.ok) {
+                addLog('系统', `已切换到${mode === 'demo' ? '演示' : '服务'}模式`);
+            } else {
+                addLog('系统', `切换到${mode === 'demo' ? '演示' : '服务'}模式`);
+            }
+        } catch (error) {
+            console.error('模式切换请求失败:', error);
+            addLog('系统', `切换到${mode === 'demo' ? '演示' : '服务'}模式`);
+        }
     });
 });
 

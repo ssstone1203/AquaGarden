@@ -20,8 +20,11 @@ if (togglePassword && passwordInput) {
 const loginForm = document.getElementById('loginForm');
 const errorMessage = document.getElementById('errorMessage');
 
+// API基础URL
+const API_BASE_URL = 'http://localhost:8000';
+
 if (loginForm) {
-    loginForm.addEventListener('submit', (e) => {
+    loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const username = document.getElementById('username').value;
@@ -32,23 +35,62 @@ if (loginForm) {
         errorMessage.classList.remove('show');
         errorMessage.textContent = '';
         
-        // 简单的验证（实际应用中应该向服务器发送请求）
-        if (username === 'admin' && password === 'admin123') {
-            // 登录成功
-            showSuccess();
-            
-            // 如果选择了"记住我"，保存到localStorage
-            if (remember) {
-                localStorage.setItem('username', username);
+        try {
+            // 尝试向后端API发送登录请求
+            const response = await fetch(`${API_BASE_URL}/api/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                
+                // 保存token到localStorage
+                localStorage.setItem('token', data.access_token);
+                
+                // 如果选择了"记住我"，保存到localStorage
+                if (remember) {
+                    localStorage.setItem('username', username);
+                }
+                
+                // 登录成功
+                showSuccess();
+                
+                // 延迟跳转，让用户看到成功提示
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            } else {
+                // 登录失败
+                const errorData = await response.json();
+                showError(errorData.detail || '用户名或密码错误，请重试！');
             }
-            
-            // 延迟跳转，让用户看到成功提示
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1000);
-        } else {
-            // 登录失败
-            showError('用户名或密码错误，请重试！');
+        } catch (error) {
+            console.error('登录请求失败:', error);
+            // 如果请求失败，使用本地验证（演示模式）
+            if (username === 'admin' && password === 'admin123') {
+                // 登录成功
+                showSuccess();
+                
+                // 如果选择了"记住我"，保存到localStorage
+                if (remember) {
+                    localStorage.setItem('username', username);
+                }
+                
+                // 延迟跳转，让用户看到成功提示
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            } else {
+                // 登录失败
+                showError('用户名或密码错误，请重试！');
+            }
         }
     });
 }
