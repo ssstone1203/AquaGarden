@@ -1,6 +1,6 @@
 Dependencies for Project 'arm', Target 'arm': (DO NOT MODIFY !)
 CompilerVersion: 6220000::V6.22::ARMCLANG
-F (.\src\hal_entry.c)(0x69B83DE3)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections -I ./app -I ./app/device -I ./app/algorithm -I ./app/control @via/rasc_armclang.via-I./RTE/_arm-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/arm-D__UVISION_VERSION="541" -D_RTE_-o ./objects/hal_entry.o -MMD)
+F (.\src\hal_entry.c)(0x69B95F9B)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections -I ./app -I ./app/device -I ./app/algorithm -I ./app/control @via/rasc_armclang.via-I./RTE/_arm-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/arm-D__UVISION_VERSION="541" -D_RTE_-o ./objects/hal_entry.o -MMD)
 I (ra_gen\hal_data.h)(0x6985D57C)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
@@ -56,7 +56,7 @@ I (ra\fsp\inc\instances\r_sci_uart.h)(0x68A700AC)
 I (ra\fsp\inc\api\r_uart_api.h)(0x68A700AC)
 I (ra_cfg\fsp_cfg\r_sci_uart_cfg.h)(0x697996CE)
 I (app\control\arm_control.h)(0x69B81C46)
-I (app\algorithm\kinematics.h)(0x69B83C6D)
+I (app\algorithm\kinematics.h)(0x69B95796)
 I (app\device\serial_servo.h)(0x69B819CF)
 I (app\global.h)(0x69798C1F)
 F (.\src\hal_warmstart.c)(0x68A700D2)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections -I ./app -I ./app/device -I ./app/algorithm -I ./app/control @via/rasc_armclang.via-I./RTE/_arm-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/arm-D__UVISION_VERSION="541" -D_RTE_-o ./objects/hal_warmstart.o -MMD)
@@ -230,12 +230,12 @@ I (ra\fsp\inc\instances\r_sci_uart.h)(0x68A700AC)
 I (ra\fsp\inc\api\r_uart_api.h)(0x68A700AC)
 I (ra_cfg\fsp_cfg\r_sci_uart_cfg.h)(0x697996CE)
 F (.\app\device\stepper_slideway.h)(0x6985F85F)()
-F (.\app\algorithm\kinematics.c)(0x69B83C6D)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections -I ./app -I ./app/device -I ./app/algorithm -I ./app/control @via/rasc_armclang.via-I./RTE/_arm-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/arm-D__UVISION_VERSION="541" -D_RTE_-o ./objects/kinematics.o -MMD)
-I (app\algorithm\kinematics.h)(0x69B83C6D)
-F (.\app\algorithm\kinematics.h)(0x69B83C6D)()
+F (.\app\algorithm\kinematics.c)(0x69B9576B)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections -I ./app -I ./app/device -I ./app/algorithm -I ./app/control @via/rasc_armclang.via-I./RTE/_arm-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/arm-D__UVISION_VERSION="541" -D_RTE_-o ./objects/kinematics.o -MMD)
+I (app\algorithm\kinematics.h)(0x69B95796)
+F (.\app\algorithm\kinematics.h)(0x69B95796)()
 F (.\app\control\arm_control.c)(0x69B82651)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections -I ./app -I ./app/device -I ./app/algorithm -I ./app/control @via/rasc_armclang.via-I./RTE/_arm-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/arm-D__UVISION_VERSION="541" -D_RTE_-o ./objects/arm_control.o -MMD)
 I (app\control\arm_control.h)(0x69B81C46)
-I (app\algorithm\kinematics.h)(0x69B83C6D)
+I (app\algorithm\kinematics.h)(0x69B95796)
 I (app\device\serial_servo.h)(0x69B819CF)
 I (ra_gen\hal_data.h)(0x6985D57C)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)

@@ -32,10 +32,21 @@ void hal_entry(void)
 //		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
 //		g_status = ArmControl_CoordinateSet(18,3,5,0,-90,90,1000);
 //		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
-		g_status = ArmControl_CoordinateSet(20,-10,5,0,-90,90,1000);
+		g_status = ArmControl_CoordinateSet(15,0,20,0,-90,90,1000);
 		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
-		g_status = ArmControl_CoordinateSet(20,-10,9,0,-90,90,1000);
+		g_status = ArmControl_CoordinateSet(3,-12,20,0,-90,90,1000);
 		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
+		g_status = ArmControl_CoordinateSet(23,0,20,0,-90,90,1000);
+		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
+		g_status = ArmControl_CoordinateSet(30,0,13,0,-90,90,1000);
+		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
+		g_status = ArmControl_CoordinateSet(30,0,13,15,-90,90,1000);
+		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
+		g_status = ArmControl_CoordinateSet(30,0,13,0,-90,90,1000);
+		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
+		g_status = ArmControl_CoordinateSet(33,0,13,0,-90,90,1000);
+		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
+		
     }
 	
 #if BSP_TZ_SECURE_BUILD

@@ -1,5 +1,10 @@
 #include "kinematics.h"
 
+//#define ELBOW_DOWN
+#define ELBOW_UP
+
+//#define KIN_FIRST_INVERSE
+
 /**
  * @brief 角度转弧度
  * 
@@ -106,6 +111,7 @@ kin_vec_t Kin_Forward(float joint0_theta, float joint1_theta, float joint2_theta
 	return kin_vec_result;
 }
 
+#ifdef KIN_FIRST_INVERSE
 //逆运动学解算
 kin_status_t Kin_Inverse(kin_obj_t* kin_obj)
 {
@@ -170,6 +176,7 @@ kin_status_t Kin_Inverse(kin_obj_t* kin_obj)
         return KIN_STATUS_INVALID;
     }
 	
+	#ifdef ELBOW_UP
 	// 选择肘部向上或向下的解（这里选择向上）
 	float theta2_rad;
     theta2_rad = acosf(cos_theta2);
@@ -184,6 +191,24 @@ kin_status_t Kin_Inverse(kin_obj_t* kin_obj)
 	
 	kin_obj->joint[1].rad = theta1_rad;
     kin_obj->joint[1].theta = Rad_To_Theta(theta1_rad);
+	#endif
+	
+	#ifdef ELBOW_DOWN
+		// 选择肘部向下的解
+	float theta2_rad;
+    theta2_rad = -acosf(cos_theta2);
+    kin_obj->joint[2].rad = theta2_rad;
+    kin_obj->joint[2].theta = Rad_To_Theta(theta2_rad);
+	
+	// 计算关节1的角度（使用腕部方向，肘部下时用 alpha + beta）
+	float alpha,beta,theta1_rad;
+    alpha = atan2f(wrist_z, wrist_r);
+    beta = acosf((L2 * L2 + d * d - L3 * L3) / (2.0f * L2 * d));
+    theta1_rad = alpha + beta;
+	
+	kin_obj->joint[1].rad = theta1_rad;
+    kin_obj->joint[1].theta = Rad_To_Theta(theta1_rad);
+	#endif
 	
 	// 计算关节3的角度（腕部角度）
     // 目标俯仰角减去前面关节的角度
@@ -203,6 +228,88 @@ kin_status_t Kin_Inverse(kin_obj_t* kin_obj)
     }
     
     return KIN_STATUS_OK;
+}
+#endif
+
+kin_status_t Kin_Inverse(kin_obj_t* kin_obj)
+{
+	if(kin_obj == NULL){
+		return KIN_STATUS_INVALID;
+	}
+	
+	float end_x, end_y, end_z;
+	end_x = kin_obj->vector.x;
+	end_y = kin_obj->vector.y;
+	end_z = kin_obj->vector.z;
+//	alpha = kin_obj->alpha_pitch;
+	
+	float L1,L2,L3,L4;
+	L1 = LINKAGE_1;
+	L2 = LINKAGE_2;
+	L3 = LINKAGE_3;
+	L4 = LINKAGE_4;
+	
+	// 计算基座旋转角（关节0）
+	float len;	//len为俯视机械臂投影在xy平面上的长度
+	len = sqrtf(end_x * end_x + end_y * end_y);
+	
+	// 如果r太小，基座角度设为0
+	if(len < 0.001f){
+		kin_obj->joint[0].rad = 0.0f;
+        kin_obj->joint[0].theta = 0.0f;
+	}else{
+		kin_obj->joint[0].rad = atan2f(end_y, end_x);
+        kin_obj->joint[0].theta = Rad_To_Theta(kin_obj->joint[0].rad);
+	}
+	
+	// 计算目标点到基座的距离(这是3维空间距离)
+    float dist;
+	dist = sqrtf(len * len + end_z * end_z);
+//	dist = sqrtf(len * len + (end_z - L1) * (end_z - L1));  // ✅ 正确
+    
+    // 检查是否在工作空间内
+    float max_reach,min_reach;
+	max_reach = L2 + L3 + L4;
+	min_reach = fabsf(L2 - L3 - L4);
+	
+	if (dist > max_reach || dist < min_reach) {
+        return KIN_STATUS_INVALID;  // 超出工作空间
+    }
+	
+	// 计算腕部(关节2)角度(kin_obj->joint[2])
+	float a, b;
+	a = len - L4*cosf(Theta_To_Rad(kin_obj->alpha_pitch));
+	b = end_z - L1 - L4*sinf(Theta_To_Rad(kin_obj->alpha_pitch));
+	
+	float cos_joint2_rad, sin_joint2_rad;
+	cos_joint2_rad = ((a*a + b*b - L2*L2 - L3*L3) / (2.0f*L2*L3));	//pdf中的
+//	cos_joint2_rad = (L2*L2 + L3*L3 - (a*a + b*b)) / (2.0f*L2*L3);  // ✅;
+	sin_joint2_rad = -sqrtf(1 - (cos_joint2_rad*cos_joint2_rad));
+	
+	kin_obj->joint[2].rad = atan2f(sin_joint2_rad, cos_joint2_rad);
+	kin_obj->joint[2].theta = Rad_To_Theta(kin_obj->joint[2].rad);
+	
+	//计算肩部(关节1)角度(kin_obj->joint[1])
+	float c, d;
+	c = L2 + L3*cos_joint2_rad;
+	d = L3*sin_joint2_rad;
+	//kin_obj->joint[1].rad = (atanf(c / d) - atanf(a / b));
+	kin_obj->joint[1].rad = atan2f(c, d) - atan2f(a, b);  // ✅ 正确
+	kin_obj->joint[1].theta = Rad_To_Theta(kin_obj->joint[1].rad);
+	
+	//计算腕部(关节3)角度(kin_obj->joint[3])
+	kin_obj->joint[3].theta = kin_obj->alpha_pitch - kin_obj->joint[1].theta - kin_obj->joint[2].theta;
+	kin_obj->joint[3].rad = Theta_To_Rad(kin_obj->joint[3].theta);
+	
+	// 检查角度限制
+    if (kin_obj->joint[0].theta < MIN_JOINT0_ANGLE || kin_obj->joint[0].theta > MAX_JOINT0_ANGLE ||
+        kin_obj->joint[1].theta < MIN_JOINT1_ANGLE || kin_obj->joint[1].theta > MAX_JOINT1_ANGLE ||
+        kin_obj->joint[2].theta < MIN_JOINT2_ANGLE || kin_obj->joint[2].theta > MAX_JOINT2_ANGLE ||
+        kin_obj->joint[3].theta < MIN_JOINT3_ANGLE || kin_obj->joint[3].theta > MAX_JOINT3_ANGLE) {
+        return KIN_STATUS_INVALID;
+    }
+	
+	return KIN_STATUS_OK;
 }
 
 /**
