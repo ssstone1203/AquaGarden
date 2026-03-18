@@ -340,7 +340,7 @@
               <MiscControls>@via/rasc_armclang.via</MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\app;.\app\device;.\app\algorithm;.\app\control</IncludePath>
+              <IncludePath>.\app;.\app\device;.\app\algorithm;.\app\control;.\app\comm</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -403,6 +403,21 @@
               <FileName>global.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\App\global.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>app/comm</GroupName>
+          <Files>
+            <File>
+              <FileName>comm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\comm\comm.c</FilePath>
+            </File>
+            <File>
+              <FileName>comm.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\comm\comm.h</FilePath>
             </File>
           </Files>
         </Group>

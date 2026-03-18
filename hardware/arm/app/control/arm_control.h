@@ -151,7 +151,8 @@ uint8_t ArmControl_CoordinateSet(float target_x, float target_y, float target_z,
 								 float pitch, float min_pitch, float max_pitch,
 								 uint16_t time);
 
-extern arm_control_t g_arm_ctrl;
+extern arm_control_t   g_arm_ctrl;
+extern kin_obj_t       g_kin_obj;      /* 最近一次 CoordinateSet 的运动学解（命令角） */
 extern volatile teach_data_t g_teach_data;
 								 
 #endif

@@ -1,6 +1,7 @@
 --cpu=Cortex-M33
 ".\objects\hal_entry.o"
 ".\objects\hal_warmstart.o"
+".\objects\comm.o"
 ".\objects\serial_servo.o"
 ".\objects\stepper_slideway.o"
 ".\objects\kinematics.o"
