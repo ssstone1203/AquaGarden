@@ -9,6 +9,10 @@ extern void WQS_Task_create(void);
                 extern TaskHandle_t WQS_Task;
 extern void Pump_Task_create(void);
                 extern TaskHandle_t Pump_Task;
+extern void ADC_Task_create(void);
+                extern TaskHandle_t ADC_Task;
+extern void Communicate_Task_create(void);
+                extern TaskHandle_t Communicate_Task;
                 uint32_t g_fsp_common_thread_count;
                 bool g_fsp_common_initialized;
                 SemaphoreHandle_t g_fsp_common_initialized_semaphore;
@@ -107,6 +111,8 @@ extern void Pump_Task_create(void);
                     THS_Task_create();
 WQS_Task_create();
 Pump_Task_create();
+ADC_Task_create();
+Communicate_Task_create();
 
                     /* Start the scheduler. */
                     vTaskStartScheduler();

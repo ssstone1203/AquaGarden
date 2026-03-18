@@ -5,9 +5,9 @@ I (ra_gen\hal_data.h)(0x6973B27B)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -16,7 +16,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -47,16 +47,16 @@ I (ra_gen\common_data.h)(0x6973B27B)
 I (ra\fsp\inc\instances\r_ioport.h)(0x68A700AA)
 I (ra\fsp\inc\api\r_ioport_api.h)(0x68A700AA)
 I (ra_cfg\fsp_cfg\r_ioport_cfg.h)(0x6973B27B)
-I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x6973B5E7)
+I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x698F1014)
 F (.\src\new_thread0_entry.c.bak)(0x6973B27B)()
 F (.\src\Pump_Task_entry.c)(0x6973B6E7)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/pump_task_entry.o -MMD)
 I (ra_gen\Pump_Task.h)(0x6973B5E8)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -65,7 +65,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -108,7 +108,7 @@ I (ra_gen\common_data.h)(0x6973B27B)
 I (ra\fsp\inc\instances\r_ioport.h)(0x68A700AA)
 I (ra\fsp\inc\api\r_ioport_api.h)(0x68A700AA)
 I (ra_cfg\fsp_cfg\r_ioport_cfg.h)(0x6973B27B)
-I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x6973B5E7)
+I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x698F1014)
 I (ra\fsp\inc\instances\r_gpt.h)(0x68A700AA)
 I (ra\fsp\inc\api\r_timer_api.h)(0x68A700AC)
 F (.\src\THS_Task_entry.c)(0x6973B6E7)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/ths_task_entry.o -MMD)
@@ -116,9 +116,9 @@ I (ra_gen\THS_Task.h)(0x6973B5E8)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -127,7 +127,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -170,7 +170,7 @@ I (ra_gen\common_data.h)(0x6973B27B)
 I (ra\fsp\inc\instances\r_ioport.h)(0x68A700AA)
 I (ra\fsp\inc\api\r_ioport_api.h)(0x68A700AA)
 I (ra_cfg\fsp_cfg\r_ioport_cfg.h)(0x6973B27B)
-I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x6973B5E7)
+I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x698F1014)
 I (ra\fsp\inc\instances\r_iic_b_master.h)(0x68A700AA)
 I (ra_cfg\fsp_cfg\r_iic_b_master_cfg.h)(0x6973B5E8)
 I (ra\fsp\inc\api\r_i2c_master_api.h)(0x68A700AC)
@@ -180,9 +180,9 @@ I (ra_gen\WQS_Task.h)(0x6973B5E8)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -191,7 +191,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -234,20 +234,19 @@ I (ra_gen\common_data.h)(0x6973B27B)
 I (ra\fsp\inc\instances\r_ioport.h)(0x68A700AA)
 I (ra\fsp\inc\api\r_ioport_api.h)(0x68A700AA)
 I (ra_cfg\fsp_cfg\r_ioport_cfg.h)(0x6973B27B)
-I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x6973B5E7)
+I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x698F1014)
 I (ra\fsp\inc\instances\r_sci_uart.h)(0x68A700AC)
 I (ra\fsp\inc\api\r_uart_api.h)(0x68A700AC)
 I (ra\fsp\inc\api\r_transfer_api.h)(0x68A700AC)
 I (ra_cfg\fsp_cfg\r_sci_uart_cfg.h)(0x6973B5E8)
-F (G:/AquaGarden/hardware/ag_driver/ra/aws/FreeRTOS/FreeRTOS/Source/event_groups.c)(0x68A6FFCE)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/event_groups.o -MMD)
-I (ra\aws\FreeRTOS\FreeRTOS\Source\include\FreeRTOS.h)(0x68A6FFCE)
-I (ra_cfg\aws\FreeRTOSConfig.h)(0x6973B27B)
+F (.\src\ADC_Task_entry.c)(0x69873087)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/adc_task_entry.o -MMD)
+I (ra_gen\ADC_Task.h)(0x6986C5C8)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -256,7 +255,137 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_armclang.h)(0x68A6FFCE)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\R7FA6E2BB.h)(0x68A700CA)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\core_cm33.h)(0x68A6FFCE)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\system.h)(0x68A700AA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_common.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\api\fsp_common_api.h)(0x68A700AA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_compiler_support.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_tfu.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_sdram.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mmf.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_ipc.h)(0x68A700CA)
+I (G:\AquaGarden\hardware\ag_driver\bsp_linker_info.h)(0x6973B27B)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_register_protection.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_irq.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_io.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_group_irq.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_clocks.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_module_stop.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_security.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\fsp_features.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\..\..\fsp\src\bsp\mcu\all\bsp_compiler_support.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_delay.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mcu_api.h)(0x68A700CA)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\FreeRTOS.h)(0x68A6FFCE)
+I (ra_cfg\aws\FreeRTOSConfig.h)(0x6973B27B)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\projdefs.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\portable.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\deprecated_definitions.h)(0x68A6FFCE)
+I (ra\fsp\src\rm_freertos_port\portmacro.h)(0x68A700AC)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\mpu_wrappers.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\task.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\list.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\semphr.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\queue.h)(0x68A6FFCE)
+I (ra_gen\hal_data.h)(0x6973B27B)
+I (ra_gen\common_data.h)(0x6973B27B)
+I (ra\fsp\inc\instances\r_ioport.h)(0x68A700AA)
+I (ra\fsp\inc\api\r_ioport_api.h)(0x68A700AA)
+I (ra_cfg\fsp_cfg\r_ioport_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x698F1014)
+I (ra\fsp\inc\instances\r_adc.h)(0x68A700AA)
+I (ra_cfg\fsp_cfg\r_adc_cfg.h)(0x6986C5C8)
+I (ra\fsp\inc\api\r_adc_api.h)(0x68A700AC)
+I (ra\fsp\inc\api\r_elc_api.h)(0x68A700AC)
+I (ra\fsp\inc\api\r_transfer_api.h)(0x68A700AC)
+F (.\src\Communicate_Task_entry.c)(0x698F10B5)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/communicate_task_entry.o -MMD)
+I (ra_gen\Communicate_Task.h)(0x698F1070)
+I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
+I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
+I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
+I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_elc.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
+I (ra_gen\vector_data.h)(0x698F1015)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_armclang.h)(0x68A6FFCE)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\R7FA6E2BB.h)(0x68A700CA)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\core_cm33.h)(0x68A6FFCE)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\system.h)(0x68A700AA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_common.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\api\fsp_common_api.h)(0x68A700AA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_compiler_support.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_tfu.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_sdram.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mmf.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_ipc.h)(0x68A700CA)
+I (G:\AquaGarden\hardware\ag_driver\bsp_linker_info.h)(0x6973B27B)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_register_protection.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_irq.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_io.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_group_irq.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_clocks.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_module_stop.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_security.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\fsp_features.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\..\..\fsp\src\bsp\mcu\all\bsp_compiler_support.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_delay.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mcu_api.h)(0x68A700CA)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\FreeRTOS.h)(0x68A6FFCE)
+I (ra_cfg\aws\FreeRTOSConfig.h)(0x6973B27B)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\projdefs.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\portable.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\deprecated_definitions.h)(0x68A6FFCE)
+I (ra\fsp\src\rm_freertos_port\portmacro.h)(0x68A700AC)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\mpu_wrappers.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\task.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\list.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\semphr.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\queue.h)(0x68A6FFCE)
+I (ra_gen\hal_data.h)(0x6973B27B)
+I (ra_gen\common_data.h)(0x6973B27B)
+I (ra\fsp\inc\instances\r_ioport.h)(0x68A700AA)
+I (ra\fsp\inc\api\r_ioport_api.h)(0x68A700AA)
+I (ra_cfg\fsp_cfg\r_ioport_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x698F1014)
+I (ra\fsp\inc\instances\r_dmac.h)(0x68A700AA)
+I (ra\fsp\inc\api\r_transfer_api.h)(0x68A700AC)
+I (ra\fsp\inc\instances\r_spi.h)(0x68A700AC)
+I (ra\fsp\inc\api\r_spi_api.h)(0x68A700AC)
+F (G:/AquaGarden/hardware/ag_driver/ra/aws/FreeRTOS/FreeRTOS/Source/event_groups.c)(0x68A6FFCE)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/event_groups.o -MMD)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\FreeRTOS.h)(0x68A6FFCE)
+I (ra_cfg\aws\FreeRTOSConfig.h)(0x6973B27B)
+I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
+I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
+I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
+I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_elc.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -298,9 +427,9 @@ I (ra_cfg\aws\FreeRTOSConfig.h)(0x6973B27B)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -309,7 +438,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -348,9 +477,9 @@ I (ra_cfg\aws\FreeRTOSConfig.h)(0x6973B27B)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -359,7 +488,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -400,9 +529,9 @@ I (ra_cfg\aws\FreeRTOSConfig.h)(0x6973B27B)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -411,7 +540,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -452,9 +581,9 @@ I (ra_cfg\aws\FreeRTOSConfig.h)(0x6973B27B)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -463,7 +592,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -505,9 +634,9 @@ I (ra_cfg\aws\FreeRTOSConfig.h)(0x6973B27B)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -516,7 +645,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -556,9 +685,9 @@ F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/s
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -567,7 +696,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -598,9 +727,9 @@ F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/s
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -609,7 +738,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -642,8 +771,8 @@ I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -652,7 +781,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -683,9 +812,9 @@ F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/bsp/mcu/all/bsp_common.c)(0x68A70
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -694,7 +823,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -725,9 +854,9 @@ F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/bsp/mcu/all/bsp_delay.c)(0x68A700
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -736,7 +865,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -768,9 +897,9 @@ F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/bsp/mcu/all/bsp_group_irq.c)(0x68
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -779,7 +908,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -811,9 +940,9 @@ I (G:\AquaGarden\hardware\ag_driver\ra\fsp\src\bsp\mcu\all\bsp_guard.h)(0x68A700
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -822,7 +951,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -853,9 +982,9 @@ F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/bsp/mcu/all/bsp_io.c)(0x68A700CA)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -864,7 +993,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -895,9 +1024,9 @@ F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/bsp/mcu/all/bsp_ipc.c)(0x68A700CA
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -906,7 +1035,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -937,9 +1066,9 @@ F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/bsp/mcu/all/bsp_irq.c)(0x68A700CA
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -948,7 +1077,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -980,9 +1109,9 @@ I (G:\AquaGarden\hardware\ag_driver\ra\fsp\src\bsp\mcu\all\bsp_macl.h)(0x68A700C
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -991,7 +1120,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1022,9 +1151,9 @@ F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/bsp/mcu/all/bsp_register_protecti
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1033,7 +1162,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1065,9 +1194,9 @@ F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/bsp/mcu/all/bsp_sdram.c)(0x68A700
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1076,7 +1205,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1107,9 +1236,9 @@ F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/bsp/mcu/all/bsp_security.c)(0x68A
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1118,7 +1247,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1149,9 +1278,9 @@ F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/bsp/mcu/ra6e2/bsp_linker.c)(0x68A
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1160,7 +1289,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1187,14 +1316,13 @@ I (ra\fsp\inc\api\..\..\inc\fsp_features.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\inc\..\..\fsp\src\bsp\mcu\all\bsp_compiler_support.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_delay.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mcu_api.h)(0x68A700CA)
-F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/r_gpt/r_gpt.c)(0x68A700AA)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/r_gpt.o -MMD)
-I (ra\fsp\inc\instances\r_gpt.h)(0x68A700AA)
+F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/r_adc/r_adc.c)(0x68A700AA)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/r_adc.o -MMD)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1203,7 +1331,100 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_armclang.h)(0x68A6FFCE)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\R7FA6E2BB.h)(0x68A700CA)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\core_cm33.h)(0x68A6FFCE)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\system.h)(0x68A700AA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_common.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\api\fsp_common_api.h)(0x68A700AA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_compiler_support.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_tfu.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_sdram.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mmf.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_ipc.h)(0x68A700CA)
+I (G:\AquaGarden\hardware\ag_driver\bsp_linker_info.h)(0x6973B27B)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_register_protection.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_irq.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_io.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_group_irq.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_clocks.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_module_stop.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_security.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\fsp_features.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\..\..\fsp\src\bsp\mcu\all\bsp_compiler_support.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_delay.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mcu_api.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\r_adc_cfg.h)(0x6986C5C8)
+I (ra\fsp\inc\instances\r_adc.h)(0x68A700AA)
+I (ra\fsp\inc\api\r_adc_api.h)(0x68A700AC)
+I (ra\fsp\inc\api\r_elc_api.h)(0x68A700AC)
+I (ra\fsp\inc\api\r_transfer_api.h)(0x68A700AC)
+F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/r_dmac/r_dmac.c)(0x68A700AA)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/r_dmac.o -MMD)
+I (ra\fsp\inc\instances\r_dmac.h)(0x68A700AA)
+I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
+I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
+I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
+I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_elc.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
+I (ra_gen\vector_data.h)(0x698F1015)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_armclang.h)(0x68A6FFCE)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\R7FA6E2BB.h)(0x68A700CA)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\core_cm33.h)(0x68A6FFCE)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\system.h)(0x68A700AA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_common.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\api\fsp_common_api.h)(0x68A700AA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_compiler_support.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_tfu.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_sdram.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mmf.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_ipc.h)(0x68A700CA)
+I (G:\AquaGarden\hardware\ag_driver\bsp_linker_info.h)(0x6973B27B)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_register_protection.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_irq.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_io.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_group_irq.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_clocks.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_module_stop.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_security.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\fsp_features.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\..\..\fsp\src\bsp\mcu\all\bsp_compiler_support.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_delay.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mcu_api.h)(0x68A700CA)
+I (ra\fsp\inc\api\r_transfer_api.h)(0x68A700AC)
+I (ra_cfg\fsp_cfg\r_dmac_cfg.h)(0x698F1015)
+F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/r_gpt/r_gpt.c)(0x68A700AA)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/r_gpt.o -MMD)
+I (ra\fsp\inc\instances\r_gpt.h)(0x68A700AA)
+I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
+I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
+I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
+I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_elc.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1237,9 +1458,9 @@ I (ra\fsp\inc\instances\r_iic_b_master.h)(0x68A700AA)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1248,7 +1469,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1282,9 +1503,9 @@ F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/r_ioport/r_ioport.c)(0x68A700AA)(
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1293,7 +1514,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1327,9 +1548,9 @@ F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/r_sci_uart/r_sci_uart.c)(0x68A700
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1338,7 +1559,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1369,13 +1590,15 @@ I (ra\fsp\inc\instances\r_sci_uart.h)(0x68A700AC)
 I (ra\fsp\inc\api\r_uart_api.h)(0x68A700AC)
 I (ra\fsp\inc\api\r_transfer_api.h)(0x68A700AC)
 I (ra_cfg\fsp_cfg\r_sci_uart_cfg.h)(0x6973B5E8)
-F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/rm_freertos_port/port.c)(0x68A700AC)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/port.o -MMD)
+F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/r_spi/r_spi.c)(0x68A700AC)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/r_spi.o -MMD)
+I (ra\fsp\inc\instances\r_spi.h)(0x68A700AC)
+I (ra\fsp\inc\api\r_spi_api.h)(0x68A700AC)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1384,7 +1607,51 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_armclang.h)(0x68A6FFCE)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\R7FA6E2BB.h)(0x68A700CA)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\core_cm33.h)(0x68A6FFCE)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\system.h)(0x68A700AA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_common.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\api\fsp_common_api.h)(0x68A700AA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_compiler_support.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_tfu.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_sdram.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mmf.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_ipc.h)(0x68A700CA)
+I (G:\AquaGarden\hardware\ag_driver\bsp_linker_info.h)(0x6973B27B)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_register_protection.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_irq.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_io.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_group_irq.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_clocks.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_module_stop.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_security.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\fsp_features.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\..\..\fsp\src\bsp\mcu\all\bsp_compiler_support.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_delay.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mcu_api.h)(0x68A700CA)
+I (ra\fsp\inc\api\r_transfer_api.h)(0x68A700AC)
+I (ra_cfg\fsp_cfg\r_spi_cfg.h)(0x698F1015)
+F (G:/AquaGarden/hardware/ag_driver/ra/fsp/src/rm_freertos_port/port.c)(0x68A700AC)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/port.o -MMD)
+I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
+I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
+I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
+I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_elc.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1420,14 +1687,14 @@ I (ra\fsp\src\rm_freertos_port\portmacro.h)(0x68A700AC)
 I (ra\aws\FreeRTOS\FreeRTOS\Source\include\mpu_wrappers.h)(0x68A6FFCE)
 I (ra\aws\FreeRTOS\FreeRTOS\Source\include\task.h)(0x68A6FFCE)
 I (ra\aws\FreeRTOS\FreeRTOS\Source\include\list.h)(0x68A6FFCE)
-F (G:/AquaGarden/hardware/ag_driver/ra_gen/Pump_Task.c)(0x6973B5E8)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/pump_task.o -MMD)
-I (G:\AquaGarden\hardware\ag_driver\ra_gen\Pump_Task.h)(0x6973B5E8)
+F (G:/AquaGarden/hardware/ag_driver/ra_gen/ADC_Task.c)(0x6986C5C8)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/adc_task.o -MMD)
+I (G:\AquaGarden\hardware\ag_driver\ra_gen\ADC_Task.h)(0x6986C5C8)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1436,7 +1703,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1479,7 +1746,136 @@ I (G:\AquaGarden\hardware\ag_driver\ra_gen\common_data.h)(0x6973B27B)
 I (ra\fsp\inc\instances\r_ioport.h)(0x68A700AA)
 I (ra\fsp\inc\api\r_ioport_api.h)(0x68A700AA)
 I (ra_cfg\fsp_cfg\r_ioport_cfg.h)(0x6973B27B)
-I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x6973B5E7)
+I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x698F1014)
+I (ra\fsp\inc\instances\r_adc.h)(0x68A700AA)
+I (ra_cfg\fsp_cfg\r_adc_cfg.h)(0x6986C5C8)
+I (ra\fsp\inc\api\r_adc_api.h)(0x68A700AC)
+I (ra\fsp\inc\api\r_elc_api.h)(0x68A700AC)
+I (ra\fsp\inc\api\r_transfer_api.h)(0x68A700AC)
+F (G:/AquaGarden/hardware/ag_driver/ra_gen/Communicate_Task.c)(0x698F1070)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/communicate_task.o -MMD)
+I (G:\AquaGarden\hardware\ag_driver\ra_gen\Communicate_Task.h)(0x698F1070)
+I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
+I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
+I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
+I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_elc.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
+I (ra_gen\vector_data.h)(0x698F1015)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_armclang.h)(0x68A6FFCE)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\R7FA6E2BB.h)(0x68A700CA)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\core_cm33.h)(0x68A6FFCE)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\system.h)(0x68A700AA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_common.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\api\fsp_common_api.h)(0x68A700AA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_compiler_support.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_tfu.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_sdram.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mmf.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_ipc.h)(0x68A700CA)
+I (G:\AquaGarden\hardware\ag_driver\bsp_linker_info.h)(0x6973B27B)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_register_protection.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_irq.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_io.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_group_irq.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_clocks.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_module_stop.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_security.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\fsp_features.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\..\..\fsp\src\bsp\mcu\all\bsp_compiler_support.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_delay.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mcu_api.h)(0x68A700CA)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\FreeRTOS.h)(0x68A6FFCE)
+I (ra_cfg\aws\FreeRTOSConfig.h)(0x6973B27B)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\projdefs.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\portable.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\deprecated_definitions.h)(0x68A6FFCE)
+I (ra\fsp\src\rm_freertos_port\portmacro.h)(0x68A700AC)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\mpu_wrappers.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\task.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\list.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\semphr.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\queue.h)(0x68A6FFCE)
+I (G:\AquaGarden\hardware\ag_driver\ra_gen\hal_data.h)(0x6973B27B)
+I (G:\AquaGarden\hardware\ag_driver\ra_gen\common_data.h)(0x6973B27B)
+I (ra\fsp\inc\instances\r_ioport.h)(0x68A700AA)
+I (ra\fsp\inc\api\r_ioport_api.h)(0x68A700AA)
+I (ra_cfg\fsp_cfg\r_ioport_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x698F1014)
+I (ra\fsp\inc\instances\r_dmac.h)(0x68A700AA)
+I (ra\fsp\inc\api\r_transfer_api.h)(0x68A700AC)
+I (ra\fsp\inc\instances\r_spi.h)(0x68A700AC)
+I (ra\fsp\inc\api\r_spi_api.h)(0x68A700AC)
+F (G:/AquaGarden/hardware/ag_driver/ra_gen/Pump_Task.c)(0x6973B5E8)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/pump_task.o -MMD)
+I (G:\AquaGarden\hardware\ag_driver\ra_gen\Pump_Task.h)(0x6973B5E8)
+I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
+I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
+I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
+I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_elc.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
+I (ra_gen\vector_data.h)(0x698F1015)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_armclang.h)(0x68A6FFCE)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\R7FA6E2BB.h)(0x68A700CA)
+I (ra\arm\CMSIS_6\CMSIS\Core\Include\core_cm33.h)(0x68A6FFCE)
+I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\system.h)(0x68A700AA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_common.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\api\fsp_common_api.h)(0x68A700AA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_compiler_support.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_tfu.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_sdram.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mmf.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_ipc.h)(0x68A700CA)
+I (G:\AquaGarden\hardware\ag_driver\bsp_linker_info.h)(0x6973B27B)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_register_protection.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_irq.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_io.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_group_irq.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_clocks.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_module_stop.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_security.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\fsp_features.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\inc\..\..\fsp\src\bsp\mcu\all\bsp_compiler_support.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_delay.h)(0x68A700CA)
+I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mcu_api.h)(0x68A700CA)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\FreeRTOS.h)(0x68A6FFCE)
+I (ra_cfg\aws\FreeRTOSConfig.h)(0x6973B27B)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\projdefs.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\portable.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\deprecated_definitions.h)(0x68A6FFCE)
+I (ra\fsp\src\rm_freertos_port\portmacro.h)(0x68A700AC)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\mpu_wrappers.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\task.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\list.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\semphr.h)(0x68A6FFCE)
+I (ra\aws\FreeRTOS\FreeRTOS\Source\include\queue.h)(0x68A6FFCE)
+I (G:\AquaGarden\hardware\ag_driver\ra_gen\hal_data.h)(0x6973B27B)
+I (G:\AquaGarden\hardware\ag_driver\ra_gen\common_data.h)(0x6973B27B)
+I (ra\fsp\inc\instances\r_ioport.h)(0x68A700AA)
+I (ra\fsp\inc\api\r_ioport_api.h)(0x68A700AA)
+I (ra_cfg\fsp_cfg\r_ioport_cfg.h)(0x6973B27B)
+I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x698F1014)
 I (ra\fsp\inc\instances\r_gpt.h)(0x68A700AA)
 I (ra\fsp\inc\api\r_timer_api.h)(0x68A700AC)
 F (G:/AquaGarden/hardware/ag_driver/ra_gen/THS_Task.c)(0x6973B5E8)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/ths_task.o -MMD)
@@ -1487,9 +1883,9 @@ I (G:\AquaGarden\hardware\ag_driver\ra_gen\THS_Task.h)(0x6973B5E8)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1498,7 +1894,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1541,7 +1937,7 @@ I (G:\AquaGarden\hardware\ag_driver\ra_gen\common_data.h)(0x6973B27B)
 I (ra\fsp\inc\instances\r_ioport.h)(0x68A700AA)
 I (ra\fsp\inc\api\r_ioport_api.h)(0x68A700AA)
 I (ra_cfg\fsp_cfg\r_ioport_cfg.h)(0x6973B27B)
-I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x6973B5E7)
+I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x698F1014)
 I (ra\fsp\inc\instances\r_iic_b_master.h)(0x68A700AA)
 I (ra_cfg\fsp_cfg\r_iic_b_master_cfg.h)(0x6973B5E8)
 I (ra\fsp\inc\api\r_i2c_master_api.h)(0x68A700AC)
@@ -1551,9 +1947,9 @@ I (G:\AquaGarden\hardware\ag_driver\ra_gen\WQS_Task.h)(0x6973B5E8)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1562,7 +1958,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1605,7 +2001,7 @@ I (G:\AquaGarden\hardware\ag_driver\ra_gen\common_data.h)(0x6973B27B)
 I (ra\fsp\inc\instances\r_ioport.h)(0x68A700AA)
 I (ra\fsp\inc\api\r_ioport_api.h)(0x68A700AA)
 I (ra_cfg\fsp_cfg\r_ioport_cfg.h)(0x6973B27B)
-I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x6973B5E7)
+I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x698F1014)
 I (ra\fsp\inc\instances\r_sci_uart.h)(0x68A700AC)
 I (ra\fsp\inc\api\r_uart_api.h)(0x68A700AC)
 I (ra\fsp\inc\api\r_transfer_api.h)(0x68A700AC)
@@ -1615,9 +2011,9 @@ I (G:\AquaGarden\hardware\ag_driver\ra_gen\common_data.h)(0x6973B27B)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1626,7 +2022,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1656,15 +2052,15 @@ I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mcu_api.h)(0x68A700CA)
 I (ra\fsp\inc\instances\r_ioport.h)(0x68A700AA)
 I (ra\fsp\inc\api\r_ioport_api.h)(0x68A700AA)
 I (ra_cfg\fsp_cfg\r_ioport_cfg.h)(0x6973B27B)
-I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x6973B5E7)
+I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x698F1014)
 F (G:/AquaGarden/hardware/ag_driver/ra_gen/hal_data.c)(0x6973B27B)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/hal_data.o -MMD)
 I (G:\AquaGarden\hardware\ag_driver\ra_gen\hal_data.h)(0x6973B27B)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1673,7 +2069,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1704,14 +2100,14 @@ I (G:\AquaGarden\hardware\ag_driver\ra_gen\common_data.h)(0x6973B27B)
 I (ra\fsp\inc\instances\r_ioport.h)(0x68A700AA)
 I (ra\fsp\inc\api\r_ioport_api.h)(0x68A700AA)
 I (ra_cfg\fsp_cfg\r_ioport_cfg.h)(0x6973B27B)
-I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x6973B5E7)
-F (G:/AquaGarden/hardware/ag_driver/ra_gen/main.c)(0x6973B5E8)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/main.o -MMD)
+I (ra_cfg\fsp_cfg\bsp\bsp_pin_cfg.h)(0x698F1014)
+F (G:/AquaGarden/hardware/ag_driver/ra_gen/main.c)(0x698F1015)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/main.o -MMD)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1720,7 +2116,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1758,13 +2154,13 @@ I (ra\aws\FreeRTOS\FreeRTOS\Source\include\task.h)(0x68A6FFCE)
 I (ra\aws\FreeRTOS\FreeRTOS\Source\include\list.h)(0x68A6FFCE)
 I (ra\aws\FreeRTOS\FreeRTOS\Source\include\semphr.h)(0x68A6FFCE)
 I (ra\aws\FreeRTOS\FreeRTOS\Source\include\queue.h)(0x68A6FFCE)
-F (G:/AquaGarden/hardware/ag_driver/ra_gen/pin_data.c)(0x6973B5E7)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/pin_data.o -MMD)
+F (G:/AquaGarden/hardware/ag_driver/ra_gen/pin_data.c)(0x698F1014)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/pin_data.o -MMD)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1773,7 +2169,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)
@@ -1803,13 +2199,13 @@ I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mcu_api.h)(0x68A700CA)
 I (ra\fsp\inc\instances\r_ioport.h)(0x68A700AA)
 I (ra\fsp\inc\api\r_ioport_api.h)(0x68A700AA)
 I (ra_cfg\fsp_cfg\r_ioport_cfg.h)(0x6973B27B)
-F (G:/AquaGarden/hardware/ag_driver/ra_gen/vector_data.c)(0x6973B5E8)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/vector_data.o -MMD)
+F (G:/AquaGarden/hardware/ag_driver/ra_gen/vector_data.c)(0x698F1015)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char-gdwarf-4 -fno-function-sections @via/rasc_armclang.via-I./RTE/_ag_driver-I./ra/arm/CMSIS_6/CMSIS/Core/Include-I./ra/aws/FreeRTOS/FreeRTOS/Source/include-I./ra/fsp/inc-I./ra/fsp/inc/api-I./ra/fsp/inc/instances-I./ra/fsp/src/rm_freertos_port-I./ra_cfg/aws-I./ra_cfg/fsp_cfg-I./ra_cfg/fsp_cfg/bsp-I./ra_gen-IG:/AquaGarden/hardware/ag_driver-D__UVISION_VERSION="541" -D_RTE_-o ./objects/vector_data.o -MMD)
 I (ra\fsp\inc\api\bsp_api.h)(0x68A700AA)
 I (ra\fsp\inc\api\fsp_common_api.h)(0x68A700AA)
 I (ra\fsp\inc\fsp_version.h)(0x68A700AA)
-I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_cfg.h)(0x698F1015)
 I (ra_gen\bsp_clock_cfg.h)(0x6973B5E6)
-I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x6973B5E8)
+I (ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h)(0x698F1015)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_mcu_info.h)(0x68A700CA)
@@ -1818,7 +2214,7 @@ I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_feature.h)(0x68A700C
 I (ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6e2\bsp_peripheral.h)(0x68A700CA)
 I (ra_cfg\fsp_cfg\bsp\bsp_mcu_ofs_cfg.h)(0x6973B27B)
 I (ra_cfg\fsp_cfg\bsp\board_cfg.h)(0x6973B27B)
-I (ra_gen\vector_data.h)(0x6973B5E8)
+I (ra_gen\vector_data.h)(0x698F1015)
 I (ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_exceptions.h)(0x68A700CA)
 I (ra\fsp\inc\api\..\..\src\bsp\cmsis\Device\RENESAS\Include\renesas.h)(0x68A700AA)
 I (ra\arm\CMSIS_6\CMSIS\Core\Include\cmsis_compiler.h)(0x68A6FFCE)

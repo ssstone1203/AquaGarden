@@ -6,11 +6,19 @@
 /* Common macro for FSP header files. There is also a corresponding FSP_FOOTER macro at the end of this file. */
 FSP_HEADER
 
-#define ESP32_RXD0 (BSP_IO_PORT_01_PIN_00)
-#define ESP32_TXD0 (BSP_IO_PORT_01_PIN_01)
+#define PS0_AD (BSP_IO_PORT_00_PIN_00)
+#define PS1_AD (BSP_IO_PORT_00_PIN_01)
+#define PS2_AD (BSP_IO_PORT_00_PIN_02)
+#define SHS_AD (BSP_IO_PORT_00_PIN_03)
+#define PH_S_AD (BSP_IO_PORT_00_PIN_13)
+#define COM_MISO1 (BSP_IO_PORT_01_PIN_00)
+#define COM_MOSI1 (BSP_IO_PORT_01_PIN_01)
+#define COM_CLK (BSP_IO_PORT_01_PIN_02)
 #define WQS_TXD9 (BSP_IO_PORT_01_PIN_09)
 #define WQS_RXD9 (BSP_IO_PORT_01_PIN_10)
-#define PUMP_VREF (BSP_IO_PORT_02_PIN_01)
+#define PUMP_VREF (BSP_IO_PORT_02_PIN_06)
+#define RXD0 (BSP_IO_PORT_02_PIN_12)
+#define TXD0 (BSP_IO_PORT_02_PIN_13)
 #define PUMP_IN2 (BSP_IO_PORT_03_PIN_01)
 #define PUMP_IN1 (BSP_IO_PORT_03_PIN_02)
 #define THS_SDA0 (BSP_IO_PORT_04_PIN_07)

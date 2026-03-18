@@ -54,23 +54,26 @@
   </raClockConfiguration>
   <raPinConfiguration>
     <pincfg active="true" name="" symbol="">
-      <configSetting altId="adc0.an000.p000" configurationId="adc0.an000" peripheral="ADC0"/>
-      <configSetting altId="adc0.an001.p001" configurationId="adc0.an001" peripheral="ADC0"/>
-      <configSetting altId="adc0.an002.p002" configurationId="adc0.an002" peripheral="ADC0"/>
-      <configSetting altId="adc0.an007.p003" configurationId="adc0.an007" peripheral="ADC0"/>
-      <configSetting altId="adc0.an011.p013" configurationId="adc0.an011" peripheral="ADC0"/>
+      <configSetting altId="adc0.an000.p000" configurationId="adc0.an000" isUsedByDriver="true" peripheral="ADC0"/>
+      <configSetting altId="adc0.an001.p001" configurationId="adc0.an001" isUsedByDriver="true" peripheral="ADC0"/>
+      <configSetting altId="adc0.an002.p002" configurationId="adc0.an002" isUsedByDriver="true" peripheral="ADC0"/>
+      <configSetting altId="adc0.an007.p003" configurationId="adc0.an007" isUsedByDriver="true" peripheral="ADC0"/>
+      <configSetting altId="adc0.an011.p013" configurationId="adc0.an011" isUsedByDriver="true" peripheral="ADC0"/>
       <configSetting altId="gpt4.gtioc4b.p301" configurationId="gpt4.gtioc4b" isUsedByDriver="true" peripheral="GPT4"/>
       <configSetting altId="i3c_fslash_iic.scl0.p408" configurationId="i3c_fslash_iic.scl0" peripheral="I3C/IIC"/>
       <configSetting altId="i3c_fslash_iic.sda0.p407" configurationId="i3c_fslash_iic.sda0" peripheral="I3C/IIC"/>
       <configSetting altId="jtag_fslash_swd.swclk.p300" configurationId="jtag_fslash_swd.swclk" peripheral="JTAG/SWD"/>
       <configSetting altId="jtag_fslash_swd.swdio.p108" configurationId="jtag_fslash_swd.swdio" peripheral="JTAG/SWD"/>
-      <configSetting altId="p201.input" configurationId="p201"/>
+      <configSetting altId="p206.output.high" configurationId="p206"/>
       <configSetting altId="p302.input" configurationId="p302"/>
-      <configSetting altId="p409.input" configurationId="p409"/>
-      <configSetting altId="sci0.rxd0.p100" configurationId="sci0.rxd0" peripheral="SCI0"/>
-      <configSetting altId="sci0.txd0.p101" configurationId="sci0.txd0" peripheral="SCI0"/>
+      <configSetting altId="p409.output.high" configurationId="p409"/>
+      <configSetting altId="sci0.rxd0.p212" configurationId="sci0.rxd0" peripheral="SCI0"/>
+      <configSetting altId="sci0.txd0.p213" configurationId="sci0.txd0" peripheral="SCI0"/>
       <configSetting altId="sci9.rxd9.p110" configurationId="sci9.rxd9" isUsedByDriver="true" peripheral="SCI9"/>
       <configSetting altId="sci9.txd9.p109" configurationId="sci9.txd9" isUsedByDriver="true" peripheral="SCI9"/>
+      <configSetting altId="spi1.miso1.p100" configurationId="spi1.miso1" isUsedByDriver="true" peripheral="SPI1"/>
+      <configSetting altId="spi1.mosi1.p101" configurationId="spi1.mosi1" isUsedByDriver="true" peripheral="SPI1"/>
+      <configSetting altId="spi1.rspck1.p102" configurationId="spi1.rspck1" isUsedByDriver="true" peripheral="SPI1"/>
     </pincfg>
   </raPinConfiguration>
 </raConfiguration>
