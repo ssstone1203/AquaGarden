@@ -39,7 +39,7 @@ except ImportError:
     print("       安装方法：pip install pyserial")
 
 # ── 串口配置 ──────────────────────────────────────────────────────
-SERIAL_PORT = "COM3"      # 机械臂串口，根据设备管理器修改
+SERIAL_PORT = "COM12"      # 机械臂串口，根据设备管理器修改
 SERIAL_BAUD = 115200
 USE_SERIAL  = True        # False = 仿真模式（只采集视觉数据）
 
@@ -61,27 +61,27 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # ── 手眼标定位姿表（与 hardware/arm/src/hal_entry.c 中 s_calib_poses[] 完全一致）──
 # 格式：(x, y, z, pitch)  单位：cm / 度
 CALIB_POSES = [
-    ( 16.0,  0.0, -3.2, -76.1),  # 01 中心（ArUco 在画面正中心）
-    ( 14.0,  0.0, -3.2, -76.1),  # 02 x-2
-    ( 18.0,  0.0, -3.2, -76.1),  # 03 x+2
-    ( 16.0, -3.0, -3.2, -76.1),  # 04 y-3
-    ( 16.0,  3.0, -3.2, -76.1),  # 05 y+3
-    ( 16.0,  0.0, -1.0, -76.1),  # 06 z+2
-    ( 16.0,  0.0, -5.5, -76.1),  # 07 z-2
-    ( 16.0,  0.0, -3.2, -71.0),  # 08 pitch+5
-    ( 16.0,  0.0, -3.2, -81.0),  # 09 pitch-5
-    ( 14.0, -3.0, -3.2, -76.1),  # 10 x-2 y-3
-    ( 14.0,  3.0, -3.2, -76.1),  # 11 x-2 y+3
-    ( 18.0, -3.0, -3.2, -76.1),  # 12 x+2 y-3
-    ( 18.0,  3.0, -3.2, -76.1),  # 13 x+2 y+3
-    ( 14.0,  0.0, -1.0, -71.0),  # 14 x-2 z+ pitch+
-    ( 18.0,  0.0, -5.5, -81.0),  # 15 x+2 z- pitch-
-    ( 16.0, -3.0, -1.0, -71.0),  # 16 y-3 z+ pitch+
-    ( 16.0,  3.0, -5.5, -81.0),  # 17 y+3 z- pitch-
-    ( 14.0, -3.0, -1.0, -71.0),  # 18 x-2 y-3 z+ pitch+
-    ( 18.0,  3.0, -1.0, -71.0),  # 19 x+2 y+3 z+ pitch+
-    ( 14.0,  3.0, -5.5, -81.0),  # 20 x-2 y+3 z- pitch-
-    ( 18.0, -3.0, -5.5, -81.0),  # 21 x+2 y-3 z- pitch-
+    (16.0,  0.0, -3.2, -76.1),  # 01 中心  dist=16.32 ✓
+    (17.0, -3.0, -3.2, -76.1),  # 02 x+1 y-3  dist=17.56 ✓
+    (18.0,  0.0, -3.2, -76.1),  # 03 x+2  dist=18.28 ✓
+    (16.0, -3.0, -3.2, -76.1),  # 04 y-3  dist=16.59 ✓
+    (16.0,  3.0, -3.2, -76.1),  # 05 y+3  dist=16.59 ✓
+    (17.0,  0.0, -1.0, -71.0),  # 06 x+1 z+2.2 pitch+5  dist=17.03 ✓
+    (16.0,  0.0, -5.5, -76.1),  # 07 z-2.3  dist=16.92 ✓
+    (16.0,  0.0, -3.2, -71.0),  # 08 pitch+5  dist=16.32 ✓
+    (16.0,  0.0, -3.2, -81.0),  # 09 pitch-5  dist=16.32 ✓
+    (17.0,  3.0, -3.2, -76.1),  # 10 x+1 y+3  dist=17.56 ✓
+    (17.0,  0.0, -5.5, -76.1),  # 11 x+1 z-2.3  dist=17.87 ✓
+    (18.0, -3.0, -3.2, -76.1),  # 12 x+2 y-3  dist=18.56 ✓
+    (18.0,  3.0, -3.2, -76.1),  # 13 x+2 y+3  dist=18.56 ✓
+    (18.0, -3.0, -1.0, -71.0),  # 14 x+2 y-3 z+2.2 pitch+5  dist=18.28 ✓
+    (18.0,  0.0, -5.5, -81.0),  # 15 x+2 z-2.3 pitch-5  dist=18.82 ✓
+    (16.0, -3.0, -1.0, -71.0),  # 16 y-3 z+2.2 pitch+5  dist=16.31 ✓
+    (16.0,  3.0, -5.5, -81.0),  # 17 y+3 z-2.3 pitch-5  dist=16.92 ✓
+    (17.0, -3.0, -5.5, -81.0),  # 18 x+1 y-3 z-2.3 pitch-5  dist=18.12 ✓
+    (18.0,  3.0, -1.0, -71.0),  # 19 x+2 y+3 z+2.2 pitch+5  dist=18.28 ✓
+    (17.0,  3.0, -1.0, -71.0),  # 20 x+1 y+3 z+2.2 pitch+5  dist=17.29 ✓
+    (18.0, -3.0, -5.5, -81.0),  # 21 x+2 y-3 z-2.3 pitch-5  dist=18.82 ✓
 ]
 N_POSES = len(CALIB_POSES)
 
@@ -115,26 +115,45 @@ def put_chinese_text(img: np.ndarray, text: str, pos: tuple,
     return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
 
 
-# ── ArUco 检测 ────────────────────────────────────────────────────
-_ARUCO_DICT_IDS = [
-    cv2.aruco.DICT_4X4_50,
-    cv2.aruco.DICT_4X4_100,
-    cv2.aruco.DICT_5X5_50,
-    cv2.aruco.DICT_6X6_50,
-]
-_DETECTORS = [
-    cv2.aruco.ArucoDetector(
-        cv2.aruco.getPredefinedDictionary(d),
-        cv2.aruco.DetectorParameters())
-    for d in _ARUCO_DICT_IDS
-]
+# ── AprilTag 36h11 检测 ───────────────────────────────────────────
+def _make_apriltag_detector() -> cv2.aruco.ArucoDetector:
+    """AprilTag 36h11 检测器（与成功案例参数完全一致）"""
+    d = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_36h11)
+    p = cv2.aruco.DetectorParameters()
+    p.adaptiveThreshWinSizeMin    = 3
+    p.adaptiveThreshWinSizeMax    = 23
+    p.adaptiveThreshWinSizeStep   = 10
+    p.polygonalApproxAccuracyRate = 0.05
+    p.minMarkerPerimeterRate      = 0.02
+    p.cornerRefinementMethod      = cv2.aruco.CORNER_REFINE_SUBPIX
+    return cv2.aruco.ArucoDetector(d, p)
+
+_DETECTOR = _make_apriltag_detector()
+
+# CLAHE 增强对比度（应对光照不均）
+_CLAHE = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
 
 
-def detect_marker(frame: np.ndarray):
-    """多字典检测，返回 (corners_4x2, marker_id) 或 None"""
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    for det in _DETECTORS:
-        corners, ids, _ = det.detectMarkers(gray)
+def detect_marker(frame: np.ndarray,
+                  cam_K=None, cam_dist=None):
+    """
+    AprilTag 36h11 检测。
+    检测顺序（优先使用去畸变图，消除鱼眼/桶形畸变影响）：
+      1. 去畸变 + CLAHE 灰度（若提供 cam_K/cam_dist）
+      2. 原始 CLAHE 灰度
+      3. 原始灰度（兜底）
+    返回 (corners_4x2, marker_id) 或 None
+    """
+    gray    = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    gray_eq = _CLAHE.apply(gray)
+
+    candidates = [gray_eq, gray]
+    if cam_K is not None and cam_dist is not None:
+        gray_undist = cv2.undistort(gray_eq, cam_K, cam_dist)
+        candidates  = [gray_undist, gray_eq, gray]
+
+    for gray_try in candidates:
+        corners, ids, _ = _DETECTOR.detectMarkers(gray_try)
         if ids is not None and len(ids) > 0:
             return corners[0], int(ids[0][0])
     return None
@@ -337,7 +356,7 @@ while True:
     result       = None
     T_target2cam = None
     if not arm_moving:
-        result = detect_marker(frame)
+        result = detect_marker(frame, cam_K=K, cam_dist=dist)
         if result is not None:
             corners, marker_id = result
             T_target2cam = estimate_pose(corners, K, dist, MARKER_SIZE)
@@ -385,11 +404,11 @@ while True:
                 display, "未检测到 ArUco 码，调整机械臂位置或光线",
                 (10, 46), font_size=24, color=(60, 60, 255))
 
-    # 串口状态指示
+    # 串口状态指示（用 PIL 渲染，避免中文乱码）
     serial_label = f"串口: {SERIAL_PORT}" if serial_connected else "串口: 仿真模式"
-    cv2.putText(display, serial_label,
-                (w - 220, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.55,
-                (100, 200, 100) if serial_connected else (100, 100, 100), 1)
+    serial_color = (100, 200, 100) if serial_connected else (120, 120, 120)
+    display = put_chinese_text(display, serial_label,
+                               (w - 210, 6), font_size=20, color=serial_color)
 
     # ── 底部提示栏 ──────────────────────────────────────
     hint_y = h - 36

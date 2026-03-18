@@ -13,27 +13,27 @@ typedef struct { float x; float y; float z; float pitch; } CalibPose_t;
 
 #define CALIB_POSES_COUNT  21
 static const CalibPose_t s_calib_poses[CALIB_POSES_COUNT] = {
-    { 16.0f,  0.0f, -3.2f, -76.1f },  /* 01 中心（ArUco 在画面正中心） */
-    { 14.0f,  0.0f, -3.2f, -76.1f },  /* 02 x-2  */
-    { 18.0f,  0.0f, -3.2f, -76.1f },  /* 03 x+2  */
-    { 16.0f, -3.0f, -3.2f, -76.1f },  /* 04 y-3  */
-    { 16.0f,  3.0f, -3.2f, -76.1f },  /* 05 y+3  */
-    { 16.0f,  0.0f, -1.0f, -76.1f },  /* 06 z+2  */
-    { 16.0f,  0.0f, -5.5f, -76.1f },  /* 07 z-2  */
-    { 16.0f,  0.0f, -3.2f, -71.0f },  /* 08 pitch+5 */
-    { 16.0f,  0.0f, -3.2f, -81.0f },  /* 09 pitch-5 */
-    { 14.0f, -3.0f, -3.2f, -76.1f },  /* 10 x-2 y-3 */
-    { 14.0f,  3.0f, -3.2f, -76.1f },  /* 11 x-2 y+3 */
-    { 18.0f, -3.0f, -3.2f, -76.1f },  /* 12 x+2 y-3 */
-    { 18.0f,  3.0f, -3.2f, -76.1f },  /* 13 x+2 y+3 */
-    { 14.0f,  0.0f, -1.0f, -71.0f },  /* 14 x-2 z+ pitch+ */
-    { 18.0f,  0.0f, -5.5f, -81.0f },  /* 15 x+2 z- pitch- */
-    { 16.0f, -3.0f, -1.0f, -71.0f },  /* 16 y-3 z+ pitch+ */
-    { 16.0f,  3.0f, -5.5f, -81.0f },  /* 17 y+3 z- pitch- */
-    { 14.0f, -3.0f, -1.0f, -71.0f },  /* 18 x-2 y-3 z+ pitch+ */
-    { 18.0f,  3.0f, -1.0f, -71.0f },  /* 19 x+2 y+3 z+ pitch+ */
-    { 14.0f,  3.0f, -5.5f, -81.0f },  /* 20 x-2 y+3 z- pitch- */
-    { 18.0f, -3.0f, -5.5f, -81.0f },  /* 21 x+2 y-3 z- pitch- */
+    { 16.0f,  0.0f, -3.2f, -76.1f },  /* 01 中心  dist=16.32 */
+    { 17.0f, -3.0f, -3.2f, -76.1f },  /* 02 x+1 y-3  dist=17.56 */
+    { 18.0f,  0.0f, -3.2f, -76.1f },  /* 03 x+2  dist=18.28 */
+    { 16.0f, -3.0f, -3.2f, -76.1f },  /* 04 y-3  dist=16.59 */
+    { 16.0f,  3.0f, -3.2f, -76.1f },  /* 05 y+3  dist=16.59 */
+    { 17.0f,  0.0f, -1.0f, -71.0f },  /* 06 x+1 z+2.2 pitch+5  dist=17.03 */
+    { 16.0f,  0.0f, -5.5f, -76.1f },  /* 07 z-2.3  dist=16.92 */
+    { 16.0f,  0.0f, -3.2f, -71.0f },  /* 08 pitch+5  dist=16.32 */
+    { 16.0f,  0.0f, -3.2f, -81.0f },  /* 09 pitch-5  dist=16.32 */
+    { 17.0f,  3.0f, -3.2f, -76.1f },  /* 10 x+1 y+3  dist=17.56 */
+    { 17.0f,  0.0f, -5.5f, -76.1f },  /* 11 x+1 z-2.3  dist=17.87 */
+    { 18.0f, -3.0f, -3.2f, -76.1f },  /* 12 x+2 y-3  dist=18.56 */
+    { 18.0f,  3.0f, -3.2f, -76.1f },  /* 13 x+2 y+3  dist=18.56 */
+    { 18.0f, -3.0f, -1.0f, -71.0f },  /* 14 x+2 y-3 z+2.2 pitch+5  dist=18.28 */
+    { 18.0f,  0.0f, -5.5f, -81.0f },  /* 15 x+2 z-2.3 pitch-5  dist=18.82 */
+    { 16.0f, -3.0f, -1.0f, -71.0f },  /* 16 y-3 z+2.2 pitch+5  dist=16.31 */
+    { 16.0f,  3.0f, -5.5f, -81.0f },  /* 17 y+3 z-2.3 pitch-5  dist=16.92 */
+    { 17.0f, -3.0f, -5.5f, -81.0f },  /* 18 x+1 y-3 z-2.3 pitch-5  dist=18.12 */
+    { 18.0f,  3.0f, -1.0f, -71.0f },  /* 19 x+2 y+3 z+2.2 pitch+5  dist=18.28 */
+    { 17.0f,  3.0f, -1.0f, -71.0f },  /* 20 x+1 y+3 z+2.2 pitch+5  dist=17.29 */
+    { 18.0f, -3.0f, -5.5f, -81.0f },  /* 21 x+2 y-3 z-2.3 pitch-5  dist=18.82 */
 };
 
 /* 当前标定位置下标（CALIB_RESET 后从 1 开始，因 RESET 已执行位置 0） */
@@ -203,8 +203,8 @@ void hal_entry(void)
 	/* ===== 常规运动模式（与示教模式互斥，需注释掉上面的 TeachMode）=====*/
 	while(1)
 	{
-		g_status = ArmControl_CoordinateSet(16,0,(float)-3.2,(float)-76.1,-90,90,1000);
-		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
+//		g_status = ArmControl_CoordinateSet(16,0,(float)-3.2,(float)-76.1,-90,90,1000);
+//		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
 //		g_status = ArmControl_CoordinateSet(15,-6,20,0,-90,90,1000);
 //		R_BSP_SoftwareDelay(2000, BSP_DELAY_UNITS_MILLISECONDS);
 //		g_status = ArmControl_CoordinateSet(30,0,13,15,-90,90,1000);
