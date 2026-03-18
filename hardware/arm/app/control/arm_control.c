@@ -270,6 +270,116 @@ void ArmControl_GripperControl(arm_control_t* arm_ctrl, bool open, uint16_t dura
     Servo_PositionSet(&arm_ctrl->servo_ctrl, SERVO_ID_GRIPPER, position, duration);
 }
 
+void ArmControl_UnloadAll(void)
+{
+	uint8_t ids[ARM_MAX_SERVOS_NUM] = {
+		SERVO_ID_GRIPPER, SERVO_ID_ROTATION, SERVO_ID_WRIST,
+		SERVO_ID_ELBOW,   SERVO_ID_SHOULDER, SERVO_ID_BASE
+	};
+	Servo_MultUnload(ARM_MAX_SERVOS_NUM, ids);
+}
+
+bool ArmControl_ReadAllPositions(uint16_t* positions, uint32_t timeout_ms)
+{
+	if (positions == NULL)
+		return false;
+
+	uint8_t ids[ARM_MAX_SERVOS_NUM] = {
+		SERVO_ID_GRIPPER, SERVO_ID_ROTATION, SERVO_ID_WRIST,
+		SERVO_ID_ELBOW,   SERVO_ID_SHOULDER, SERVO_ID_BASE
+	};
+	servo_move_param_t pos_data[ARM_MAX_SERVOS_NUM];
+
+	if (!Servo_MultPosRead(ARM_MAX_SERVOS_NUM, ids, pos_data, timeout_ms))
+		return false;
+
+	/* 按 servo_id 映射到 positions[id-1] */
+	for (uint8_t i = 0; i < ARM_MAX_SERVOS_NUM; i++)
+	{
+		uint8_t id = pos_data[i].servo_id;
+		if (id >= 1 && id <= ARM_MAX_SERVOS_NUM)
+			positions[id - 1] = pos_data[i].position;
+	}
+
+	return true;
+}
+
+/**
+ * @brief 舵机位置 → 关节角度（Theta_To_Servo 的逆运算）
+ *
+ * Theta_To_Servo 中：
+ *   target_angle = joint.theta            (joint 0,2,3)
+ *   target_angle = 90 - joint.theta       (joint 1, 肩部)
+ *   servo_position = 500 + SERIAL_ANGLE_FACTOR × target_angle
+ *   servo ID = 6 - joint_index
+ *
+ * 逆运算：
+ *   target_angle = (servo_position - 500) / SERIAL_ANGLE_FACTOR
+ *   joint.theta = target_angle            (joint 0,2,3)
+ *   joint.theta = 90 - target_angle       (joint 1)
+ */
+void ArmControl_PositionsToJointAngles(const uint16_t* positions, float* joint_angles)
+{
+	if (positions == NULL || joint_angles == NULL)
+		return;
+
+	/* positions[id-1]，关节 i 对应 servo ID = 6-i → positions[5-i] */
+	for (uint8_t i = 0; i < 4; i++)
+	{
+		float target_angle = ((float)positions[5 - i] - 500.0f) / SERIAL_ANGLE_FACTOR;
+		if (i == 1)
+			joint_angles[i] = 90.0f - target_angle;
+		else
+			joint_angles[i] = target_angle;
+	}
+}
+
+volatile teach_data_t g_teach_data;
+
+void ArmControl_TeachMode(uint32_t read_interval_ms)
+{
+	kin_obj_t fk_obj;
+
+	ArmControl_UnloadAll();
+	R_BSP_SoftwareDelay(200, BSP_DELAY_UNITS_MILLISECONDS);
+
+	while (1)
+	{
+		uint16_t positions[ARM_MAX_SERVOS_NUM] = {0};
+		bool ok = ArmControl_ReadAllPositions(positions, 500);
+
+		if (ok)
+		{
+			float angles[4];
+			ArmControl_PositionsToJointAngles(positions, angles);
+
+			for (uint8_t i = 0; i < 4; i++)
+			{
+				fk_obj.joint[i].theta = angles[i];
+				fk_obj.joint[i].rad   = angles[i] * PI / 180.0f;
+			}
+			Kin_Forward(&fk_obj);
+
+			/* 写入全局观察变量 */
+			g_teach_data.x     = fk_obj.vector.x;
+			g_teach_data.y     = fk_obj.vector.y;
+			g_teach_data.z     = fk_obj.vector.z;
+			g_teach_data.pitch = fk_obj.alpha_pitch;
+			for (uint8_t i = 0; i < 4; i++)
+				g_teach_data.joint_angles[i] = angles[i];
+			for (uint8_t i = 0; i < ARM_MAX_SERVOS_NUM; i++)
+				g_teach_data.servo_pos[i] = positions[i];
+			g_teach_data.valid = true;
+		}
+		else
+		{
+			g_teach_data.valid = false;
+		}
+
+		R_BSP_SoftwareDelay(read_interval_ms, BSP_DELAY_UNITS_MILLISECONDS);
+	}
+}
+
 bool g_result1_state, g_result2_state;	//debug
 uint8_t ArmControl_CoordinateSet(float target_x, float target_y, float target_z, 
 								 float pitch, float min_pitch, float max_pitch,

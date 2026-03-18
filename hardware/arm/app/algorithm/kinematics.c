@@ -52,64 +52,6 @@ void Kin_Init(kin_obj_t* kin_obj)
     kin_obj->alpha_pitch = 0.0f;
 }
 
-//几何法
-//顺运动学解算
-kin_vec_t Kin_Forward(float joint0_theta, float joint1_theta, float joint2_theta, float joint3_theta)
-{
-	kin_vec_t kin_vec_result;
-	float rad0, rad1, rad2, rad3;
-	float end_x, end_y, end_z;
-	float L1,L2,L3,L4;
-	
-	// 角度转弧度
-    rad0 = Theta_To_Rad(joint0_theta);
-    rad1 = Theta_To_Rad(joint1_theta);
-    rad2 = Theta_To_Rad(joint2_theta);
-    rad3 = Theta_To_Rad(joint3_theta);
-	
-	// 正运动学计算（基于几何法）
-    // 假设机械臂结构：
-    // - 关节0：基座旋转（绕Z轴）
-    // - 关节1：肩部俯仰（绕Y轴）
-    // - 关节2：肘部俯仰（绕Y轴）
-    // - 关节3：腕部俯仰（绕Y轴）
-	
-	// 计算各关节在XY平面的投影
-    L1 = LINKAGE_1;
-    L2 = LINKAGE_2;
-    L3 = LINKAGE_3;
-	L4 = LINKAGE_4;
-	
-	//从基座坐标系原点到第1个关节（肩关节）的水平距离为L1
-	float base_x;
-	base_x = L1;
-	
-	// 肩部关节后的位置
-	float shoulder_x, shoulder_z;
-	shoulder_x = base_x + L2 * cosf(rad1);
-	shoulder_z = L1 + L2 * sinf(rad1);
-	
-	// 肘部关节后的位置
-	float elbow_x,elbow_z;
-	elbow_x = shoulder_x + L3 * cosf(rad1 + rad2);
-	elbow_z = shoulder_z + L3 * sinf(rad1 + rad2);
-
-	// 腕部关节后的位置（末端）
-	float wrist_x,wrist_z;
-	wrist_x = elbow_x + L4 * cosf(rad1 + rad2 + rad3);
-	wrist_z = elbow_z + L4 * sinf(rad1 + rad2 + rad3);
-	
-	// 考虑基座旋转
-    end_x = wrist_x * cosf(rad0);
-    end_y = wrist_x * sinf(rad0);
-    end_z = wrist_z;
-	
-	kin_vec_result.x = end_x;
-	kin_vec_result.y = end_y;
-	kin_vec_result.z = end_z;
-	
-	return kin_vec_result;
-}
 
 #ifdef KIN_FIRST_INVERSE
 //逆运动学解算
@@ -230,6 +172,36 @@ kin_status_t Kin_Inverse(kin_obj_t* kin_obj)
     return KIN_STATUS_OK;
 }
 #endif
+
+/**
+ * @brief 正向运动学：根据 joint[0..3].theta 计算末端 XYZ 和 alpha_pitch
+ *
+ * 坐标系与 Kin_Inverse / Theta_To_Servo 一致：
+ *   joint[0] = 基座旋转 (θ₀)
+ *   joint[1] = 肩部俯仰 (θ₁)
+ *   joint[2] = 肘部俯仰 (θ₂)
+ *   joint[3] = 腕部俯仰 (θ₃)
+ */
+void Kin_Forward(kin_obj_t* kin_obj)
+{
+	if (kin_obj == NULL)
+		return;
+
+	float t0 = Theta_To_Rad(kin_obj->joint[0].theta);
+	float t1 = Theta_To_Rad(kin_obj->joint[1].theta);
+	float t12 = t1 + Theta_To_Rad(kin_obj->joint[2].theta);
+	float t123 = t12 + Theta_To_Rad(kin_obj->joint[3].theta);
+
+	float len = LINKAGE_2 * cosf(t1) + LINKAGE_3 * cosf(t12) + LINKAGE_4 * cosf(t123);
+	float z   = LINKAGE_1 + LINKAGE_2 * sinf(t1) + LINKAGE_3 * sinf(t12) + LINKAGE_4 * sinf(t123);
+
+	kin_obj->vector.x = len * cosf(t0);
+	kin_obj->vector.y = len * sinf(t0);
+	kin_obj->vector.z = z;
+	kin_obj->alpha_pitch = kin_obj->joint[1].theta
+	                     + kin_obj->joint[2].theta
+	                     + kin_obj->joint[3].theta;
+}
 
 kin_status_t Kin_Inverse(kin_obj_t* kin_obj)
 {

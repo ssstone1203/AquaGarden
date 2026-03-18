@@ -103,9 +103,55 @@ void ArmControl_Reset(arm_control_t* arm_ctrl, uint16_t duration);
  */
 void ArmControl_GripperControl(arm_control_t* arm_ctrl, bool open, uint16_t duration);
 
-//末端坐标控制
+/**
+ * @brief 所有舵机掉电卸力（可手动转动）
+ */
+void ArmControl_UnloadAll(void);
+
+/**
+ * @brief 读取所有舵机的当前位置值
+ * @param positions 输出数组，长度 ARM_MAX_SERVOS_NUM，按 ID 1-6 顺序存放位置值
+ * @param timeout_ms 超时时间（毫秒）
+ * @return true 成功, false 超时或通信失败
+ */
+bool ArmControl_ReadAllPositions(uint16_t* positions, uint32_t timeout_ms);
+
+/**
+ * @brief 将舵机位置值转换为4个关节角度
+ * @param positions 舵机位置数组 [ID1..ID6]（由 ReadAllPositions 填充）
+ * @param joint_angles 输出：4个关节角度（度），[0]=基座, [1]=肩部, [2]=肘部, [3]=腕部
+ */
+void ArmControl_PositionsToJointAngles(const uint16_t* positions, float* joint_angles);
+
+/**
+ * @brief 示教模式实时数据（可在调试器 Watch 窗口观察）
+ */
+typedef struct
+{
+    float x;
+    float y;
+    float z;
+    float pitch;
+    float joint_angles[4];
+    uint16_t servo_pos[ARM_MAX_SERVOS_NUM];
+    bool valid;
+} teach_data_t;
+
+/**
+ * @brief 进入示教模式（阻塞循环）
+ *
+ * 卸力所有舵机，持续读取位置并通过正向运动学计算末端 XYZ。
+ * 实时数据存储在 g_teach_data，可通过调试器 Watch 窗口监视。
+ *
+ * @param read_interval_ms 每次读取的间隔（毫秒）
+ */
+void ArmControl_TeachMode(uint32_t read_interval_ms);
+
 uint8_t ArmControl_CoordinateSet(float target_x, float target_y, float target_z, 
 								 float pitch, float min_pitch, float max_pitch,
 								 uint16_t time);
 
+extern arm_control_t g_arm_ctrl;
+extern volatile teach_data_t g_teach_data;
+								 
 #endif

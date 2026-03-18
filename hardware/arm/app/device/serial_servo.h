@@ -35,7 +35,11 @@
 #define SERVO_LED_ERROR_WRITE      35
 #define SERVO_LED_ERROR_READ       36
 
-#define CMD_SERVO_MOVE 0x03
+#define CMD_SERVO_MOVE          0x03
+#define CMD_MULT_SERVO_UNLOAD   0x14  // decimal 20, protocol doc "指令: 20"
+#define CMD_MULT_SERVO_POS_READ 0x15  // decimal 21, protocol doc "指令: 21"
+
+#define SERVO_MAX_COUNT         6
 
 #pragma pack(1)		//设置结构体成员按1字节对齐
 
@@ -74,6 +78,12 @@ typedef struct
 void Servo_Init(servo_ctrl_t* servo_ctrl);
 void Servo_CmdFrameSend(servo_frame_t* servo_frame);
 void Servo_PositionSet(servo_ctrl_t* servo_ctrl, uint8_t servo_id, uint16_t position, uint16_t duration);
+
+void Servo_MultUnload(uint8_t count, const uint8_t* servo_ids);
+bool Servo_MultPosRead(uint8_t count, const uint8_t* servo_ids,
+                       servo_move_param_t* pos_out, uint32_t timeout_ms);
+
+void Servo_UartCallback(uart_callback_args_t* p_args);
 
 extern servo_ctrl_t g_servo_ctrl;
 
