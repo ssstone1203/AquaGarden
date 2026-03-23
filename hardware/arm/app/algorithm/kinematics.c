@@ -234,29 +234,27 @@ kin_status_t Kin_Inverse(kin_obj_t* kin_obj)
         kin_obj->joint[0].theta = Rad_To_Theta(kin_obj->joint[0].rad);
 	}
 	
-	// 计算目标点到基座的距离(这是3维空间距离)
-    float dist;
-	dist = sqrtf(len * len + end_z * end_z);
-//	dist = sqrtf(len * len + (end_z - L1) * (end_z - L1));  // ✅ 正确
-    
-    // 检查是否在工作空间内
-    float max_reach,min_reach;
-	max_reach = L2 + L3 + L4;
-	min_reach = fabsf(L2 - L3 - L4);
-	
-	if (dist > max_reach || dist < min_reach) {
-        return KIN_STATUS_INVALID;  // 超出工作空间
-    }
-	
-	// 计算腕部(关节2)角度(kin_obj->joint[2])
+	// 计算腕部目标点（去除末端连杆 L4 的影响）
+    float alpha_rad = Theta_To_Rad(kin_obj->alpha_pitch);
 	float a, b;
-	a = len - L4*cosf(Theta_To_Rad(kin_obj->alpha_pitch));
-	b = end_z - L1 - L4*sinf(Theta_To_Rad(kin_obj->alpha_pitch));
-	
+	a = len - L4*cosf(alpha_rad);
+	b = end_z - L1 - L4*sinf(alpha_rad);
+
+	// 用腕部距离检查工作空间（正确做法）
+	float wrist_dist2 = a*a + b*b;
+	float max_wrist   = L2 + L3;
+	float min_wrist   = fabsf(L2 - L3);
+	if (wrist_dist2 > max_wrist * max_wrist || wrist_dist2 < min_wrist * min_wrist) {
+		return KIN_STATUS_INVALID;
+	}
+
+	// 计算肘部(关节2)角度
 	float cos_joint2_rad, sin_joint2_rad;
-	cos_joint2_rad = ((a*a + b*b - L2*L2 - L3*L3) / (2.0f*L2*L3));	//pdf中的
-//	cos_joint2_rad = (L2*L2 + L3*L3 - (a*a + b*b)) / (2.0f*L2*L3);  // ✅;
-	sin_joint2_rad = -sqrtf(1 - (cos_joint2_rad*cos_joint2_rad));
+	cos_joint2_rad = (a*a + b*b - L2*L2 - L3*L3) / (2.0f*L2*L3);
+	// 限幅防止浮点误差导致 acos/sqrt 溢出
+	if (cos_joint2_rad >  1.0f) cos_joint2_rad =  1.0f;
+	if (cos_joint2_rad < -1.0f) cos_joint2_rad = -1.0f;
+	sin_joint2_rad = -sqrtf(1.0f - cos_joint2_rad*cos_joint2_rad);
 	
 	kin_obj->joint[2].rad = atan2f(sin_joint2_rad, cos_joint2_rad);
 	kin_obj->joint[2].theta = Rad_To_Theta(kin_obj->joint[2].rad);
@@ -285,62 +283,37 @@ kin_status_t Kin_Inverse(kin_obj_t* kin_obj)
 }
 
 /**
- * @brief 设置机械臂pitch可转动的范围
- * 尝试在给定的俯仰角范围内求解逆运动学
+ * @brief 在 [alpha1, alpha2] 区间内以 2° 步长扫描，找到第一个有效的 IK 解。
+ *        比原来只尝试 3 个点的方案覆盖更全面，避免漏解。
  */
-kin_status_t g_kin_inverse1, g_kin_inverse2,g_kin_inverse_mid;
-bool PitchRange_Set(kin_obj_t* kin_obj,kin_vec_t* kin_vec, float alpha1, float alpha2)
+bool PitchRange_Set(kin_obj_t* kin_obj, kin_vec_t* kin_vec, float alpha1, float alpha2)
 {
-	if (kin_obj == NULL || kin_vec == NULL) {
+    if (kin_obj == NULL || kin_vec == NULL)
         return false;
-    }
-	
-	// 复制目标位置
+
     kin_obj->vector.x = kin_vec->x;
     kin_obj->vector.y = kin_vec->y;
     kin_obj->vector.z = kin_vec->z;
-	
-	// 确保alpha1 < alpha2
-	float temp;
-    if (alpha1 > alpha2) {
-        temp = alpha1;
-        alpha1 = alpha2;
-        alpha2 = temp;
+
+    // 保证 lo <= hi
+    float lo = alpha1, hi = alpha2;
+    if (lo > hi) { float t = lo; lo = hi; hi = t; }
+
+    // 以 2° 为步长从 lo 扫到 hi
+    #define PITCH_STEP 2.0f
+    float a = lo;
+    while (a <= hi + 0.01f)
+    {
+        kin_obj->alpha_pitch = a;
+        if (Kin_Inverse(kin_obj) == KIN_STATUS_OK)
+            return true;
+        a += PITCH_STEP;
     }
-	
-	// 尝试在范围内求解
-    // 先尝试alpha1
-    kin_obj->alpha_pitch = alpha1;
-	
-	g_kin_inverse1 = Kin_Inverse(kin_obj);
-	if(g_kin_inverse1 == KIN_STATUS_OK){
-		return true;
-	}
-//    if (Kin_Inverse(kin_obj) == KIN_STATUS_OK) {
-//        return true;
-//    }
-	// 再尝试alpha2
-    kin_obj->alpha_pitch = alpha2;
-	
-	g_kin_inverse2 = Kin_Inverse(kin_obj);
-	if(g_kin_inverse2 == KIN_STATUS_OK){
-		return true;
-	}
-//    if (Kin_Inverse(kin_obj) == KIN_STATUS_OK) {
-//        return true;
-//    }
-	
-	// 如果两个边界都无解，尝试中间值
-	float alpha_mid;
-    alpha_mid = (alpha1 + alpha2) / 2.0f;
-    kin_obj->alpha_pitch = alpha_mid;
-	g_kin_inverse_mid = Kin_Inverse(kin_obj);
-	if(g_kin_inverse_mid == KIN_STATUS_OK){
-		return true;
-	}
-//    if (Kin_Inverse(kin_obj) == KIN_STATUS_OK) {
-//        return true;
-//    }
-    
+
+    // 补充检查精确的 hi 边界（步长可能跳过）
+    kin_obj->alpha_pitch = hi;
+    if (Kin_Inverse(kin_obj) == KIN_STATUS_OK)
+        return true;
+
     return false;
 }
