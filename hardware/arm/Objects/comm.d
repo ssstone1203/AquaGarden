@@ -24,7 +24,7 @@
   ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_sdram.h \
   ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mmf.h \
   ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_ipc.h \
-  G:\AquaGarden\hardware\arm\bsp_linker_info.h \
+  C:\Users\24413\Desktop\Code\fish\hardware\arm\bsp_linker_info.h \
   ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_register_protection.h \
   ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_irq.h \
   ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_io.h \
