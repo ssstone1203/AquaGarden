@@ -112,17 +112,17 @@ def detect_red(frame):
 # ================================================================
 #  仿射映射拟合
 # ================================================================
-def fit_affine(pixels, robots_xy):
+def fit_affine(pixels, targets):
     """
-    pixels   : (N,2) 像素坐标 (u,v)
-    robots_xy: (N,2) 机械臂 (x,y)
-    返回 A (2,3)，使得 [x,y]^T ≈ A @ [u,v,1]^T
+    pixels : (N,2) 像素坐标 (u,v)
+    targets: (N,M) 目标值，M 列（x,y 或 x,y,z,pitch 等）
+    返回 A (M,3)，使得 targets^T ≈ A @ [u,v,1]^T
     """
     N = len(pixels)
     U = np.c_[np.array(pixels, dtype=float), np.ones(N)]  # (N,3)
-    R = np.array(robots_xy, dtype=float)                   # (N,2)
+    R = np.array(targets, dtype=float)                     # (N,M)
     A, _, _, _ = np.linalg.lstsq(U, R, rcond=None)
-    return A.T   # (2,3)
+    return A.T   # (M,3)
 
 
 # ================================================================
@@ -288,44 +288,42 @@ def main():
     print(f"{'='*58}")
 
     px_arr  = np.array(pixels, dtype=float)   # (N,2)
-    rob_arr = np.array(robots, dtype=float)   # (N,4)
+    rob_arr = np.array(robots, dtype=float)   # (N,4): x,y,z,pitch
 
-    A_xy       = fit_affine(px_arr, rob_arr[:, :2])
-    mean_z     = float(np.mean(rob_arr[:, 2]))
-    mean_pitch = float(np.mean(rob_arr[:, 3]))
+    # 对 x,y,z,pitch 全部做仿射拟合
+    A = fit_affine(px_arr, rob_arr)   # (4,3)
 
     # 验证残差
-    U        = np.c_[px_arr, np.ones(n)]
-    pred_xy  = (A_xy @ U.T).T
-    errs     = np.linalg.norm(pred_xy - rob_arr[:, :2], axis=1)
+    U       = np.c_[px_arr, np.ones(n)]    # (N,3)
+    pred    = (A @ U.T).T                  # (N,4)
+    errs_xy = np.linalg.norm(pred[:, :2] - rob_arr[:, :2], axis=1)
+    errs_z  = np.abs(pred[:, 2] - rob_arr[:, 2])
+    errs_p  = np.abs(pred[:, 3] - rob_arr[:, 3])
 
-    print(f"  仿射矩阵 A (2×3):")
-    for row in A_xy:
-        print(f"    [{row[0]:+.6f}  {row[1]:+.6f}  {row[2]:+.6f}]")
-    print(f"  夹取 z     = {mean_z:.2f} cm（{n} 组均值）")
-    print(f"  夹取 pitch = {mean_pitch:.1f}°（{n} 组均值）")
-    print(f"  拟合残差   最大={errs.max():.2f} cm  均值={errs.mean():.2f} cm")
+    print(f"  仿射矩阵 A (4×3)  [x, y, z, pitch]:")
+    labels = ["x    ", "y    ", "z    ", "pitch"]
+    for label, row in zip(labels, A):
+        print(f"    {label}: [{row[0]:+.6f}  {row[1]:+.6f}  {row[2]:+.6f}]")
+    print(f"  xy残差  最大={errs_xy.max():.2f} cm  均值={errs_xy.mean():.2f} cm")
+    print(f"  z残差   最大={errs_z.max():.2f} cm  均值={errs_z.mean():.2f} cm")
+    print(f"  pitch残差 最大={errs_p.max():.1f}°  均值={errs_p.mean():.1f}°")
 
-    print(f"\n  各组数据：")
-    for i, (pix, rob, err) in enumerate(zip(pixels, robots, errs)):
-        print(f"    [{i+1:02d}] 像素({pix[0]:4d},{pix[1]:4d}) → "
-              f"x={rob[0]:6.2f}  y={rob[1]:6.2f}  z={rob[2]:6.2f}  "
-              f"p={rob[3]:5.1f}°  残差={err:.2f}cm")
+    print(f"\n  各组数据（预测 vs 实测）：")
+    for i, (pix, rob, prd, exy, ez, ep) in enumerate(
+            zip(pixels, rob_arr, pred, errs_xy, errs_z, errs_p)):
+        print(f"    [{i+1:02d}] ({pix[0]:4d},{pix[1]:4d})"
+              f"  实: x={rob[0]:6.2f} y={rob[1]:5.2f} z={rob[2]:6.2f} p={rob[3]:5.1f}°"
+              f"  预: x={prd[0]:6.2f} y={prd[1]:5.2f} z={prd[2]:6.2f} p={prd[3]:5.1f}°"
+              f"  |xy|={exy:.2f}cm z={ez:.2f}cm p={ep:.1f}°")
 
     os.makedirs(os.path.dirname(MAP_FILE), exist_ok=True)
     np.savez(MAP_FILE,
-             A_xy=A_xy,
-             mean_z=mean_z,
-             mean_pitch=mean_pitch,
+             A=A,
              obs_pose=np.array([OBS_X, OBS_Y, OBS_Z, OBS_PITCH]),
              pixels=px_arr,
              robots=rob_arr)
 
     print(f"\n[保存] → {MAP_FILE}")
-    print(f"\n[提示] 将以下参数更新到 clamp.py：")
-    print(f"  GRASP_Z     = {mean_z:.2f}")
-    print(f"  GRASP_PITCH = {mean_pitch:.1f}")
-    print(f"  （或直接运行 clamp.py，它会从 teach_map.npz 自动读取）")
     print(f"{'='*58}")
 
 
