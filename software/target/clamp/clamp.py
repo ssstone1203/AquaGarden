@@ -14,7 +14,7 @@ import sys
 # ================================================================
 #  硬件配置
 # ================================================================
-SERIAL_PORT  = "COM5"
+SERIAL_PORT  = "COM3"
 CAMERA_INDEX = 1
 CAMERA_ROT   = True          # 摄像头倒装旋转 180°
 
@@ -53,8 +53,21 @@ ZONES = {
 # ================================================================
 #  ★  微调偏差（映射结果的常量修正）  ★
 # ================================================================
-X_BIAS =  -1.0   # cm，正=靠前 负=靠后
+X_BIAS =  -1.0   # cm，正=靠前 负=靠后（超声波校正启用时仅影响相机估算的 fallback）
 Y_BIAS =   0.0   # cm，正=偏左 负=偏右
+
+# ================================================================
+#  超声波 X 轴距离校正 
+# ================================================================
+# 超声波安装在基座与物块之间，沿 X 轴正方向测距。
+# 几何关系：bx_real = SENSOR_X_OFFSET + 超声波读数
+#
+# 传感器安装位置到机械臂基座原点的 X 轴距离（实测 8.7 cm，误差 ±0.6 cm）
+SENSOR_X_OFFSET = 8.7   # cm
+
+# 超声波与相机估算的最大允许偏差（cm）；超出此范围则认为测量异常，回退到相机估算
+# 设为测量误差（0.6）+ 相机映射残差裕量（1.5）= 2.1，取整为 2.5
+ULTRA_SANITY_RANGE = 4.0
 
 # ================================================================
 #  串口控制
@@ -83,7 +96,7 @@ class Arm:
         print(f"  >> {c}\n  << {r or '(超时)'}")
         return r
 
-    def move(self, x, y, z, pitch, dur=1500, mn=-90, mx=90):
+    def move(self, x, y, z, pitch, dur=1000, mn=-90, mx=90):
         return self.cmd(f"MOVE {x:.2f} {y:.2f} {z:.2f} {pitch:.1f} {mn} {mx} {dur}",
                         timeout=dur / 1000 + 4) == "OK"
 
@@ -94,6 +107,15 @@ class Arm:
             return tuple(v) if len(v) == 4 else None
         except Exception:
             return None
+
+    def dist(self, timeout=3.0):
+        """发送 DIST 指令，返回超声波测距结果 (cm)；失败返回 -1.0"""
+        r = self.cmd("DIST", timeout=timeout)
+        try:
+            v = float(r)
+            return v if v > 0 else -1.0
+        except Exception:
+            return -1.0
 
     def open(self,  dur=600): return self.cmd(f"GRIPPER_CLOSE {dur}", timeout=dur/1000+3) == "OK"
     def close(self, dur=600): return self.cmd(f"GRIPPER_OPEN  {dur}", timeout=dur/1000+3) == "OK"
@@ -197,7 +219,7 @@ def main():
     try:
         # ── 步骤1：移到观测位姿 ─────────────────────────────────────
         print(f"\n[步骤1] 移到观测位姿...")
-        arm.move(OBS_X, OBS_Y, OBS_Z, OBS_PITCH, dur=2500)
+        arm.move(OBS_X, OBS_Y, OBS_Z, OBS_PITCH, dur=1500)
 
         # ── 步骤2：检测物块，按空格确认 ─────────────────────────────
         print(f"\n[步骤2] 检测彩色物块 — 按 [空格] 确认，[Q] 退出")
@@ -232,10 +254,28 @@ def main():
             if key == ord(' ') and cx is not None:
                 bx, by, bz, bp = pixel_to_robot(cx, cy, A)
                 block_color = color_key
+
+                # ── 超声波 X 轴校正 ──────────────────────────────────
+                # 此时机械臂静止在观测位姿，传感器正对物块，读数最可靠
+                d = arm.dist()
+                bx_camera = bx
+                if d > 0:
+                    bx_ultra = SENSOR_X_OFFSET + d
+                    if abs(bx_ultra - bx_camera) <= ULTRA_SANITY_RANGE:
+                        bx = bx_ultra
+                        print(f"\n  超声波校正: {d:.2f} cm  "
+                              f"(相机估算 {bx_camera:.2f} → 校正后 {bx:.2f})")
+                    else:
+                        print(f"\n  超声波读数 {bx_ultra:.2f} cm 偏差过大 "
+                              f"（相机估算 {bx_camera:.2f}），使用相机估算")
+                else:
+                    print(f"\n  超声波测距失败，使用相机估算 x={bx_camera:.2f}")
+                # ─────────────────────────────────────────────────────
+
                 above_z = bz + ABOVE_CLEARANCE + 1.5
-                print(f"\n  检测颜色:   {_COLOR_NAME.get(color_key, '未知')}")
+                print(f"  检测颜色:   {_COLOR_NAME.get(color_key, '未知')}")
                 print(f"  像素坐标:   ({cx}, {cy})")
-                print(f"  预测夹取:   x={bx:.2f}  y={by:.2f}  z={bz:.2f}  pitch={bp:.1f}°")
+                print(f"  最终夹取:   x={bx:.2f}  y={by:.2f}  z={bz:.2f}  pitch={bp:.1f}°")
                 print(f"  接近高度:   z={above_z:.2f} cm")
                 break
 
@@ -251,12 +291,12 @@ def main():
 
         above_z = bz + ABOVE_CLEARANCE + 1.5
         print(f"  (b) 移到物块上方  ({bx:.2f}, {by:.2f}, {above_z:.2f})")
-        if not arm.move(bx, by, above_z, bp, dur=1500):
+        if not arm.move(bx, by, above_z, bp, dur=1000):
             print("  [错误] 移动失败")
             return
 
         print(f"  (c) 下降至夹取深度  z={bz:.2f}  pitch={bp:.1f}°")
-        if not arm.move(bx, by, bz, bp, dur=1500):
+        if not arm.move(bx, by, bz, bp, dur=1000):
             print("  [错误] 移动失败")
             return
 
@@ -265,13 +305,13 @@ def main():
         time.sleep(0.4)
 
         print(f"  (e) 抬起  z={LIFT_Z:.2f}")
-        if not arm.move(bx, by, LIFT_Z, bp, dur=1200):
+        if not arm.move(bx, by, LIFT_Z, bp, dur=800):
             print("  [错误] 移动失败")
             return
 
         # ── 步骤4：调整为水平夹持姿态 ──────────────────────────────
         print(f"\n[步骤4] 水平夹持过渡...")
-        arm.move(HORIZ_X, HORIZ_Y, HORIZ_Z, HORIZ_PITCH, dur=2500)
+        arm.move(HORIZ_X, HORIZ_Y, HORIZ_Z, HORIZ_PITCH, dur=1500)
 
         # ── 步骤5：自动选区（按物块颜色） ───────────────────────────
         zone = ZONES.get(block_color)
@@ -290,7 +330,7 @@ def main():
             via = zone.get('via')
             if via:
                 print(f"\n[步骤6] 经过中间过渡点  ({via['x']},{via['y']},{via['z']},p={via['pitch']}°)")
-                if not arm.move(via['x'], via['y'], via['z'], via['pitch'], dur=2000):
+                if not arm.move(via['x'], via['y'], via['z'], via['pitch'], dur=1200):
                     print("  [错误] 过渡点移动失败，物块未放置")
                     via = None   # 标记失败，跳过后续
 
@@ -301,13 +341,13 @@ def main():
                 ready = True
                 if not skip_transit:
                     print(f"  平移到放置区上方  z={transit_z:.2f}")
-                    if not arm.move(zone['x'], zone['y'], transit_z, zone['pitch'], dur=2000):
+                    if not arm.move(zone['x'], zone['y'], transit_z, zone['pitch'], dur=1200):
                         print("  [错误] 平移失败，物块未放置")
                         ready = False
 
                 if ready:
                     print(f"  下降到放置高度  z={zone['z']:.2f}  pitch={zone['pitch']:.1f}°")
-                    if arm.move(zone['x'], zone['y'], zone['z'], zone['pitch'], dur=1500):
+                    if arm.move(zone['x'], zone['y'], zone['z'], zone['pitch'], dur=1000):
                         time.sleep(0.3)
                         print(f"  松开夹爪")
                         arm.open()
@@ -315,9 +355,9 @@ def main():
                         print(f"  抬起离开")
                         # skip_transit 时沿原路退回 via 点，否则垂直抬起
                         if skip_transit and via:
-                            arm.move(via['x'], via['y'], via['z'], via['pitch'], dur=1500)
+                            arm.move(via['x'], via['y'], via['z'], via['pitch'], dur=800)
                         else:
-                            arm.move(zone['x'], zone['y'], transit_z, zone['pitch'], dur=1000)
+                            arm.move(zone['x'], zone['y'], transit_z, zone['pitch'], dur=700)
                     else:
                         print("  [错误] 下降失败，物块未放置")
 
