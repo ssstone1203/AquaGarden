@@ -11,29 +11,31 @@ uint8_t g_status = 0;
 /* ── 手眼标定位姿表（与 tools/algorithm/step2_collect_data.py 中 CALIB_POSES 完全一致）── */
 typedef struct { float x; float y; float z; float pitch; } CalibPose_t;
 
-#define CALIB_POSES_COUNT  21
+#define CALIB_POSES_COUNT  23
 static const CalibPose_t s_calib_poses[CALIB_POSES_COUNT] = {
-    { 16.0f,  0.0f, -3.2f, -76.1f },  /* 01 中心  dist=16.32 */
-    { 17.0f, -3.0f, -3.2f, -76.1f },  /* 02 x+1 y-3  dist=17.56 */
-    { 18.0f,  0.0f, -3.2f, -76.1f },  /* 03 x+2  dist=18.28 */
-    { 16.0f, -3.0f, -3.2f, -76.1f },  /* 04 y-3  dist=16.59 */
-    { 16.0f,  3.0f, -3.2f, -76.1f },  /* 05 y+3  dist=16.59 */
-    { 17.0f,  0.0f, -1.0f, -71.0f },  /* 06 x+1 z+2.2 pitch+5  dist=17.03 */
-    { 16.0f,  0.0f, -5.5f, -76.1f },  /* 07 z-2.3  dist=16.92 */
-    { 16.0f,  0.0f, -3.2f, -71.0f },  /* 08 pitch+5  dist=16.32 */
-    { 16.0f,  0.0f, -3.2f, -81.0f },  /* 09 pitch-5  dist=16.32 */
-    { 17.0f,  3.0f, -3.2f, -76.1f },  /* 10 x+1 y+3  dist=17.56 */
-    { 17.0f,  0.0f, -5.5f, -76.1f },  /* 11 x+1 z-2.3  dist=17.87 */
-    { 18.0f, -3.0f, -3.2f, -76.1f },  /* 12 x+2 y-3  dist=18.56 */
-    { 18.0f,  3.0f, -3.2f, -76.1f },  /* 13 x+2 y+3  dist=18.56 */
-    { 18.0f, -3.0f, -1.0f, -71.0f },  /* 14 x+2 y-3 z+2.2 pitch+5  dist=18.28 */
-    { 18.0f,  0.0f, -5.5f, -81.0f },  /* 15 x+2 z-2.3 pitch-5  dist=18.82 */
-    { 16.0f, -3.0f, -1.0f, -71.0f },  /* 16 y-3 z+2.2 pitch+5  dist=16.31 */
-    { 16.0f,  3.0f, -5.5f, -81.0f },  /* 17 y+3 z-2.3 pitch-5  dist=16.92 */
-    { 17.0f, -3.0f, -5.5f, -81.0f },  /* 18 x+1 y-3 z-2.3 pitch-5  dist=18.12 */
-    { 18.0f,  3.0f, -1.0f, -71.0f },  /* 19 x+2 y+3 z+2.2 pitch+5  dist=18.28 */
-    { 17.0f,  3.0f, -1.0f, -71.0f },  /* 20 x+1 y+3 z+2.2 pitch+5  dist=17.29 */
-    { 18.0f, -3.0f, -5.5f, -81.0f },  /* 21 x+2 y-3 z-2.3 pitch-5  dist=18.82 */
+    { 13.0f,  0.0f, -3.0f, -68.0f },  /* 01 */
+    { 13.0f,  0.0f, -6.5f, -83.0f },  /* 02 */
+    { 16.0f,  0.0f, -2.0f, -62.0f },  /* 03 */
+    { 16.0f,  0.0f, -4.5f, -76.0f },  /* 04 */
+    { 16.0f,  0.0f, -7.5f, -88.0f },  /* 05 */
+    { 19.0f,  0.0f, -3.0f, -64.0f },  /* 06 */
+    { 19.0f,  0.0f, -6.0f, -78.0f },  /* 07 */
+    { 13.0f, -5.0f, -3.5f, -72.0f },  /* 08 */
+    { 13.0f, -5.0f, -6.5f, -83.0f },  /* 09 */
+    { 16.0f, -6.0f, -3.0f, -68.0f },  /* 10 */
+    { 16.0f, -6.0f, -6.0f, -80.0f },  /* 11 */
+    { 16.0f, -8.0f, -4.0f, -76.0f },  /* 12 */
+    { 13.0f,  5.0f, -3.5f, -72.0f },  /* 13 */
+    { 13.0f,  5.0f, -6.5f, -83.0f },  /* 14 */
+    { 16.0f,  6.0f, -3.0f, -68.0f },  /* 15 */
+    { 16.0f,  6.0f, -6.0f, -80.0f },  /* 16 */
+    { 16.0f,  8.0f, -4.0f, -76.0f },  /* 17 */
+    { 15.0f,  0.0f, -8.5f, -88.0f },  /* 18 */
+    { 18.0f,  0.0f, -1.5f, -58.0f },  /* 19 */
+    { 18.0f,  0.0f, -9.0f, -88.0f },  /* 20 */
+    { 12.0f,  0.0f, -3.5f, -78.0f },  /* 21 */
+    { 12.0f, -4.0f, -5.0f, -80.0f },  /* 22 */
+    { 12.0f,  4.0f, -5.0f, -80.0f },  /* 23 */
 };
 
 /* 当前标定位置下标（CALIB_RESET 后从 1 开始，因 RESET 已执行位置 0） */
@@ -120,11 +122,18 @@ void hal_entry(void)
 	 *       → 返回 "PONG\n"，用于连接测试
 	 *
 	 *   MOVE x y z pitch min_pitch max_pitch duration
-	 *       → 调用 ArmControl_CoordinateSet，返回 "OK\n" 或 "ERR\n"
+	 *       → 逆运动学解算并驱动舵机；等待 duration+300ms 运动完成后返回 "OK\n"
+	 *       → 逆运动学无解时立即返回 "ERR\n"
 	 *       → 示例：MOVE 16 0 -3.2 -76.1 -90 90 1000
 	 *
 	 *   RESET
-	 *       → 机械臂复位到出厂初始位置，返回 "OK\n"
+	 *       → 机械臂复位到出厂初始位置，返回 "OK\n"（立即回复，运动 1000ms）
+	 *
+	 *   GRIPPER_OPEN [dur_ms]
+	 *       → 打开夹爪，等待 dur_ms+100ms 后返回 "OK\n"（默认 dur=500）
+	 *
+	 *   GRIPPER_CLOSE [dur_ms]
+	 *       → 关闭夹爪，等待 dur_ms+100ms 后返回 "OK\n"（默认 dur=500）
 	 *
 	 *   CALIB_RESET
 	 *       → 手眼标定：重置序号，机械臂移动到位置 01（中心），返回 "OK\n" 或 "ERR\n"
@@ -153,6 +162,47 @@ void hal_entry(void)
 			ArmControl_Reset(&g_arm_ctrl, 1000);
 			Comm_SendStr("OK\n");
 		}
+		/*
+		 *   UNLOAD
+		 *       → 所有舵机卸力（可用手自由掰动机械臂），返回 "OK\n"
+		 *       → 再次发 RESET / MOVE 可重新上力
+		 *
+		 *   READ_POS
+		 *       → 读取舵机当前位置，计算正向运动学后返回 "x,y,z,pitch\n"（cm/度）
+		 *       → 读取失败返回 "ERR\n"
+		 */
+		else if (strcmp(line, "UNLOAD") == 0)
+		{
+			ArmControl_UnloadAll();
+			Comm_SendStr("OK\n");
+		}
+		else if (strcmp(line, "READ_POS") == 0)
+		{
+			uint16_t positions[ARM_MAX_SERVOS_NUM] = {0};
+			float    joints[4] = {0};
+			char     reply[64];
+			kin_obj_t fk_obj;
+
+			if (ArmControl_ReadAllPositions(positions, 500))
+			{
+				ArmControl_PositionsToJointAngles(positions, joints);
+				for (uint8_t i = 0; i < 4; i++)
+				{
+					fk_obj.joint[i].theta = joints[i];
+					fk_obj.joint[i].rad   = joints[i] * PI / 180.0f;
+				}
+				Kin_Forward(&fk_obj);
+				snprintf(reply, sizeof(reply),
+						 "%.2f,%.2f,%.2f,%.2f\n",
+						 fk_obj.vector.x, fk_obj.vector.y,
+						 fk_obj.vector.z, fk_obj.alpha_pitch);
+				Comm_SendStr(reply);
+			}
+			else
+			{
+				Comm_SendStr("ERR\n");
+			}
+		}
 		else if (strncmp(line, "MOVE ", 5) == 0)
 		{
 			char *p   = line + 5;
@@ -167,7 +217,40 @@ void hal_entry(void)
 			uint16_t duration = (uint16_t)strtol(p, NULL, 10);
 
 			g_status = ArmControl_CoordinateSet(x, y, z, pitch, min_p, max_p, duration);
-			Comm_SendStr(g_status == 0 ? "OK\n" : "ERR\n");
+			if (g_status)
+			{
+				/* 等待运动完成后再回复，确保上位机收到 OK 时机械臂已静止 */
+				R_BSP_SoftwareDelay(duration + 300, BSP_DELAY_UNITS_MILLISECONDS);
+				Comm_SendStr("OK\n");
+			}
+			else
+			{
+				Comm_SendStr("ERR\n");
+			}
+		}
+		/*
+		 *   GRIPPER_OPEN [dur_ms]
+		 *       → 打开夹爪，等待运动完成后返回 "OK\n"
+		 *       → dur_ms 默认 500，范围 100~5000
+		 *
+		 *   GRIPPER_CLOSE [dur_ms]
+		 *       → 关闭夹爪，等待运动完成后返回 "OK\n"
+		 */
+		else if (strncmp(line, "GRIPPER_OPEN", 12) == 0)
+		{
+			uint16_t dur = (uint16_t)strtol(line + 12, NULL, 10);
+			if (dur < 100 || dur > 5000) dur = 500;
+			ArmControl_GripperControl(&g_arm_ctrl, true, dur);
+			R_BSP_SoftwareDelay(dur + 100, BSP_DELAY_UNITS_MILLISECONDS);
+			Comm_SendStr("OK\n");
+		}
+		else if (strncmp(line, "GRIPPER_CLOSE", 13) == 0)
+		{
+			uint16_t dur = (uint16_t)strtol(line + 13, NULL, 10);
+			if (dur < 100 || dur > 5000) dur = 500;
+			ArmControl_GripperControl(&g_arm_ctrl, false, dur);
+			R_BSP_SoftwareDelay(dur + 100, BSP_DELAY_UNITS_MILLISECONDS);
+			Comm_SendStr("OK\n");
 		}
 		/*
 		 * 手眼标定专用指令
