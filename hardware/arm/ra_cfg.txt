@@ -183,7 +183,7 @@ FSP Configuration
       P201 B8 - - - - Disabled - - "SYSTEM0: MD" - None - - 
       P202 B12 - - - - Disabled - - "AGT3: AGTOB3; BUS_ASYNCH0: BC1; CAN0: CRX0; CTSU0: TS19; ETHERC_MII0: ET0_ERXD2; GPT5: GTIOC5B; ICU0: IRQ03; SCI2: SCK2; SCI9: RXD9; SCI9: SCL9; SDHI0: SD0DAT6; SPI0: MISOA" - None - - 
       P203 D11 - - - - Disabled - - "AGT3: AGTOA3; BUS_ASYNCH0: A19; CAN0: CTX0; CTSU0: TS18; ETHERC_MII0: ET0_COL; GPT5: GTIOC5A; ICU0: IRQ02; SCI2: CTSRTS2; SCI9: SDA9; SCI9: TXD9; SDHI0: SD0DAT5; SPI0: MOSIA" - None - - 
-      P204 A13 - - - - Disabled - - "AGT1: AGTIO1; BUS_ASYNCH0: A18; CAC0: CACREF; CTSU0: TS00; ETHERC_MII0: ET0_RX_DV; GPT_OPS0: GTIW; GPT4: GTIOC4B; SCI4: SCK4; SCI9: SCK9; SDHI0: SD0DAT4; SPI0: RSPCKA; SSI0: SSIBCK0; USB_FS0: USB_OVRCURB" - None - - 
+      P204 A13 GPT4_GTIOC4B - Low - "Peripheral mode" CMOS None "AGT1: AGTIO1; BUS_ASYNCH0: A18; CAC0: CACREF; CTSU0: TS00; ETHERC_MII0: ET0_RX_DV; GPT_OPS0: GTIW; GPT4: GTIOC4B; SCI4: SCK4; SCI9: SCK9; SDHI0: SD0DAT4; SPI0: RSPCKA; SSI0: SSIBCK0; USB_FS0: USB_OVRCURB" - IO - - 
       P205 E12 - - - - Disabled - - "AGT1: AGTO1; BUS_ASYNCH0: A16; CGC0: CLKOUT; CTSU0: TS01; ETHERC_MII0: ET0_WOL; ETHERC_RMII0: ET0_WOL; GPT_OPS0: GTIV; GPT4: GTIOC4A; ICU0: IRQ01; IIC1: SCL1; SCI4: SDA4; SCI4: TXD4; SCI9: CTSRTS9; SDHI0: SD0DAT3; SPI0: SSLA0; SSI0: SSILRCK0; USB_FS0: USB_OVRCURA" - None - - 
       P206 D12 - - - - Disabled - - "BUS_ASYNCH0: WAIT; CEC0: CECIO; CTSU0: TS02; ETHERC_MII0: ET0_LINKSTA; ETHERC_RMII0: ET0_LINKSTA; GPT_OPS0: GTIU; ICU0: IRQ00; IIC1: SDA1; SCI4: RXD4; SCI4: SCL4; SCI9: CTS9; SDHI0: SD0DAT2; SPI0: SSLA1; SSI0: SSIDATA0; USB_FS0: USB_VBUSEN" - None - - 
       P207 C12 - - - - Disabled - - "BUS_ASYNCH0: A17; CTSU0: TSCAP; QSPI0: QSSL; SCI4: SDA4; SCI4: TXD4; SPI0: SSLA2" - None - - 
@@ -257,7 +257,7 @@ FSP Configuration
       P700 N15 - - - - Disabled - - "AGT4: AGTO4; ETHERC_MII0: ET0_ETXD1; ETHERC_RMII0: RMII_TXD0; GPT5: GTIOC5A; SPI0: MISOA" - None - - 
       P701 M14 - - - - Disabled - - "AGT3: AGTO3; ETHERC_MII0: ET0_ETXD0; ETHERC_RMII0: REF50CK; GPT5: GTIOC5B; SPI0: MOSIA" - None - - 
       P702 L12 - - - - Disabled - - "AGT2: AGTO2; ETHERC_MII0: ET0_ERXD1; ETHERC_RMII0: RMII_RXD0; GPT6: GTIOC6A; SPI0: RSPCKA" - None - - 
-      P703 M15 - - - - Disabled - - "AGT1: AGTO1; ETHERC_MII0: ET0_ERXD0; ETHERC_RMII0: RMII_RXD1; GPT6: GTIOC6B; SPI0: SSLA0" - None - - 
+      P703 M15 GPIO - Low - "Output mode (Initial Low)" CMOS - "AGT1: AGTO1; ETHERC_MII0: ET0_ERXD0; ETHERC_RMII0: RMII_RXD1; GPT6: GTIOC6B; SPI0: SSLA0" - IO - - 
       P704 L13 - - - - Disabled - - "AGT0: AGTO0; CAN0: CTX0; ETHERC_MII0: ET0_RX_CLK; ETHERC_RMII0: RMII_RX_ER; SPI0: SSLA1" - None - - 
       P705 K12 - - - - Disabled - - "AGT0: AGTIO0; CAN0: CRX0; ETHERC_MII0: ET0_CRS; ETHERC_RMII0: RMII_CRS_DV; SCI3: CTS3; SPI0: SSLA2" - None - - 
       P706 L14 SCI3_SCL3 - Low None "Peripheral mode" "n-ch open drain" None "ICU0: IRQ07; SCI3: RXD3; SCI3: SCL3; USB_HS0: USBHS_OVRCURB" - IO - - 
@@ -499,7 +499,7 @@ FSP Configuration
       
     Instance "g_rgb_timer Timer, General PWM (r_gpt)"
       General: Name: g_rgb_timer
-      General: Channel: 2
+      General: Channel: 4
       General: Mode: Periodic
       General: Period: 1250
       General: Compare Match: Compare Match A: Status: Disabled
@@ -517,9 +517,9 @@ FSP Configuration
       Output: Custom Waveform: GTIOB: Retain Output Level at Count Stop: Disabled
       Output: Custom Waveform: Custom Waveform Enable: Disabled
       Output: Duty Cycle Percent (only applicable in PWM mode): 50
-      Output: GTIOCA Output Enabled: True
+      Output: GTIOCA Output Enabled: False
       Output: GTIOCA Stop Level: Pin Level Low
-      Output: GTIOCB Output Enabled: False
+      Output: GTIOCB Output Enabled: True
       Output: GTIOCB Stop Level: Pin Level Low
       Input: Count Up Source: 
       Input: Count Down Source: 

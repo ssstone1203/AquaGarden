@@ -6,8 +6,8 @@ gpt_instance_ctrl_t g_rgb_timer_ctrl;
 const gpt_extended_pwm_cfg_t g_rgb_timer_pwm_extend =
 {
     .trough_ipl          = (BSP_IRQ_DISABLED),
-#if defined(VECTOR_NUMBER_GPT2_COUNTER_UNDERFLOW)
-    .trough_irq          = VECTOR_NUMBER_GPT2_COUNTER_UNDERFLOW,
+#if defined(VECTOR_NUMBER_GPT4_COUNTER_UNDERFLOW)
+    .trough_irq          = VECTOR_NUMBER_GPT4_COUNTER_UNDERFLOW,
 #else
     .trough_irq          = FSP_INVALID_VECTOR,
 #endif
@@ -27,10 +27,10 @@ const gpt_extended_pwm_cfg_t g_rgb_timer_pwm_extend =
 #endif
 const gpt_extended_cfg_t g_rgb_timer_extend =
 {
-    .gtioca = { .output_enabled = true,
+    .gtioca = { .output_enabled = false,
                 .stop_level     = GPT_PIN_LEVEL_LOW
               },
-    .gtiocb = { .output_enabled = false,
+    .gtiocb = { .output_enabled = true,
                 .stop_level     = GPT_PIN_LEVEL_LOW
               },
     .start_source        = (gpt_source_t) ( GPT_SOURCE_NONE),
@@ -42,13 +42,13 @@ const gpt_extended_cfg_t g_rgb_timer_extend =
     .capture_b_source    = (gpt_source_t) ( GPT_SOURCE_NONE),
     .capture_a_ipl       = (BSP_IRQ_DISABLED),
     .capture_b_ipl       = (BSP_IRQ_DISABLED),
-#if defined(VECTOR_NUMBER_GPT2_CAPTURE_COMPARE_A)
-    .capture_a_irq       = VECTOR_NUMBER_GPT2_CAPTURE_COMPARE_A,
+#if defined(VECTOR_NUMBER_GPT4_CAPTURE_COMPARE_A)
+    .capture_a_irq       = VECTOR_NUMBER_GPT4_CAPTURE_COMPARE_A,
 #else
     .capture_a_irq       = FSP_INVALID_VECTOR,
 #endif
-#if defined(VECTOR_NUMBER_GPT2_CAPTURE_COMPARE_B)
-    .capture_b_irq       = VECTOR_NUMBER_GPT2_CAPTURE_COMPARE_B,
+#if defined(VECTOR_NUMBER_GPT4_CAPTURE_COMPARE_B)
+    .capture_b_irq       = VECTOR_NUMBER_GPT4_CAPTURE_COMPARE_B,
 #else
     .capture_b_irq       = FSP_INVALID_VECTOR,
 #endif
@@ -64,14 +64,14 @@ const gpt_extended_cfg_t g_rgb_timer_extend =
     .gtior_setting.gtior_b.gtioa  = (0U << 4U) | (0U << 2U) | (0U << 0U),
     .gtior_setting.gtior_b.oadflt = (uint32_t) GPT_PIN_LEVEL_LOW,
     .gtior_setting.gtior_b.oahld  = 0U,
-    .gtior_setting.gtior_b.oae    = (uint32_t) true,
+    .gtior_setting.gtior_b.oae    = (uint32_t) false,
     .gtior_setting.gtior_b.oadf   = (uint32_t) GPT_GTIOC_DISABLE_PROHIBITED,
     .gtior_setting.gtior_b.nfaen  = ((uint32_t) GPT_CAPTURE_FILTER_NONE & 1U),
     .gtior_setting.gtior_b.nfcsa  = ((uint32_t) GPT_CAPTURE_FILTER_NONE >> 1U),
     .gtior_setting.gtior_b.gtiob  = (0U << 4U) | (0U << 2U) | (0U << 0U),
     .gtior_setting.gtior_b.obdflt = (uint32_t) GPT_PIN_LEVEL_LOW,
     .gtior_setting.gtior_b.obhld  = 0U,
-    .gtior_setting.gtior_b.obe    = (uint32_t) false,
+    .gtior_setting.gtior_b.obe    = (uint32_t) true,
     .gtior_setting.gtior_b.obdf   = (uint32_t) GPT_GTIOC_DISABLE_PROHIBITED,
     .gtior_setting.gtior_b.nfben  = ((uint32_t) GPT_CAPTURE_FILTER_NONE & 1U),
     .gtior_setting.gtior_b.nfcsb  = ((uint32_t) GPT_CAPTURE_FILTER_NONE >> 1U),
@@ -87,7 +87,7 @@ const timer_cfg_t g_rgb_timer_cfg =
 {
     .mode                = TIMER_MODE_PERIODIC,
     /* Actual period: 0.00000125 seconds. Actual duty: 49.6%. */ .period_counts = (uint32_t) 0x7d, .duty_cycle_counts = 0x3e, .source_div = (timer_source_div_t)0,
-    .channel             = 2,
+    .channel             = 4,
     .p_callback          = NULL,
     /** If NULL then do not add & */
 #if defined(NULL)
@@ -97,8 +97,8 @@ const timer_cfg_t g_rgb_timer_cfg =
 #endif
     .p_extend            = &g_rgb_timer_extend,
     .cycle_end_ipl       = (BSP_IRQ_DISABLED),
-#if defined(VECTOR_NUMBER_GPT2_COUNTER_OVERFLOW)
-    .cycle_end_irq       = VECTOR_NUMBER_GPT2_COUNTER_OVERFLOW,
+#if defined(VECTOR_NUMBER_GPT4_COUNTER_OVERFLOW)
+    .cycle_end_irq       = VECTOR_NUMBER_GPT4_COUNTER_OVERFLOW,
 #else
     .cycle_end_irq       = FSP_INVALID_VECTOR,
 #endif

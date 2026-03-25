@@ -104,6 +104,7 @@ pnpm-lock.yaml
 .venv/
 venv/
 env/
+.vscode/
 
 # 数据库与迁移产物
 *.db
