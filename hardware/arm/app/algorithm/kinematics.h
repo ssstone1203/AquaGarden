@@ -16,8 +16,8 @@
 
 // 关节角度限制定义（与joint[4]数组索引对应）
 // 根据实际机械臂结构调整，允许向后倾斜
-#define MIN_JOINT0_ANGLE                           -90.0f// 关节0（基座旋转）最小角度
-#define MAX_JOINT0_ANGLE                            90.0f// 关节0（基座旋转）最大角度
+#define MIN_JOINT0_ANGLE                           -180.0f// 关节0（基座旋转）最小角度
+#define MAX_JOINT0_ANGLE                            180.0f// 关节0（基座旋转）最大角度
 #define MIN_JOINT1_ANGLE                           0.0f// 关节1（肩部俯仰）最小角度
 #define MAX_JOINT1_ANGLE                           180.0f// 关节1（肩部俯仰）最大角度
 #define MIN_JOINT2_ANGLE                           -150.0f // 关节2（肘部俯仰）最小角度（放宽到-150）

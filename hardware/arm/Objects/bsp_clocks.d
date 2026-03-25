@@ -1,6 +1,6 @@
 ./objects/bsp_clocks.o: \
-  C:\Users\24413\Desktop\Code\fish\hardware\arm\ra\fsp\src\bsp\mcu\all\bsp_clocks.c \
-  C:\Users\24413\Desktop\Code\fish\hardware\arm\ra\fsp\src\bsp\mcu\all\bsp_clocks.h \
+  G:\AquaGarden\hardware\arm\ra\fsp\src\bsp\mcu\all\bsp_clocks.c \
+  G:\AquaGarden\hardware\arm\ra\fsp\src\bsp\mcu\all\bsp_clocks.h \
   ra_gen\bsp_clock_cfg.h ra\fsp\inc\api\bsp_api.h \
   ra\fsp\inc\api\fsp_common_api.h ra\fsp\inc\fsp_version.h \
   ra_cfg\fsp_cfg\bsp\bsp_cfg.h ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h \
@@ -26,7 +26,7 @@
   ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_sdram.h \
   ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_mmf.h \
   ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_ipc.h \
-  C:\Users\24413\Desktop\Code\fish\hardware\arm\bsp_linker_info.h \
+  G:\AquaGarden\hardware\arm\bsp_linker_info.h \
   ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_register_protection.h \
   ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_irq.h \
   ra\fsp\inc\api\..\..\src\bsp\mcu\all\bsp_io.h \

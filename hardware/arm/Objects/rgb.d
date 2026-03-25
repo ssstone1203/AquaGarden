@@ -1,9 +1,7 @@
-./objects/arm_control.o: app\control\arm_control.c \
-  app\control\arm_control.h app\algorithm\kinematics.h \
-  app\device\serial_servo.h ra_gen\hal_data.h ra\fsp\inc\api\bsp_api.h \
-  ra\fsp\inc\api\fsp_common_api.h ra\fsp\inc\fsp_version.h \
-  ra_cfg\fsp_cfg\bsp\bsp_cfg.h ra_gen\bsp_clock_cfg.h \
-  ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h \
+./objects/rgb.o: app\device\rgb.c app\device\rgb.h ra_gen\hal_data.h \
+  ra\fsp\inc\api\bsp_api.h ra\fsp\inc\api\fsp_common_api.h \
+  ra\fsp\inc\fsp_version.h ra_cfg\fsp_cfg\bsp\bsp_cfg.h \
+  ra_gen\bsp_clock_cfg.h ra_cfg\fsp_cfg\bsp\bsp_mcu_family_cfg.h \
   ra_cfg\fsp_cfg\bsp\bsp_mcu_device_pn_cfg.h \
   ra_cfg\fsp_cfg\bsp\bsp_mcu_device_cfg.h \
   ra_cfg\fsp_cfg\bsp\..\..\..\ra\fsp\src\bsp\mcu\ra6m5\bsp_mcu_info.h \
@@ -45,5 +43,4 @@
   ra\fsp\inc\api\r_timer_api.h ra\fsp\inc\instances\r_sci_uart.h \
   ra\fsp\inc\api\r_uart_api.h ra\fsp\inc\api\r_transfer_api.h \
   ra_cfg\fsp_cfg\r_sci_uart_cfg.h ra\fsp\inc\instances\r_sci_i2c.h \
-  ra_cfg\fsp_cfg\r_sci_i2c_cfg.h ra\fsp\inc\api\r_i2c_master_api.h \
-  app\global.h
+  ra_cfg\fsp_cfg\r_sci_i2c_cfg.h ra\fsp\inc\api\r_i2c_master_api.h

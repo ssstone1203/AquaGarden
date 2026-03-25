@@ -10,7 +10,7 @@
       <TargetName>arm</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>6240000::V6.24::ARMCLANG</pCCUsed>
+      <pCCUsed>6220000::V6.22::ARMCLANG</pCCUsed>
       <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -444,6 +444,26 @@
               <FileType>5</FileType>
               <FilePath>.\app\device\stepper_slideway.h</FilePath>
             </File>
+            <File>
+              <FileName>ultrasound.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\device\ultrasound.c</FilePath>
+            </File>
+            <File>
+              <FileName>ultrasound.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\device\ultrasound.h</FilePath>
+            </File>
+            <File>
+              <FileName>rgb.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\device\rgb.c</FilePath>
+            </File>
+            <File>
+              <FileName>rgb.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\device\rgb.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -473,6 +493,16 @@
               <FileName>arm_control.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\app\control\arm_control.h</FilePath>
+            </File>
+            <File>
+              <FileName>pc_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\control\pc_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>pc_control.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\control\pc_control.h</FilePath>
             </File>
           </Files>
         </Group>
