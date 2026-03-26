@@ -1,0 +1,44 @@
+# Web Framework
+fastapi==0.109.2
+uvicorn[standard]==0.27.1
+python-multipart==0.0.9
+
+# Database
+sqlalchemy[asyncio]==2.0.27
+asyncpg==0.29.0
+alembic==1.13.1
+
+# Redis
+redis==5.0.1
+
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.1.2
+
+# Validation
+pydantic==2.6.1
+pydantic-settings==2.1.0
+email-validator==2.1.0.post1
+
+# HTTP Client
+httpx==0.26.0
+
+# Hardware Communication
+pyserial==3.5
+
+# Computer Vision & Color Detection
+opencv-python-headless==4.9.0.80
+numpy==1.26.4
+
+# YOLOv8 (optional, for trash classification)
+# ultralytics==8.1.16
+
+# Testing
+pytest==8.0.1
+pytest-asyncio==0.23.4
+httpx==0.26.0
+
+# Dev
+black==24.1.1
+ruff==0.2.1
