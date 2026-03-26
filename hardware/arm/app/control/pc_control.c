@@ -185,20 +185,20 @@ void PcControl_Run(void)
             R_BSP_SoftwareDelay(dur + 100, BSP_DELAY_UNITS_MILLISECONDS);
             Comm_SendStr("OK\n");
         }
-        else if (strcmp(line, "DIST") == 0)
-        {
-            float dist = Ultrasound_GetDistance();
-            if (dist < 0.0f)
-            {
-                Comm_SendStr("ERR\n");
-            }
-            else
-            {
-                char reply[16];
-                snprintf(reply, sizeof(reply), "%.2f\n", dist);
-                Comm_SendStr(reply);
-            }
-        }
+//        else if (strcmp(line, "DIST") == 0)
+//        {
+//            float dist = Ultrasound_GetDistance();
+//            if (dist < 0.0f)
+//            {
+//                Comm_SendStr("ERR\n");
+//            }
+//            else
+//            {
+//                char reply[16];
+//                snprintf(reply, sizeof(reply), "%.2f\n", dist);
+//                Comm_SendStr(reply);
+//            }
+//        }
         else if (strcmp(line, "CALIB_RESET") == 0)
         {
             s_calib_idx = 0;

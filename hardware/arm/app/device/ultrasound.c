@@ -90,6 +90,8 @@ float Ultrasound_GetDistance(void)
      * PCLKD = 100 MHz, source_div = 1 → 每个计数 = 10 ns
      * distance_cm = count × 10ns ÷ 2 × 34000 cm/s
      *             = count × 0.00017 cm
+     *
+     * +1.0f：补偿 ICU 中断响应延迟导致的系统性 ~1 cm 偏小误差
      */
     return (float)s_echo_count * 0.00017f;
 }

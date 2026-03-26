@@ -15,18 +15,21 @@ awake.py  ——  唤醒词检测（基于 openWakeWord）
 import os
 import time
 import threading
+from typing import Optional, Callable
+from pathlib import Path
 import numpy as np
 import pyaudio
+import openwakeword
 from openwakeword.model import Model
 
 # ================================================================
 #  配置
 # ================================================================
 
-# 自定义唤醒词模型路径（.onnx 文件），None = 使用 openWakeWord 内置模型
-# 训练自定义唤醒词后，将生成的 .onnx 文件路径填在这里
-# 示例：CUSTOM_MODEL_PATH = "./models/xiao_yu.onnx"
-CUSTOM_MODEL_PATH = None
+# 使用的唤醒词模型名（内置模型直接填名字，自定义 .onnx 填完整路径）
+# 内置可选：hey_jarvis / alexa / hey_mycroft / timers 等
+# 自定义示例：r"G:\AquaGarden\model\awake\xiao_yu.onnx"
+WAKE_MODEL = "hey_jarvis"
 
 # 触发阈值（0.0 ~ 1.0）：越高越不容易误触发，越低越灵敏
 THRESHOLD = 0.5
@@ -53,8 +56,8 @@ class WakeWordDetector:
 
     Parameters
     ----------
-    model_path : str | None
-        自定义 .onnx 模型路径；None 时加载 openWakeWord 全部内置模型
+    model : str
+        内置模型名（如 "hey_jarvis"）或自定义 .onnx 的完整路径
     threshold  : float
         置信度阈值，默认 0.5
     cooldown   : float
@@ -65,10 +68,10 @@ class WakeWordDetector:
 
     def __init__(
         self,
-        model_path: str | None = CUSTOM_MODEL_PATH,
-        threshold:  float      = THRESHOLD,
-        cooldown:   float      = COOLDOWN_SEC,
-        on_wake                = None,
+        model:     str                    = WAKE_MODEL,
+        threshold: float                  = THRESHOLD,
+        cooldown:  float                  = COOLDOWN_SEC,
+        on_wake:   Optional[Callable]     = None,
     ):
         self.threshold  = threshold
         self.cooldown   = cooldown
@@ -76,18 +79,26 @@ class WakeWordDetector:
         self._running   = False
         self._last_wake = 0.0
 
-        # 加载模型
-        if model_path and os.path.isfile(model_path):
-            print(f"[唤醒] 加载自定义模型: {model_path}")
+        # 加载模型：完整路径则为自定义模型，否则为内置模型名
+        if os.path.isfile(model):
+            print(f"[唤醒] 加载自定义模型: {model}")
             self._model = Model(
-                wakeword_models=[model_path],
+                wakeword_models=[model],
                 inference_framework="onnx",
             )
         else:
-            if model_path:
-                print(f"[唤醒] 警告：模型文件不存在 ({model_path})，改用内置模型")
-            print("[唤醒] 加载内置预训练模型...")
-            self._model = Model(inference_framework="onnx")
+            # 内置模型可能未下载，自动补充下载
+            models_dir = Path(openwakeword.__file__).parent / "resources" / "models"
+            model_file = models_dir / f"{model}_v0.1.onnx"
+            if not model_file.exists():
+                print(f"[唤醒] 内置模型 {model} 尚未下载，正在下载...")
+                openwakeword.utils.download_models()
+                print("[唤醒] 下载完成")
+            print(f"[唤醒] 加载内置模型: {model}")
+            self._model = Model(
+                wakeword_models=[model],
+                inference_framework="onnx",
+            )
 
         self._model_names = list(self._model.models.keys())
         print(f"[唤醒] 已加载模型: {self._model_names}")
@@ -157,7 +168,7 @@ class WakeWordDetector:
 
     # ── 枚举输入设备，优先选 USB ──────────────────────────────────
     @staticmethod
-    def _find_input_device(audio: pyaudio.PyAudio) -> int | None:
+    def _find_input_device(audio: pyaudio.PyAudio) -> Optional[int]:
         count = audio.get_device_count()
         usb_idx = None
         for i in range(count):
@@ -199,7 +210,7 @@ if __name__ == "__main__":
     list_audio_devices()
 
     detector = WakeWordDetector(
-        model_path=CUSTOM_MODEL_PATH,
+        model=WAKE_MODEL,
         threshold=THRESHOLD,
         cooldown=COOLDOWN_SEC,
     )
