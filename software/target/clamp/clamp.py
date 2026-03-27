@@ -51,7 +51,7 @@ HORIZ_X, HORIZ_Y, HORIZ_PITCH = 14.68, 0.25, -54.7
 ZONES = {
     'r': dict(name="Red   zone", x=  8.31, y= 21.78, z= -6.54, pitch= -74.2),
     'g': dict(name="Green zone", x=  0.84, y= 22.21, z= -7.01, pitch= -78.0),
-    'b': dict(name="Blue  zone", x= -4.36, y= 22.34, z= -7.24, pitch= -72.2),
+    'b': dict(name="Blue  zone", x= -6.36, y= 21.34, z= -7.24, pitch= -72.2),
 }
 
 # ================================================================
@@ -152,7 +152,7 @@ _COLOR_RANGES = {
     'r': [(np.array([0,   80, 80]), np.array([10,  255, 255])),
           (np.array([160, 80, 80]), np.array([180, 255, 255]))],
     'g': [(np.array([40,  60, 60]), np.array([85,  255, 255]))],
-    'b': [(np.array([100, 80, 60]), np.array([130, 255, 255]))],
+    'b': [(np.array([95, 50, 40]), np.array([135, 255, 255]))],
 }
 _COLOR_BGR = {'r': (0, 0, 255), 'g': (0, 200, 0), 'b': (255, 80, 0)}
 _COLOR_NAME = {'r': 'Red', 'g': 'Green', 'b': 'Blue'}

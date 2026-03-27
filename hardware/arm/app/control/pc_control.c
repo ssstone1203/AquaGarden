@@ -169,6 +169,23 @@ void PcControl_Run(void)
                 Comm_SendStr("ERR\n");
             }
         }
+        else if (strncmp(line, "MOVE_NB ", 8) == 0)
+        {
+            char    *p   = line + 8;
+            char    *end = p;
+            float    x        = strtof(p, &end); p = end + 1;
+            float    y        = strtof(p, &end); p = end + 1;
+            float    z        = strtof(p, &end); p = end + 1;
+            float    pitch    = strtof(p, &end); p = end + 1;
+            float    min_p    = strtof(p, &end); p = end + 1;
+            float    max_p    = strtof(p, &end); p = end + 1;
+            uint16_t duration = (uint16_t)strtol(p, NULL, 10);
+
+            if (ArmControl_CoordinateSet(x, y, z, pitch, min_p, max_p, duration))
+                Comm_SendStr("OK\n");
+            else
+                Comm_SendStr("ERR\n");
+        }
         else if (strncmp(line, "GRIPPER_OPEN", 12) == 0)
         {
             uint16_t dur = (uint16_t)strtol(line + 12, NULL, 10);
