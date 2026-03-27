@@ -5,6 +5,7 @@
 #include "comm.h"
 #include "ultrasound.h"
 #include "kinematics.h"
+#include "rgb.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -91,6 +92,7 @@ void PcControl_Init(void)
     ArmControl_Init();
     Comm_Init();
     Ultrasound_Init();
+    RGB_Init();
 
     R_BSP_SoftwareDelay(2, BSP_DELAY_UNITS_SECONDS);
 }
@@ -216,6 +218,48 @@ void PcControl_Run(void)
 //                Comm_SendStr(reply);
 //            }
 //        }
+        /* ── LED / RGB 命令 ──────────────────────────────────────────── */
+        /* LED_ALL r g b        整环同色并刷新，r/g/b 为 0-255 整数        */
+        else if (strncmp(line, "LED_ALL ", 8) == 0)
+        {
+            char    *p   = line + 8;
+            char    *end = p;
+            uint8_t  r   = (uint8_t)strtol(p,   &end, 10); p = end + 1;
+            uint8_t  g   = (uint8_t)strtol(p,   &end, 10); p = end + 1;
+            uint8_t  b   = (uint8_t)strtol(p,   NULL, 10);
+            RGB_SetAll(r, g, b);
+            RGB_Show();
+            Comm_SendStr("OK\n");
+        }
+        /* LED_PIXEL i r g b    设置第 i 颗 LED 颜色并刷新（i 从 0 起）  */
+        else if (strncmp(line, "LED_PIXEL ", 10) == 0)
+        {
+            char    *p     = line + 10;
+            char    *end   = p;
+            uint8_t  index = (uint8_t)strtol(p,   &end, 10); p = end + 1;
+            uint8_t  r     = (uint8_t)strtol(p,   &end, 10); p = end + 1;
+            uint8_t  g     = (uint8_t)strtol(p,   &end, 10); p = end + 1;
+            uint8_t  b     = (uint8_t)strtol(p,   NULL, 10);
+            RGB_SetPixel(index, r, g, b);
+            RGB_Show();
+            Comm_SendStr("OK\n");
+        }
+        /* LED_BRIGHT n         设置全局亮度 0-255，不刷新显示             */
+        else if (strncmp(line, "LED_BRIGHT ", 11) == 0)
+        {
+            uint8_t br = (uint8_t)strtol(line + 11, NULL, 10);
+            RGB_SetBrightness(br);
+            RGB_Show();
+            Comm_SendStr("OK\n");
+        }
+        /* LED_CLEAR            关闭所有 LED                              */
+        else if (strcmp(line, "LED_CLEAR") == 0)
+        {
+            RGB_Clear();
+            RGB_Show();
+            Comm_SendStr("OK\n");
+        }
+        /* ── 手眼标定命令 ─────────────────────────────────────────────── */
         else if (strcmp(line, "CALIB_RESET") == 0)
         {
             s_calib_idx = 0;

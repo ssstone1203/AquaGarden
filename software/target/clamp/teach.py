@@ -24,7 +24,7 @@ import sys
 import os
 
 # ── 配置 ─────────────────────────────────────────────────────────────
-SERIAL_PORT  = "COM5"
+SERIAL_PORT  = "COM14"
 SERIAL_BAUD  = 115200
 BLOCK_HEIGHT = 3.0          # cm，已知固定值
 

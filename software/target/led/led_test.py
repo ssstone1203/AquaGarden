@@ -1,62 +1,86 @@
 #!/usr/bin/env python3
 """
-led_test.py  —— 串口发送测试
+led_test.py  —— 固定位置 + 固定灯色测试
 
-用途：
-  1 发送 "1\n"：固件当前把 "1" 用在 CALIB_POSES 递增（可能会触发手眼标定移动）
-  0 发送 "0\n"：固件当前未显式处理（通常无回包）
-
-你可以先验证串口通不通、固件是否返回内容。
-后续如果要真正控制 RGB 亮度，需要在固件命令解析里加逻辑。
+启动后自动执行：
+  1. 机械臂移动到固定位置（等待到位后继续）
+  2. 设置亮度为半亮（128/255）
+  3. 点亮灯环固定颜色 R=255 G=200 B=150
 """
 
 import serial
 import time
 
-SERIAL_PORT = "COM5"
-BAUDRATE = 115200
+SERIAL_PORT = "COM14"
+BAUDRATE    = 115200
+
+LED_R       = 255
+LED_G       = 200
+LED_B       = 150
+LED_BRIGHT  = 128       # 半亮度，范围 0-255
+
+ARM_X       = 15.21
+ARM_Y       = -1.28
+ARM_Z       = 12.52
+ARM_PITCH   = -27.4
+ARM_MIN_P   = -90.0
+ARM_MAX_P   = 90.0
+ARM_DUR     = 2000      # 运动时长 ms，MOVE 命令会在固件侧阻塞等待
+
+
+def send_cmd(ser: serial.Serial, cmd: str, timeout: float = 5.0) -> str:
+    ser.write((cmd + "\n").encode("ascii", errors="ignore"))
+    ser.timeout = timeout
+    resp = ser.readline().decode(errors="ignore").strip()
+    ser.timeout = 1.0
+    return resp
 
 
 def main():
-    print("=" * 50)
-    print("LED Serial Test (send 1/0)")
-    print(f"Port={SERIAL_PORT}  Baud={BAUDRATE}")
-    print("输入：")
-    print("  1  -> send '1\\n' (add brightness / or triggers CALIB in current firmware)")
-    print("  0  -> send '0\\n' (may be ignored in current firmware)")
-    print("  q  -> quit")
-    print("=" * 50)
+    print("=" * 55)
+    print("LED + 机械臂固定位置测试")
+    print(f"  串口: {SERIAL_PORT}  波特率: {BAUDRATE}")
+    print(f"  目标位置: x={ARM_X}  y={ARM_Y}  z={ARM_Z}  pitch={ARM_PITCH}°")
+    print(f"  LED 颜色: R={LED_R}  G={LED_G}  B={LED_B}  亮度={LED_BRIGHT}/255")
+    print("=" * 55)
 
     ser = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=1.0)
-    # 串口缓冲清空，避免读到旧回包
     ser.reset_input_buffer()
     time.sleep(0.2)
 
     try:
-        while True:
-            s = input("按键 > ").strip().lower()
-            if s == "q":
-                break
+        # ── 步骤 1：移动机械臂 ──────────────────────────────────────────
+        move_cmd = (
+            f"MOVE {ARM_X} {ARM_Y} {ARM_Z} {ARM_PITCH} "
+            f"{ARM_MIN_P} {ARM_MAX_P} {ARM_DUR}"
+        )
+        print(f"[1/3] 发送: {move_cmd}")
+        resp = send_cmd(ser, move_cmd, timeout=ARM_DUR / 1000 + 3.0)
+        if resp == "OK":
+            print("      机械臂已到位")
+        else:
+            print("      警告：回包异常 (%s)，继续执行" % (resp or "无回包"))
 
-            if s not in ("0", "1"):
-                print("[提示] 只能输入 0 / 1 / q")
-                continue
+        # ── 步骤 2：设置亮度 ────────────────────────────────────────────
+        bright_cmd = f"LED_BRIGHT {LED_BRIGHT}"
+        print(f"[2/3] 发送: {bright_cmd}")
+        resp = send_cmd(ser, bright_cmd)
+        print("      " + ("OK" if resp == "OK" else "警告：" + (resp or "无回包")))
 
-            line = s + "\n"
-            ser.write(line.encode("ascii", errors="ignore"))
-            print(f"[发送] {s}")
+        # ── 步骤 3：点亮灯环 ────────────────────────────────────────────
+        led_cmd = f"LED_ALL {LED_R} {LED_G} {LED_B}"
+        print(f"[3/3] 发送: {led_cmd}")
+        resp = send_cmd(ser, led_cmd)
+        print("      " + ("OK" if resp == "OK" else "警告：" + (resp or "无回包")))
 
-            # 读一行回包（如果固件有输出）
-            resp = ser.readline().decode(errors="ignore").strip()
-            if resp:
-                print(f"[回包] {resp}")
-            else:
-                print("[回包] (空，可能固件未处理该命令)")
+        print("=" * 55)
+        print("完成。按 Enter 退出（灯保持亮起）...")
+        input()
+
     finally:
         ser.close()
-        print("退出")
+        print("串口已关闭，退出")
 
 
 if __name__ == "__main__":
     main()
-
