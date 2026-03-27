@@ -9,7 +9,7 @@ from pathlib import Path
 # ================================================================
 #  硬件
 # ================================================================
-SERIAL_PORT  = "COM14"
+SERIAL_PORT  = "COM7"
 CAMERA_INDEX = 1
 CAMERA_ROT   = True   # 摄像头倒装旋转 180°
 
@@ -81,17 +81,26 @@ VL_MODEL       = "qwen-vl-plus"
 LLM_MODEL      = "qwen-turbo"
 
 # ================================================================
-#  API Key（优先读环境变量，其次在此填写）
+#  API Key（优先读环境变量）
 # ================================================================
 DASHSCOPE_API_KEY = (
     os.getenv("DASHSCOPE_API_KEY")
     or os.getenv("QWEN_API_KEY")
-    or ""   # ← 在此填写或在 .env 文件中设置
+    or "sk-ec2d73d7868b49e89cf080f412ce687e"
 )
 
 # ================================================================
-#  语音识别
+#  STT：语音识别录音时长
 # ================================================================
-STT_LANGUAGE    = "zh-CN"
-STT_TIMEOUT     = 5    # 等待开口的最长时间（秒）
-STT_PHRASE_LIMIT = 8   # 最长录音时长（秒）
+STT_PHRASE_LIMIT = 5    # 每次最长录音时长（秒）
+
+# ================================================================
+#  TTS：语音合成（DashScope CosyVoice）
+# ================================================================
+# TTS（qwen3-tts-flash，与 xiaoshutong 保持一致）
+TTS_MODEL = "qwen3-tts-flash"
+TTS_VOICE = "Cherry"         # 可选: Cherry(女) / Ryan(男) / Ethan(男)
+
+# ASR（qwen3-asr-flash）
+ASR_MODEL = "qwen3-asr-flash"
+

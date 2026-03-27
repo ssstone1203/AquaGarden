@@ -1,122 +1,241 @@
 """
-dialogue.py  ——  唤醒后与用户的语音对话
-职责：
-  1. listen()  —— 录音并转文字（STT）
-  2. parse()   —— 用 LLM 将文字映射到任务名和附加参数
-  3. speak()   —— 简单打印提示（可替换为 TTS）
+dialogue.py  ——  语音对话模块（阿里云 DashScope qwen3 系列）
+
+参考 xiaoshutong/src/agent/speech.py 的实现模式：
+  - TTS: qwen3-tts-flash → 返回音频 URL → 下载 → pygame 播放
+  - ASR: 录音到 WAV 文件 → qwen3-asr-flash → 返回文字
+  - LLM: qwen-plus / qwen-turbo → 意图识别
 """
 
+import os
 import time
+import wave
+import tempfile
+import threading
+import requests
+import dashscope
 from typing import Tuple, Optional
-from openai import OpenAI
 
 import config
 
-# ── 尝试导入语音识别库（可选） ────────────────────────────────────
+# ── 依赖可用性检查（启动时打印一次） ──────────────────────────────
 try:
-    import speech_recognition as sr
-    _SR_AVAILABLE = True
+    import pyaudio
+    _PYAUDIO_OK = True
 except ImportError:
-    _SR_AVAILABLE = False
-    print("[对话] 提示：未安装 speech_recognition，将使用键盘输入模式")
-    print("       可执行：pip install SpeechRecognition pyaudio")
+    _PYAUDIO_OK = False
+    print("[对话] ✗ pyaudio 未安装  →  pip install pyaudio")
+
+try:
+    import pygame
+    _PYGAME_OK = True
+except ImportError:
+    _PYGAME_OK = False
+    print("[对话] ✗ pygame 未安装  →  pip install pygame")
+
+print(f"[对话] pyaudio={'✓' if _PYAUDIO_OK else '✗'}  pygame={'✓' if _PYGAME_OK else '✗'}")
 
 
 # ================================================================
-#  语音转文字
+#  录音：麦克风 → WAV 文件
 # ================================================================
 
-def listen(prompt: str = "请说出要执行的任务...") -> str:
+def _record_wav(duration: int = None) -> Optional[str]:
     """
-    录音并返回识别文字。
-    若 speech_recognition 不可用，则回退到键盘输入。
+    录音到临时 WAV 文件，返回文件路径。
+    duration=None 时使用 config.STT_PHRASE_LIMIT。
     """
-    speak(prompt)
+    if not _PYAUDIO_OK:
+        return None
 
-    if not _SR_AVAILABLE:
-        return input("[键盘输入] > ").strip()
+    duration = duration or config.STT_PHRASE_LIMIT
 
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        recognizer.adjust_for_ambient_noise(source, duration=0.5)
-        print(f"[对话] 正在聆听...（最多 {config.STT_PHRASE_LIMIT}s）")
-        try:
-            audio = recognizer.listen(
-                source,
-                timeout=config.STT_TIMEOUT,
-                phrase_time_limit=config.STT_PHRASE_LIMIT,
-            )
-        except sr.WaitTimeoutError:
-            print("[对话] 未检测到说话，超时")
-            return ""
+    p = pyaudio.PyAudio()
+    stream = p.open(
+        format=pyaudio.paInt16, channels=1,
+        rate=16000, input=True, frames_per_buffer=1024,
+    )
 
+    print(f"[对话] 录音中...（{duration}s，说完即可）")
+    frames = []
+    for _ in range(int(16000 / 1024 * duration)):
+        frames.append(stream.read(1024, exception_on_overflow=False))
+
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+    tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+    with wave.open(tmp.name, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(16000)
+        wf.writeframes(b"".join(frames))
+
+    return tmp.name
+
+
+# ================================================================
+#  ASR：WAV 文件 → 文字（qwen3-asr-flash）
+# ================================================================
+
+def _asr(wav_path: str) -> str:
+    """调用 qwen3-asr-flash，返回识别文字"""
     try:
-        text = recognizer.recognize_google(audio, language=config.STT_LANGUAGE)
-        print(f"[对话] 识别: {text}")
-        return text
-    except sr.UnknownValueError:
-        print("[对话] 无法识别语音")
-        return ""
-    except sr.RequestError as e:
-        print(f"[对话] STT 请求失败: {e}，切换到键盘输入")
-        return input("[键盘输入] > ").strip()
+        dashscope.api_key = config.DASHSCOPE_API_KEY
+        audio_url = f"file://{os.path.abspath(wav_path)}"
+
+        response = dashscope.MultiModalConversation.call(
+            api_key=config.DASHSCOPE_API_KEY,
+            model=config.ASR_MODEL,
+            messages=[
+                {"role": "system", "content": [{"text": ""}]},
+                {"role": "user",   "content": [{"audio": audio_url}]},
+            ],
+            result_format="message",
+            asr_options={"enable_lid": True, "enable_itn": True, "language": "zh"},
+        )
+
+        if response.status_code == 200:
+            choices = response.output.choices
+            if choices:
+                content = choices[0].message.content
+                if content:
+                    item = content[0]
+                    text = (
+                        item.get("text") if isinstance(item, dict)
+                        else getattr(item, "text", None)
+                    )
+                    return text.strip() if text else ""
+        else:
+            print(f"[ASR] 错误 {response.status_code}: {response.message}")
+
+    except Exception as e:
+        print(f"[ASR] 失败: {e}")
+
+    return ""
 
 
 # ================================================================
-#  文字提示（可替换为 TTS）
+#  TTS：文字 → 语音播放（qwen3-tts-flash → URL → pygame）
+# ================================================================
+
+def _tts_play(text: str):
+    """调用 qwen3-tts-flash 合成语音，下载后用 pygame 播放"""
+    try:
+        dashscope.api_key = config.DASHSCOPE_API_KEY
+
+        response = dashscope.MultiModalConversation.call(
+            model=config.TTS_MODEL,
+            api_key=config.DASHSCOPE_API_KEY,
+            text=text,
+            voice=config.TTS_VOICE,
+            language_type="Chinese",
+            stream=False,
+        )
+
+        if response.status_code != 200:
+            print(f"[TTS] 错误 {response.status_code}: {response.message}")
+            return
+
+        audio_url  = response.output.audio.url
+        audio_data = requests.get(audio_url, timeout=15).content
+
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+            f.write(audio_data)
+            tmp = f.name
+
+        try:
+            pygame.mixer.init()
+            pygame.mixer.music.load(tmp)
+            pygame.mixer.music.play()
+            while pygame.mixer.music.get_busy():
+                pygame.time.wait(50)
+            pygame.mixer.music.unload()
+        finally:
+            os.unlink(tmp)
+
+    except Exception as e:
+        print(f"[TTS] 失败: {e}")
+
+
+# ================================================================
+#  公共接口
 # ================================================================
 
 def speak(text: str):
-    print(f"[机械臂] {text}")
+    """播报文字（打印 + TTS）"""
+    print(f"[Jarvis] {text}")
+    if not (config.DASHSCOPE_API_KEY and _PYGAME_OK and _PYAUDIO_OK):
+        return
+    _tts_play(text)
+
+
+def listen() -> str:
+    """
+    录音并返回识别文字。
+    无 pyaudio 时降级为键盘输入。
+    """
+    if not (config.DASHSCOPE_API_KEY and _PYAUDIO_OK):
+        return input("[键盘输入] > ").strip()
+
+    wav = _record_wav()
+    if not wav:
+        return input("[键盘输入] > ").strip()
+
+    try:
+        text = _asr(wav)
+    finally:
+        try:
+            os.unlink(wav)
+        except Exception:
+            pass
+
+    if text:
+        print(f"[对话] 识别: {text}")
+    else:
+        print("[对话] 未识别到语音，请键盘输入")
+        text = input("[键盘输入] > ").strip()
+
+    return text
 
 
 # ================================================================
-#  意图解析：用户话语 → (task_name, kwargs)
+#  意图解析：文字 → (task_name, params)
 # ================================================================
 
 _SYSTEM_PROMPT = """
-你是机械臂助手的意图分析器。根据用户说的话，输出 JSON，格式如下：
+你是 Jarvis，一个辅助小朋友学习的 AI 机械臂助手。
+根据用户说的话，判断要执行哪个任务，输出 JSON：
 {"task": "<任务名>", "params": {}}
 
-任务名只能是以下四个之一：
-- "clamp"  : 颜色识别与分拣
-- "led"    : 智能台灯（params 中可含 "preset": "low"/"medium"/"high"）
-- "face"   : 人脸识别追踪
-- "answer" : 题目解答（params 中可含 "question": "<用户问题>"）
+任务名只能是以下五个之一：
+- "clamp"  : 颜色识别与分拣积木
+- "led"    : 控制台灯（params 可含 "preset": "low"/"medium"/"high"）
+- "face"   : 人脸识别追踪（检测小朋友是否在座位上）
+- "answer" : 拍照解答题目（params 可含 "question": "<具体问题>"）
 - "unknown": 无法判断
 
 示例：
-用户: "帮我把红色积木分开" → {"task": "clamp", "params": {}}
-用户: "台灯调暗一点"      → {"task": "led",   "params": {"preset": "low"}}
-用户: "追踪我的脸"        → {"task": "face",  "params": {}}
-用户: "帮我解这道数学题"  → {"task": "answer","params": {"question": "请解答图片中的数学题"}}
-用户: "你好"              → {"task": "unknown","params": {}}
+"帮我把积木分类" → {"task": "clamp", "params": {}}
+"台灯调暗"       → {"task": "led",   "params": {"preset": "low"}}
+"看看我在不在"   → {"task": "face",  "params": {}}
+"这道题怎么做"   → {"task": "answer","params": {"question": "请解答图片中的题目"}}
+"你好"           → {"task": "unknown","params": {}}
 
 只输出 JSON，不要多余文字。
 """.strip()
 
-# 关键词降级映射（无 API Key 时使用）
 _KEYWORD_MAP = [
-    (["颜色", "分拣", "积木", "物块", "夹取", "红", "绿", "蓝"],  "clamp"),
-    (["灯", "光", "亮度", "照明", "台灯"],                        "led"),
-    (["人脸", "追踪", "跟踪", "检测人", "看我", "脸"],             "face"),
-    (["题目", "解答", "拍照", "拍题", "作业", "解题", "题"],       "answer"),
+    (["颜色", "分拣", "积木", "物块", "夹取", "红", "绿", "蓝", "分类"], "clamp"),
+    (["灯", "光", "亮度", "照明", "台灯"],                               "led"),
+    (["人脸", "追踪", "跟踪", "在不在", "看我", "脸", "座位"],            "face"),
+    (["题目", "解答", "拍照", "拍题", "作业", "解题", "题", "怎么做"],    "answer"),
 ]
 
 
-def _keyword_parse(text: str) -> Tuple[str, dict]:
-    for keywords, task in _KEYWORD_MAP:
-        if any(w in text for w in keywords):
-            return task, {}
-    return "unknown", {}
-
-
 def parse(text: str) -> Tuple[str, dict]:
-    """
-    将用户文字映射到 (task_name, kwargs)。
-    - task_name: "clamp" / "led" / "face" / "answer" / "unknown"
-    - kwargs: 传给任务函数的额外关键字参数（如 led 的 preset）
-    """
+    """将用户话语映射到 (task_name, kwargs)"""
     if not text:
         return "unknown", {}
 
@@ -125,6 +244,7 @@ def parse(text: str) -> Tuple[str, dict]:
 
     try:
         import json
+        from openai import OpenAI
         client = OpenAI(api_key=config.DASHSCOPE_API_KEY, base_url=config.DASHSCOPE_BASE_URL)
         resp   = client.chat.completions.create(
             model=config.LLM_MODEL,
@@ -135,38 +255,39 @@ def parse(text: str) -> Tuple[str, dict]:
             temperature=0,
             max_tokens=80,
         )
-        raw    = resp.choices[0].message.content.strip()
-        data   = json.loads(raw)
-        task   = data.get("task", "unknown")
-        params = data.get("params", {})
-        return task, params
+        data   = json.loads(resp.choices[0].message.content.strip())
+        return data.get("task", "unknown"), data.get("params", {})
     except Exception as e:
-        print(f"[对话] LLM 解析失败: {e}，降级到关键词匹配")
+        print(f"[对话] LLM 解析失败: {e}，降级关键词匹配")
         return _keyword_parse(text)
 
 
+def _keyword_parse(text: str) -> Tuple[str, dict]:
+    for keywords, task in _KEYWORD_MAP:
+        if any(w in text for w in keywords):
+            return task, {}
+    return "unknown", {}
+
+
 # ================================================================
-#  台灯任务：在任务内部再问一次亮度
+#  台灯亮度询问
 # ================================================================
 
 def ask_led_preset() -> str:
-    """询问并返回台灯亮度档位 low/medium/high"""
-    speak("请说出亮度：低（low）、中（medium）还是高（high）？")
-    text = listen(prompt="")
-    text_low = text.lower()
-    if any(w in text_low for w in ["低", "low", "暗", "dim"]):
+    speak("请说出亮度：低、中还是高？")
+    text = listen()
+    if any(w in text for w in ["低", "暗", "low", "dim"]):
         return "low"
-    if any(w in text_low for w in ["高", "high", "bright", "亮", "最亮"]):
+    if any(w in text for w in ["高", "亮", "high", "bright"]):
         return "high"
     return "medium"
 
 
 # ================================================================
-#  题目解答：在任务内部获取用户问题
+#  题目解答：获取用户问题
 # ================================================================
 
 def ask_question() -> str:
-    """询问用户想问什么"""
-    speak("请说出你的问题，我来拍照解答。")
-    text = listen(prompt="")
+    speak("请告诉我题目的问题，我来帮你拍照解答。")
+    text = listen()
     return text if text else "请解答图片中的题目"

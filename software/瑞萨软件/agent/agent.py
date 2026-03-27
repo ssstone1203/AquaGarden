@@ -20,11 +20,8 @@ import os
 import threading
 import time
 
-# 将 awake 模块目录加入路径
-_AWAKE_DIR = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "../../../target/awake")
-)
-sys.path.insert(0, _AWAKE_DIR)
+# agent 目录加入 path，确保所有本地模块可直接 import
+sys.path.insert(0, os.path.dirname(__file__))
 
 import config
 import dialogue
@@ -32,12 +29,13 @@ from arm import Arm
 from tasks import task_clamp, task_led, task_face, task_answer
 
 try:
-    from awake import WakeWordDetector
+    from wakeword import WakeWordDetector
     _WAKE_AVAILABLE = True
-except ImportError:
+except ImportError as _e:
     _WAKE_AVAILABLE = False
-    print("[Agent] 提示：未安装 openwakeword，将使用 Enter 键模拟唤醒")
-    print("       可执行：pip install openwakeword pyaudio numpy")
+    print(f"[Agent] 唤醒词模块加载失败: {_e}")
+    print("       请执行: pip install openwakeword pyaudio numpy")
+    print("[Agent] 将使用 Enter 键模拟唤醒")
 
 
 # ================================================================
@@ -70,7 +68,7 @@ def _dispatch(arm: Arm, task_name: str, params: dict):
 
 def main():
     print("=" * 56)
-    print("  AI 机械臂辅学系统  （Agent 启动）")
+    print("  Jarvis — AI 机械臂辅学助手  启动中...")
     print("=" * 56)
 
     # 初始化串口
@@ -88,6 +86,7 @@ def main():
     print("[Agent] 移到初始姿态...")
     arm.go_home()
     time.sleep(config.HOME["dur"] / 1000 + 0.5)
+    dialogue.speak("你好！我是 Jarvis，你的学习小助手，随时叫我！")
 
     # ── 唤醒模式 ─────────────────────────────────────────────────
     _wake_event = threading.Event()
@@ -119,24 +118,30 @@ def main():
                 input()   # Enter 键模拟唤醒
                 print("[唤醒] 模拟唤醒触发")
 
-            dialogue.speak("我在，请告诉我要做什么任务？")
-
-            # 语音识别 + 意图解析
-            text               = dialogue.listen()
-            task_name, params  = dialogue.parse(text)
-
-            if task_name == "unknown":
-                dialogue.speak("没有理解，请再次唤醒我并重新说明。")
-                arm.go_home()
-                continue
-
-            task_labels = {
+            _TASK_LABELS = {
                 "clamp":  "颜色识别与分拣",
                 "led":    "智能台灯",
                 "face":   "人脸识别追踪",
                 "answer": "题目解答",
             }
-            dialogue.speak(f"好的，开始执行：{task_labels.get(task_name, task_name)}")
+            _TASK_HINT = "可选任务：分拣 / 台灯 / 人脸追踪 / 题目解答"
+
+            # 语音识别 + 意图解析（最多重试 3 次）
+            task_name, params = "unknown", {}
+            for attempt in range(3):
+                prompt = "我在，请告诉我要做什么任务？" if attempt == 0 else f"没听清，请再说一次。（{_TASK_HINT}）"
+                dialogue.speak(prompt)
+                text              = dialogue.listen()
+                task_name, params = dialogue.parse(text)
+                if task_name != "unknown":
+                    break
+
+            if task_name == "unknown":
+                dialogue.speak("多次未能识别，退出等待下次唤醒。")
+                arm.go_home()
+                continue
+
+            dialogue.speak(f"好的，开始执行：{_TASK_LABELS.get(task_name, task_name)}")
 
             # 执行任务
             try:
