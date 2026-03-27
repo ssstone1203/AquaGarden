@@ -1,0 +1,16 @@
+# Agent 依赖
+# pip install -r requirements.txt
+
+# 核心
+pyserial
+opencv-python
+numpy
+openai
+python-dotenv
+
+# 唤醒词（需要先下载模型）
+openwakeword
+pyaudio
+
+# 语音识别（STT）
+SpeechRecognition
