@@ -9,7 +9,7 @@ from pathlib import Path
 # ================================================================
 #  硬件
 # ================================================================
-SERIAL_PORT  = "COM7"
+SERIAL_PORT  = "COM14"
 CAMERA_INDEX = 1
 CAMERA_ROT   = True   # 摄像头倒装旋转 180°
 
@@ -49,6 +49,7 @@ ZONES = {
 # ================================================================
 LED_X, LED_Y, LED_Z, LED_PITCH = 15.21, -1.28, 12.52, -27.4
 LED_PRESETS = {
+    "off":    dict(r=0,   g=0,   b=0,   bright=0),
     "low":    dict(r=180, g=160, b=120, bright=60),
     "medium": dict(r=255, g=200, b=150, bright=128),
     "high":   dict(r=255, g=230, b=200, bright=220),

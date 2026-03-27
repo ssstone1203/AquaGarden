@@ -211,14 +211,23 @@ _SYSTEM_PROMPT = """
 
 任务名只能是以下五个之一：
 - "clamp"  : 颜色识别与分拣积木
-- "led"    : 控制台灯（params 可含 "preset": "low"/"medium"/"high"）
+- "led"    : 控制台灯（params 可含 "preset": "off"/"low"/"medium"/"high"）
 - "face"   : 人脸识别追踪（检测小朋友是否在座位上）
 - "answer" : 拍照解答题目（params 可含 "question": "<具体问题>"）
 - "unknown": 无法判断
 
+台灯 preset 规则：
+- "off"    : 关闭台灯 / 熄灯 / 灯关掉 / 不开灯
+- "low"    : 调暗 / 低亮 / 昏暗
+- "medium" : 正常亮度 / 中等
+- "high"   : 调亮 / 高亮 / 最亮
+
 示例：
 "帮我把积木分类" → {"task": "clamp", "params": {}}
 "台灯调暗"       → {"task": "led",   "params": {"preset": "low"}}
+"关闭台灯"       → {"task": "led",   "params": {"preset": "off"}}
+"把灯关掉"       → {"task": "led",   "params": {"preset": "off"}}
+"台灯调亮"       → {"task": "led",   "params": {"preset": "high"}}
 "看看我在不在"   → {"task": "face",  "params": {}}
 "这道题怎么做"   → {"task": "answer","params": {"question": "请解答图片中的题目"}}
 "你好"           → {"task": "unknown","params": {}}
@@ -274,8 +283,10 @@ def _keyword_parse(text: str) -> Tuple[str, dict]:
 # ================================================================
 
 def ask_led_preset() -> str:
-    speak("请说出亮度：低、中还是高？")
+    speak("请说出亮度：关闭、低、中还是高？")
     text = listen()
+    if any(w in text for w in ["关", "关闭", "熄", "灭", "off"]):
+        return "off"
     if any(w in text for w in ["低", "暗", "low", "dim"]):
         return "low"
     if any(w in text for w in ["高", "亮", "high", "bright"]):

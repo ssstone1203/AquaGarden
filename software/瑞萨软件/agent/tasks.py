@@ -168,9 +168,17 @@ def task_clamp(arm: Arm):
 def task_led(arm: Arm, preset_key: str = config.LED_DEFAULT):
     """
     任务2：智能台灯
-    preset_key: 'low' / 'medium' / 'high'，由 dialogue 模块根据用户语音传入
+    preset_key: 'off' / 'low' / 'medium' / 'high'，由 dialogue 模块根据用户语音传入
+    'off' 直接关灯，不移动机械臂；其余档位先移到台灯位置再点亮。
     """
     preset = config.LED_PRESETS.get(preset_key, config.LED_PRESETS[config.LED_DEFAULT])
+
+    if preset_key == "off":
+        print("[台灯] 关闭台灯（亮度归零）")
+        arm.led(0, 0, 0, 0)
+        print("[台灯] 已关闭")
+        return
+
     print(f"[台灯] 移到台灯位置，亮度档位: {preset_key}")
     arm.move(config.LED_X, config.LED_Y, config.LED_Z, config.LED_PITCH, dur=2000)
     time.sleep(0.3)
