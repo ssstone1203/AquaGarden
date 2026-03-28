@@ -121,7 +121,7 @@ STT_PHRASE_LIMIT = 3    # 每次最长录音时长（秒）
 # ================================================================
 # TTS（qwen3-tts-flash，与 xiaoshutong 保持一致）
 TTS_MODEL = "qwen3-tts-flash"
-TTS_VOICE = "Ryan"         # 可选: Cherry(女) / Ryan(男) / Ethan(男)
+TTS_VOICE = "Cherry"         # 可选: Cherry(女) / Ryan(男) / Ethan(男)
 
 # ASR（qwen3-asr-flash）
 ASR_MODEL = "qwen3-asr-flash"

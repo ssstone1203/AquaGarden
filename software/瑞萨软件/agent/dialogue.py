@@ -159,14 +159,64 @@ def _tts_play(text: str):
         print(f"[TTS] 失败: {e}")
 
 
+def _chunk_for_tts(text: str, max_chars: int = 400) -> list:
+    """
+    将长文本切成多段，避免单次 TTS 过长失败；尽量在句号、问号等处断开。
+    """
+    text = text.strip()
+    if not text:
+        return []
+
+    paragraphs = [p.strip() for p in text.splitlines() if p.strip()]
+    flat       = "".join(p.replace("\n", " ").strip() for p in paragraphs)
+
+    if len(flat) <= max_chars:
+        return [flat]
+
+    chunks   = []
+    delims   = "。！？!?；;"
+    i        = 0
+    n        = len(flat)
+    while i < n:
+        end = min(i + max_chars, n)
+        if end < n:
+            cut = end
+            for j in range(end - 1, i, -1):
+                if flat[j] in delims:
+                    cut = j + 1
+                    break
+            if cut <= i:
+                cut = end
+        else:
+            cut = n
+        piece = flat[i:cut].strip()
+        if piece:
+            chunks.append(piece)
+        i = cut
+    return chunks
+
+
+def tts_only(text: str):
+    """
+    仅语音播报（不额外 print），用于已在别处完整打印过的长文本（如题目解答）。
+    """
+    if not text or not text.strip():
+        return
+    if not (config.DASHSCOPE_API_KEY and _PYGAME_OK):
+        print("[TTS] 跳过语音：无 API Key 或 pygame 不可用")
+        return
+    for seg in _chunk_for_tts(text):
+        _tts_play(seg)
+
+
 # ================================================================
 #  公共接口
 # ================================================================
 
 def speak(text: str):
-    """播报文字（打印 + TTS）"""
+    """播报文字（打印 + TTS；播放仅需 pygame，不依赖麦克风）"""
     print(f"[Jarvis] {text}")
-    if not (config.DASHSCOPE_API_KEY and _PYGAME_OK and _PYAUDIO_OK):
+    if not (config.DASHSCOPE_API_KEY and _PYGAME_OK):
         return
     _tts_play(text)
 
@@ -213,7 +263,7 @@ _SYSTEM_PROMPT = """
 - "clamp"  : 颜色识别与分拣积木
 - "led"    : 控制台灯（params 可含 "preset": "off"/"low"/"medium"/"high"）
 - "face"   : 人脸识别追踪（检测小朋友是否在座位上）
-- "answer" : 拍照解答题目（params 可含 "question": "<具体问题>"）
+- "answer" : 拍照分析并解答题目（params 可含 "question": "<具体问题>"）
 - "action" : 播放预录动作（params 含 "action": "<动作名>"）
 - "unknown": 无法判断
 
@@ -237,6 +287,7 @@ _SYSTEM_PROMPT = """
 "台灯调亮"       → {"task": "led",    "params": {"preset": "high"}}
 "看看我在不在"   → {"task": "face",   "params": {}}
 "这道题怎么做"   → {"task": "answer", "params": {"question": "请解答图片中的题目"}}
+"帮我分析这道题" → {"task": "answer", "params": {"question": "请分析并解答图片中的题目"}}
 "跳个舞"         → {"task": "action", "params": {"action": "跳舞"}}
 "打个招呼"       → {"task": "action", "params": {"action": "打招呼"}}
 "点头表示同意"   → {"task": "action", "params": {"action": "点头"}}
@@ -258,7 +309,7 @@ _KEYWORD_MAP = [
     (["颜色", "分拣", "积木", "物块", "夹取", "红", "绿", "蓝", "分类"], "clamp"),
     (["灯", "光", "亮度", "照明", "台灯"],                               "led"),
     (["人脸", "追踪", "跟踪", "在不在", "看我", "脸", "座位"],            "face"),
-    (["题目", "解答", "拍照", "拍题", "作业", "解题", "题", "怎么做"],    "answer"),
+    (["题目", "解答", "分析", "拍照", "拍题", "作业", "解题", "题", "怎么做"], "answer"),
     (list(_ACTION_KEYWORD_MAP.keys()),                                    "action"),
 ]
 

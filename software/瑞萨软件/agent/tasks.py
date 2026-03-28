@@ -15,6 +15,7 @@ from pathlib import Path
 from openai import OpenAI
 
 import config
+import dialogue
 from arm import Arm
 
 # ================================================================
@@ -335,7 +336,7 @@ def task_face(arm: Arm):
 def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
     """
     任务4：题目解答
-    移到观测位置 → 拍照 → 调用多模态大模型 → 打印答案
+    移到观测位置 → 拍照 → 调用多模态大模型 → 打印并语音播报分析与解答
     question 由 dialogue 模块根据用户语音传入
     """
     if not config.DASHSCOPE_API_KEY:
@@ -361,7 +362,13 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
         frame = cv2.rotate(frame, cv2.ROTATE_180)
 
     photo_path = config.PHOTO_PATH
-    cv2.imwrite(str(photo_path), frame)
+    # Windows 上 cv2.imwrite 对含中文等非 ASCII 的路径常会失败且不写入文件，
+    # 后续 read_bytes 会报 FileNotFoundError；用 imencode + write_bytes 可规避。
+    ok, enc = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
+    if not ok:
+        print("[解答] 错误：图片编码失败")
+        return
+    photo_path.write_bytes(enc.tobytes())
     print(f"[解答] 已拍照: {photo_path}")
     print(f"[解答] 问题: {question}")
     print("[解答] 正在请求大模型，请稍候...")
@@ -376,19 +383,30 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
         resp = client.chat.completions.create(
             model=config.VL_MODEL,
             messages=[
-                {"role": "system", "content": "你是一个辅学助手，请用简体中文、简洁地解答题目。"},
+                {
+                    "role": "system",
+                    "content": (
+                        "你是辅学助手，用简体中文作答，务必简短。"
+                        "先用一两句话点明思路或考点，再直接给出结论与必要步骤，不展开赘述；"
+                        "全文尽量控制在200字以内，口语化、便于朗读，不用Markdown表格或复杂排版。"
+                    ),
+                },
                 {"role": "user", "content": [
                     {"type": "text",      "text": question},
                     {"type": "image_url", "image_url": {"url": image_url}},
                 ]},
             ],
             temperature=0.2,
+            max_tokens=400,
         )
-        answer = resp.choices[0].message.content or ""
+        answer = (resp.choices[0].message.content or "").strip()
+        dialogue.speak("解答如下。")
         print("\n" + "=" * 50)
         print("【模型解答】")
-        print(answer.strip())
+        print(answer)
         print("=" * 50 + "\n")
+        if answer:
+            dialogue.tts_only(answer)
 
     except Exception as e:
         print(f"[解答] 请求失败: {e}")
