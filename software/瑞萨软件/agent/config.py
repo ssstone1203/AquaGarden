@@ -36,6 +36,8 @@ X_BIAS, Y_BIAS  = -0.2, 0.3  # 像素映射偏差补偿（cm）
 SENSOR_X_OFFSET = 8.7    # 超声波传感器 X 偏移（cm）
 ULTRA_MAX_DIFF  = 4.0    # 超声波与相机估算最大允许差值（cm）
 ABOVE_CLEARANCE = 1.5    # 物块顶面上方安全间隙（cm）
+# 视觉映射 z 略偏低时易蹭桌面：夹取终点在 bz 基础上抬高（cm），与 clamp.py 策略一致
+GRASP_Z_LIFT   = 0.8
 HORIZ_X, HORIZ_Y, HORIZ_PITCH = 14.68, 0.25, -54.7  # 夹持过渡位姿
 
 ZONES = {
@@ -72,6 +74,25 @@ FACE_SCAN_CYCLES = 2     # 扫描圈数
 FACE_TASK_TIMEOUT = 60   # s，任务最长运行时间
 
 # ================================================================
+#  任务3.5（任务5）：动作回放
+# ================================================================
+ACTIONS_DIR = Path(__file__).parent.parent.parent / "target" / "action" / "actions"
+
+# 回放时序（与 action_teach.py 保持一致）
+ACTION_PLAYBACK_DUR_MS      = 250   # 每帧舵机运动时长 ms
+ACTION_PLAYBACK_INTERVAL_MS = 170   # 相邻帧发送间隔 ms
+ACTION_PAUSE_THRESHOLD_MS   = 350   # 超过此值视为有意停顿，改用阻塞 MOVE
+
+# 语音关键词 → 动作文件名（文件名须与 actions/ 目录中 JSON 文件名一致）
+ACTION_KEYWORD_MAP = {
+    "跳舞":   ["跳舞", "跳个舞", "dance", "舞蹈"],
+    "打招呼": ["打招呼", "招手", "挥手", "你好", "hello", "hi"],
+    "点头":   ["点头", "同意", "好的", "赞同"],
+    "摇头":   ["摇头", "不", "拒绝", "反对"],
+    "看天气": ["天气", "看天气", "抬头看", "温度"],
+}
+
+# ================================================================
 #  任务4：题目解答
 # ================================================================
 ANSWER_OBS_X, ANSWER_OBS_Y = 16.0, 0.0  # 拍照位姿（与分拣观测位相同）
@@ -93,14 +114,14 @@ DASHSCOPE_API_KEY = (
 # ================================================================
 #  STT：语音识别录音时长
 # ================================================================
-STT_PHRASE_LIMIT = 5    # 每次最长录音时长（秒）
+STT_PHRASE_LIMIT = 3    # 每次最长录音时长（秒）
 
 # ================================================================
 #  TTS：语音合成（DashScope CosyVoice）
 # ================================================================
 # TTS（qwen3-tts-flash，与 xiaoshutong 保持一致）
 TTS_MODEL = "qwen3-tts-flash"
-TTS_VOICE = "Cherry"         # 可选: Cherry(女) / Ryan(男) / Ethan(男)
+TTS_VOICE = "Ryan"         # 可选: Cherry(女) / Ryan(男) / Ethan(男)
 
 # ASR（qwen3-asr-flash）
 ASR_MODEL = "qwen3-asr-flash"

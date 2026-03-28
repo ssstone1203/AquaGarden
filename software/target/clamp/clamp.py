@@ -36,6 +36,9 @@ ABOVE_CLEARANCE = 1.0              # 接近点：物块顶面上方（cm）
 BLOCK_TOP_Z     = GRASP_Z + 1.5   # 物块顶面估算（cm），仅用于计算 ABOVE_Z
 LIFT_Z          = -2.0             # 保留备用（已不用于主流程）
 
+# 视觉映射的 z 略偏下时，合拢易蹭桌面：夹取终点在映射 z 基础上抬高（cm），Z 越大越高
+GRASP_Z_LIFT   = 0.8
+
 # ★ 安全运输高度：所有水平移动必须在此高度以上进行 ★
 # 取值依据：工作区内最高物块顶面约 z = -6 cm，
 # 再留 10 cm 净空（物块 + 夹爪延伸量），取 4.0 cm
@@ -290,6 +293,8 @@ def main():
         # ── 步骤3：夹取 ────────────────────────────────────────────
         print(f"\n[步骤3] 夹取")
 
+        grasp_z = bz + GRASP_Z_LIFT
+
         print(f"  (a) 张开夹爪")
         arm.open()
 
@@ -299,8 +304,8 @@ def main():
             print("  [错误] 移动失败")
             return
 
-        print(f"  (c) 下降至夹取深度  z={bz:.2f}  pitch={bp:.1f}°")
-        if not arm.move(bx, by, bz, bp, dur=600):
+        print(f"  (c) 下降至夹取深度  z={grasp_z:.2f}  (映射 z={bz:.2f} + 抬高 {GRASP_Z_LIFT})  pitch={bp:.1f}°")
+        if not arm.move(bx, by, grasp_z, bp, dur=600):
             print("  [错误] 移动失败")
             return
 

@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 import config
 import dialogue
 from arm import Arm
-from tasks import task_clamp, task_led, task_face, task_answer
+from tasks import task_clamp, task_led, task_face, task_answer, task_action, list_actions
 
 try:
     from wakeword import WakeWordDetector
@@ -57,6 +57,17 @@ def _dispatch(arm: Arm, task_name: str, params: dict):
     elif task_name == "answer":
         question = params.get("question") or dialogue.ask_question()
         task_answer(arm, question=question)
+
+    elif task_name == "action":
+        action_name = params.get("action", "")
+        available   = list_actions()
+        if action_name not in available:
+            # LLM 未给出明确动作名，语音询问用户
+            action_name = dialogue.ask_action_name(available)
+        if action_name:
+            task_action(arm, action_name)
+        else:
+            dialogue.speak("没有找到对应的动作，请重新尝试。")
 
     else:
         dialogue.speak("抱歉，没有理解你的意思，请再说一次。")
@@ -123,8 +134,9 @@ def main():
                 "led":    "智能台灯",
                 "face":   "人脸识别追踪",
                 "answer": "题目解答",
+                "action": "动作回放",
             }
-            _TASK_HINT = "可选任务：分拣 / 台灯 / 人脸追踪 / 题目解答"
+            _TASK_HINT = "可选任务：分拣 / 台灯 / 人脸追踪 / 题目解答 / 动作回放"
 
             # 语音识别 + 意图解析（最多重试 3 次）
             task_name, params = "unknown", {}

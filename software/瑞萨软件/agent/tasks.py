@@ -5,6 +5,8 @@ tasks.py  ——  四个任务函数
 """
 
 import cv2
+import json
+import os
 import time
 import base64
 import mimetypes
@@ -131,15 +133,17 @@ def task_clamp(arm: Arm):
         if bx is None:
             return
 
-        zone     = config.ZONES.get(block_color)
-        above_z  = bz + config.ABOVE_CLEARANCE
+        zone      = config.ZONES.get(block_color)
+        grasp_z   = bz + config.GRASP_Z_LIFT
+        above_z   = bz + config.ABOVE_CLEARANCE
         print(f"[分拣] 目标: {_COLOR_NAME.get(block_color,'未知')}  "
-              f"x={bx:.2f} y={by:.2f} z={bz:.2f}  → {zone['name'] if zone else '未知区'}")
+              f"x={bx:.2f} y={by:.2f} z={bz:.2f} 夹取 z={grasp_z:.2f}  "
+              f"→ {zone['name'] if zone else '未知区'}")
 
         # 夹取流程
         arm.gripper_open()
         arm.move(bx, by, above_z, bp, dur=1000)
-        arm.move(bx, by, bz,      bp, dur=600)
+        arm.move(bx, by, grasp_z,  bp, dur=600)
         arm.gripper_close()
         time.sleep(0.4)
         arm.move(bx, by, config.SAFE_Z, bp, dur=800)
@@ -388,3 +392,77 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
 
     except Exception as e:
         print(f"[解答] 请求失败: {e}")
+
+
+# ================================================================
+#  任务5：动作回放
+# ================================================================
+
+def _load_action_file(name: str):
+    """从 ACTIONS_DIR 加载关键帧列表，找不到返回 None。"""
+    safe = name.replace("/", "_").replace("\\", "_")
+    path = Path(config.ACTIONS_DIR) / f"{safe}.json"
+    if not path.exists():
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data.get("keyframes", [])
+
+
+def list_actions() -> list:
+    """返回 ACTIONS_DIR 下所有已录制动作名（不含扩展名）。"""
+    d = Path(config.ACTIONS_DIR)
+    if not d.exists():
+        return []
+    return sorted(os.path.splitext(f)[0] for f in os.listdir(d) if f.endswith(".json"))
+
+
+def task_action(arm: Arm, action_name: str):
+    """
+    任务5：回放录制好的动作。
+    action_name 须与 actions/ 目录中 JSON 文件名（不含 .json）完全一致。
+    """
+    keyframes = _load_action_file(action_name)
+    if keyframes is None:
+        print(f"[动作] 找不到动作文件：{action_name}")
+        return
+    if not keyframes:
+        print(f"[动作] 动作文件为空：{action_name}")
+        return
+
+    dur_ms      = config.ACTION_PLAYBACK_DUR_MS
+    interval_ms = config.ACTION_PLAYBACK_INTERVAL_MS
+    pause_thr   = config.ACTION_PAUSE_THRESHOLD_MS
+
+    # 估算总时长（用于日志）
+    est_ms = sum(
+        kf.get("duration", 200) if kf.get("duration", 200) > pause_thr else interval_ms
+        for kf in keyframes
+    )
+    print(f"[动作] 开始回放【{action_name}】"
+          f"  {len(keyframes)} 帧  预计 {est_ms / 1000:.1f}s")
+
+    # 归位等待机械臂就绪
+    arm.go_home()
+    time.sleep(2.0)
+
+    total = len(keyframes)
+    for i, frame in enumerate(keyframes, 1):
+        x, y, z, pitch = frame["x"], frame["y"], frame["z"], frame["pitch"]
+        stored_dur = frame.get("duration", 200)
+        is_pause   = stored_dur > pause_thr
+        is_last    = (i == total)
+
+        if is_last or is_pause:
+            # 停顿帧或最后一帧用阻塞 MOVE，让舵机完全到位后再继续
+            block_dur = int(stored_dur) if is_pause else dur_ms
+            arm.move(x, y, z, pitch, dur=block_dur)
+        else:
+            arm.move_nb(x, y, z, pitch, dur=dur_ms)
+            time.sleep(interval_ms / 1000.0)
+
+        print(f"\r  [{i:3d}/{total}] x={x:6.2f} y={y:6.2f} z={z:6.2f} "
+              f"pitch={pitch:5.1f}  {'[停顿]' if is_pause else ''}",
+              end="", flush=True)
+
+    print(f"\n[动作] 【{action_name}】回放完成")
