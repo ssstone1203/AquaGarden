@@ -36,6 +36,43 @@ static const pressure_point_t g_pressure_curve[] =
 uint16_t g_adc_raw[PRESSURE_SENSOR_NUM]   = {0};
 float    g_pressure[PRESSURE_SENSOR_NUM]  = {0.0f};
 
+/* 根据“压力-电阻曲线”查表并线性插值得到未反相的压力值（单位：kg） */
+static float pressure_sensor_curve_lookup(float r_sensor_kohm)
+{
+    const uint32_t point_num = (uint32_t)(sizeof(g_pressure_curve) / sizeof(g_pressure_curve[0]));
+
+    /* 电阻最大（基本无压力），直接返回 0kg */
+    if (r_sensor_kohm >= g_pressure_curve[0].resistance_kohm)
+    {
+        return g_pressure_curve[0].pressure_kg;
+    }
+
+    /* 电阻最小（接近满量程），直接返回满量程 5kg */
+    if (r_sensor_kohm <= g_pressure_curve[point_num - 1U].resistance_kohm)
+    {
+        return g_pressure_curve[point_num - 1U].pressure_kg;
+    }
+
+    /* 中间区间：找到所在的两点，做一次线性插值 */
+    for (uint32_t i = 0U; i < (point_num - 1U); i++)
+    {
+        float r_high = g_pressure_curve[i].resistance_kohm;
+        float r_low  = g_pressure_curve[i + 1U].resistance_kohm;
+
+        if ((r_sensor_kohm <= r_high) && (r_sensor_kohm >= r_low))
+        {
+            float p_high = g_pressure_curve[i].pressure_kg;
+            float p_low  = g_pressure_curve[i + 1U].pressure_kg;
+
+            float t = (r_high - r_sensor_kohm) / (r_high - r_low);
+            return p_high + t * (p_low - p_high);
+        }
+    }
+
+    /* 兜底（理论上不会到达这里） */
+    return 0.0f;
+}
+
 fsp_err_t pressure_sensor_init(void)
 {
     fsp_err_t err = FSP_SUCCESS;
@@ -80,39 +117,24 @@ float pressure_sensor_convert_to_kg(uint16_t adc_raw)
                           (PRESSURE_SENSOR_ADC_REFERENCE_V - adc_voltage);
     float r_sensor_kohm = r_sensor_ohm / 1000.0f;
 
-    /* 3. 使用图 3 的“压力-电阻曲线”表做线性插值 */
-    const uint32_t point_num = (uint32_t)(sizeof(g_pressure_curve) / sizeof(g_pressure_curve[0]));
+    /* 3. 先根据曲线得到“未反相”的压力值（0kg=松手，5kg=用力） */
+    float pressure_raw = pressure_sensor_curve_lookup(r_sensor_kohm);
 
-    /* 电阻最大（基本无压力），直接返回 0kg */
-    if (r_sensor_kohm >= g_pressure_curve[0].resistance_kohm)
+    /* 4. 由于实际接线方向与假设相反，这里做一次反相处理：
+     *    松手时显示 0kg，用力时接近 5kg
+     */
+    float pressure_inverted = PRESSURE_SENSOR_FULL_SCALE_KG - pressure_raw;
+
+    if (pressure_inverted < 0.0f)
     {
-        return g_pressure_curve[0].pressure_kg;
+        pressure_inverted = 0.0f;
+    }
+    else if (pressure_inverted > PRESSURE_SENSOR_FULL_SCALE_KG)
+    {
+        pressure_inverted = PRESSURE_SENSOR_FULL_SCALE_KG;
     }
 
-    /* 电阻最小（接近满量程），直接返回满量程 5kg */
-    if (r_sensor_kohm <= g_pressure_curve[point_num - 1U].resistance_kohm)
-    {
-        return g_pressure_curve[point_num - 1U].pressure_kg;
-    }
-
-    /* 中间区间：找到所在的两点，做一次线性插值 */
-    for (uint32_t i = 0U; i < (point_num - 1U); i++)
-    {
-        float r_high = g_pressure_curve[i].resistance_kohm;
-        float r_low  = g_pressure_curve[i + 1U].resistance_kohm;
-
-        if ((r_sensor_kohm <= r_high) && (r_sensor_kohm >= r_low))
-        {
-            float p_high = g_pressure_curve[i].pressure_kg;
-            float p_low  = g_pressure_curve[i + 1U].pressure_kg;
-
-            float t = (r_high - r_sensor_kohm) / (r_high - r_low);
-            return p_high + t * (p_low - p_high);
-        }
-    }
-
-    /* 兜底（理论上不会到达这里） */
-    return 0.0f;
+    return pressure_inverted;
 }
 
 fsp_err_t pressure_sensor_read(uint16_t * p_adc_raw, float * p_pressure_kg)
