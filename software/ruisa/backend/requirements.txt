@@ -1,49 +1,13 @@
-# AquaGarden Backend 依赖
-# pip install -r requirements.txt
-
-# Web Framework
+# Ruisa Agent Web（agent.py + tasks.py）最小依赖
 fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
-python-multipart>=0.0.9
-
-# Database
-sqlalchemy[asyncio]>=2.0.25
-aiosqlite>=0.19.0
-
-# Redis
-redis>=5.0.0
-
-# Authentication
-python-jose[cryptography]>=3.3.0
-bcrypt>=4.1.0
-
-# Validation
 pydantic>=2.6.0
 pydantic-settings>=2.1.0
-email-validator>=2.1.0
-
-# HTTP Client
-httpx>=0.26.0
-
-# Hardware Communication
-pyserial>=3.5
-
-# Computer Vision & Color Detection
-opencv-python-headless>=4.9.0
-numpy>=1.26.0
-
-# AI / LLM
-openai>=1.12.0
-dashscope>=1.20.0
-
-# Utilities
 python-dotenv>=1.0.0
+python-multipart>=0.0.9
 
-# Testing (optional)
-pytest>=8.0.0
-pytest-asyncio>=0.23.0
-httpx>=0.26.0
-
-# Dev (optional)
-# black>=24.1.0
-# ruff>=0.2.0
+# agent/tasks.py
+pyserial>=3.5
+numpy>=1.26.0
+opencv-python>=4.9.0
+openai>=1.12.0
