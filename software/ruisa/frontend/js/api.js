@@ -2,12 +2,12 @@
  * AquaGarden API 服务层
  * 统一管理所有后端 API 调用，包括认证 Token 自动注入和刷新逻辑
  *
- * 后端基础地址: http://localhost:8000
+ * 与页面同源（由 FastAPI 托管前端时即为当前站点）
  * API 前缀: /api/v1
  */
 
 // ── 配置 ─────────────────────────────────────────────────────────────────────
-const API_BASE = 'http://localhost:8000/api/v1';
+const API_BASE = `${window.location.origin}/api/v1`;
 
 // ── Token 管理 ───────────────────────────────────────────────────────────────
 const tokenManager = {
@@ -414,6 +414,27 @@ const agentAPI = {
      */
     getStatus: async () => {
         return apiRequest('/agent/status');
+    },
+
+    /**
+     * 是否已加载 AGENT_TRAINED_PYC 扩展
+     * GET /api/v1/agent/trained/status
+     */
+    trainedStatus: async () => {
+        return apiRequest('/agent/trained/status');
+    },
+
+    /**
+     * 调用扩展 .pyc 中的 infer / predict
+     * POST /api/v1/agent/trained/infer
+     * @param {string} text
+     * @param {object} [context] - 作为 infer(text, **context) 的关键字参数
+     */
+    trainedInfer: async (text, context = {}) => {
+        return apiRequest('/agent/trained/infer', {
+            method: 'POST',
+            body: { text, context },
+        });
     },
 };
 

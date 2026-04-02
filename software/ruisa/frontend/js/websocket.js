@@ -7,6 +7,21 @@
  *   WS /api/v1/ws/arm/calibration - 标定数据实时推送
  */
 
+/** 与 HTTP API 同源：优先使用 window.API.base（常为 :8000），避免页面在 :5500 等端口时 WS 连错主机 */
+function agWsBaseUrl() {
+    try {
+        if (typeof window !== 'undefined' && window.API && window.API.base) {
+            const u = new URL(window.API.base);
+            const proto = u.protocol === 'https:' ? 'wss:' : 'ws:';
+            return `${proto}//${u.host}`;
+        }
+    } catch (e) {
+        /* ignore */
+    }
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${proto}//${window.location.host}`;
+}
+
 // ── 状态 WebSocket ───────────────────────────────────────────────────────────
 class ArmStatusWS {
     constructor() {
@@ -32,7 +47,7 @@ class ArmStatusWS {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
 
         const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
-        this.url = `ws://localhost:8000/api/v1/ws/arm/status${tokenParam}`;
+        this.url = `${agWsBaseUrl()}/api/v1/ws/arm/status${tokenParam}`;
         this.isManualClose = false;
 
         try {
@@ -179,7 +194,7 @@ class CalibrationWS {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
 
         const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
-        this.url = `ws://localhost:8000/api/v1/ws/arm/calibration${tokenParam}`;
+        this.url = `${agWsBaseUrl()}/api/v1/ws/arm/calibration${tokenParam}`;
         this.isManualClose = false;
 
         try {

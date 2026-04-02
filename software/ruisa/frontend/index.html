@@ -82,38 +82,83 @@
         }
         .btn-logout:hover { background: #1a2a4a; color: #8ab4e0; border-color: #2a4a80; }
 
-        /* ── Task Tabs ── */
-        .task-tabs {
-            height: 50px;
-            background: #0c1220;
-            border-bottom: 1px solid #182a4a;
-            display: flex; align-items: center;
-            padding: 0 20px; gap: 4px; flex-shrink: 0;
+        /* ── 功能模块导航（横跨工作流 + 终端上方，独立一行）──────────── */
+        .module-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px 12px;
+            background: linear-gradient(180deg, #0d1528 0%, #0a101c 100%);
+            border-bottom: 1px solid #1e3a6a;
+            flex-shrink: 0;
             overflow-x: auto;
+            flex-wrap: nowrap;
         }
-        .task-tabs::-webkit-scrollbar { display: none; }
-        .tab {
-            padding: 7px 16px; border-radius: 8px; cursor: pointer;
-            font-size: 13px; font-weight: 500; white-space: nowrap;
-            transition: all .2s; border: 1px solid transparent;
-            color: #4a6fa5; display: flex; align-items: center; gap: 7px;
-            user-select: none;
+        .module-nav::-webkit-scrollbar { height: 4px; }
+        .module-nav::-webkit-scrollbar-thumb { background: #1a3060; border-radius: 2px; }
+        .module-nav-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #3a5a80;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-right: 6px;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
-        .tab:hover { background: #172440; color: #8ab4e0; }
-        .tab.active { background: #0f2248; border-color: #1e4a9a; color: #00c8ff; }
-        .tab .tnum {
-            font-size: 10px; background: #162036; border-radius: 3px;
-            padding: 1px 5px; color: #4a7ab5;
+        .nav-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            color: #5a7aa8;
+            background: transparent;
+            font-family: inherit;
         }
-        .tab.active .tnum { background: #00c8ff22; color: #00c8ff; }
+        .nav-item:hover {
+            background: #152038;
+            color: #9ab8e8;
+            border-color: #243a5a;
+        }
+        .nav-item.active {
+            background: linear-gradient(135deg, #0f2848 0%, #0c1e38 100%);
+            border-color: #00c8ff55;
+            color: #00c8ff;
+            box-shadow: 0 0 16px rgba(0, 200, 255, 0.12);
+        }
+        .nav-item .nav-ico { font-size: 16px; line-height: 1; }
+        .nav-item .nav-num {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #121a2a;
+            color: #4a6a90;
+        }
+        .nav-item.active .nav-num {
+            background: #00c8ff22;
+            color: #00c8ff;
+        }
 
-        /* ── Main ── */
-        .main { display: flex; flex: 1; overflow: hidden; }
+        /* ── Main（左工作流 + 右终端）────────────────────────────── */
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
 
         /* ── Left Panel ── */
         .left-panel {
             width: 42%; border-right: 1px solid #182a4a;
             display: flex; flex-direction: column; overflow: hidden;
+            min-height: 0;
         }
         .panel-header {
             padding: 12px 18px;
@@ -151,7 +196,12 @@
         .run-badge.done    { border-color: #00e87a44; color: #00e87a; background: #002a1a; }
 
         /* Workflow scroll */
-        .workflow-scroll { flex: 1; overflow-y: auto; padding: 16px 18px 8px; }
+        .workflow-scroll {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 16px 18px 8px;
+        }
         .workflow-scroll::-webkit-scrollbar { width: 3px; }
         .workflow-scroll::-webkit-scrollbar-track { background: transparent; }
         .workflow-scroll::-webkit-scrollbar-thumb { background: #1a3060; border-radius: 2px; }
@@ -218,7 +268,13 @@
         .state-card.error  .stag { background: #1a0808; color: #d04040; }
 
         /* ── Right Panel ── */
-        .right-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .right-panel {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
         .term-bar {
             padding: 9px 14px; background: #060910;
@@ -425,6 +481,10 @@
         }
         .agent-info { flex: 1; }
         .agent-name { font-size: 14px; font-weight: 600; color: #b0ccf0; }
+        .agent-tagline {
+            font-size: 10px; color: #5a7aaa; margin-top: 2px; line-height: 1.35;
+            max-width: 220px;
+        }
         .agent-status { font-size: 11px; color: #3a6090; margin-top: 2px; }
         .agent-status.online { color: #00e87a; }
         .agent-toggle {
@@ -550,6 +610,51 @@
             transition: all 0.2s;
         }
         .quick-btn:hover { background: #1a3a7a; color: #00c8ff; border-color: #00c8ff; }
+        .quick-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        .agent-debug-bar {
+            padding: 8px 16px;
+            background: #1a1520;
+            border-top: 1px solid #4a3060;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            color: #d4b8e8;
+        }
+        .agent-debug-hint { flex: 1; line-height: 1.4; }
+        .agent-debug-wake-btn {
+            flex-shrink: 0;
+            padding: 6px 12px;
+            background: #3a2050;
+            border: 1px solid #8040a0;
+            border-radius: 8px;
+            color: #e8d4f8;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .agent-debug-wake-btn:hover { background: #502868; }
+        .agent-debug-wake-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .agent-debug-toggle {
+            flex-shrink: 0;
+            padding: 5px 10px;
+            background: #142040;
+            border: 1px solid #1e3a60;
+            border-radius: 8px;
+            color: #6a9acc;
+            font-size: 10px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .agent-debug-toggle:hover { background: #1a2e56; color: #00c8ff; }
+        .agent-debug-toggle.active {
+            background: #3a2050;
+            border-color: #8040a0;
+            color: #e8d4f8;
+        }
+        .agent-debug-toggle:disabled { opacity: 0.45; cursor: not-allowed; }
 
         /* 任务执行中提示 */
         .task-execute-panel {
@@ -573,6 +678,16 @@
 </head>
 <body>
 
+<!-- 登录提示遮罩 -->
+<div class="login-overlay" id="loginOverlay" style="display:none;">
+    <div class="login-overlay-card">
+        <div style="font-size:40px;margin-bottom:16px;">🔐</div>
+        <h2>请先登录</h2>
+        <p>机械臂控制系统需要登录后才能操作。<br>请登录以继续使用。</p>
+        <button class="btn" onclick="window.location.href='login.html'">前往登录</button>
+    </div>
+</div>
+
 <!-- Toast 提示 -->
 <div class="toast-container" id="toastContainer"></div>
 
@@ -586,9 +701,9 @@
         </div>
     </div>
     <div class="header-right">
-        <div class="user-info" id="userInfo" style="display: none;">
+        <div class="user-info" id="userInfo" style="display:none;">
             <div class="user-avatar" id="userAvatar">U</div>
-            <span id="username">--</span>
+            <span id="username">用户</span>
         </div>
         <button class="btn-logout" onclick="handleLogout()">退出</button>
         <button class="arm-connect-btn" id="armConnectBtn" onclick="toggleArmConnect()">
@@ -612,38 +727,46 @@
     <span>标定: <span class="val" id="calibName">未加载</span></span>
 </div>
 
-<!-- Task Tabs -->
-<div class="task-tabs" id="taskTabs"></div>
+<!-- 功能模块切换（与工作流、终端同宽，在二者正上方） -->
+<nav class="module-nav" id="moduleNav" aria-label="功能模块切换"></nav>
 
 <!-- AI 对话助手面板 -->
 <div class="agent-panel" id="agentPanel">
     <div class="agent-header" onclick="toggleAgentPanel()">
         <div class="agent-avatar">🤖</div>
         <div class="agent-info">
-            <div class="agent-name">AI 学习助手</div>
+            <div class="agent-name">小臂 · AI 机械臂辅学助手</div>
+            <div class="agent-tagline">与 <strong>agent/tasks.py</strong> 五项一致：①颜色识别与分拣（task_clamp）②智能台灯（task_led）③人脸识别追踪（task_face）④题目解答（task_answer）⑤动作回放（task_action）</div>
             <div class="agent-status" id="agentStatus">未连接</div>
         </div>
+        <button type="button" class="agent-debug-toggle" id="agentDebugToggleBtn"
+            onclick="event.stopPropagation(); toggleAgentDebugMode();"
+            title="键盘 DEBUG：开启后须先「模拟唤醒」，再用键盘输入驱动五项任务（等同本地 DEBUG=1 python agent.py）">键盘DEBUG·关</button>
         <button class="agent-toggle" id="agentToggleBtn">▼</button>
     </div>
     <div class="agent-messages" id="agentMessages">
         <div class="msg assistant">
-            你好！我是你的 AI 学习助手，有什么可以帮助你的吗？
+            你好呀！我是小臂，你的学习小助手~ 有什么需要帮忙的吗？
             <div class="msg-time">刚刚</div>
         </div>
     </div>
     <div class="quick-actions" id="quickActions">
-        <button class="quick-btn" onclick="sendQuickMessage('帮我分拣积木')">🎨 分拣积木</button>
-        <button class="quick-btn" onclick="sendQuickMessage('打开台灯')">💡 台灯控制</button>
-        <button class="quick-btn" onclick="sendQuickMessage('帮我看这道题')">📐 题目解答</button>
-        <button class="quick-btn" onclick="sendQuickMessage('打个招呼')">👋 打招呼</button>
-        <button class="quick-btn" onclick="sendQuickMessage('跳个舞')">💃 跳舞</button>
+        <button class="quick-btn" onclick="sendQuickMessage('帮我分拣积木')" title="tasks.py 任务1 · task_clamp · 颜色识别与分拣">🎨 颜色分拣</button>
+        <button class="quick-btn" onclick="sendQuickMessage('打开台灯')" title="tasks.py 任务2 · task_led · 智能台灯">💡 智能台灯</button>
+        <button class="quick-btn" onclick="sendQuickMessage('看看我在不在')" title="tasks.py 任务3 · task_face · 人脸识别追踪">👁️ 人脸追踪</button>
+        <button class="quick-btn" onclick="sendQuickMessage('帮我看这道题')" title="tasks.py 任务4 · task_answer · 题目解答">📐 题目解答</button>
+        <button class="quick-btn" onclick="sendQuickMessage('打个招呼')" title="tasks.py 任务5 · task_action · 动作回放（actions 目录 JSON，默认触发「打招呼」）">🎭 动作回放</button>
     </div>
     <div class="agent-task-indicator" id="agentTaskIndicator" style="display: none;">
         <div class="agent-task-spinner"></div>
         <span id="agentTaskText">正在执行任务...</span>
     </div>
+    <div class="agent-debug-bar" id="agentDebugBar" aria-live="polite">
+        <span class="agent-debug-hint" id="agentDebugHint"></span>
+        <button type="button" class="agent-debug-wake-btn" id="agentDebugWakeBtn" onclick="sendAgentDebugWake()">模拟唤醒</button>
+    </div>
     <div class="agent-input">
-        <input type="text" id="agentInput" placeholder="输入你的问题或指令..." onkeypress="handleAgentInput(event)">
+        <input type="text" id="agentInput" placeholder="输入指令（对应 tasks.py：分拣/台灯/人脸/解答/动作回放；意图见 dialogue.parse）" onkeypress="handleAgentInput(event)">
         <button class="agent-send-btn" id="agentSendBtn" onclick="sendAgentMessage()">▶</button>
     </div>
 </div>
@@ -655,7 +778,7 @@
     <div class="task-execute-desc" id="taskExecuteDesc">请稍候...</div>
 </div>
 
-<!-- Main -->
+<!-- Main：工作流 / 终端 -->
 <div class="main">
 
     <!-- Left: Workflow -->
@@ -717,7 +840,8 @@
 <script src="js/agent_ws.js"></script>
 <script>
 /* ─────────────────────────  CONFIG  ───────────────────────── */
-const API_BASE = 'http://localhost:8000/api/v1';
+/* API_BASE 仅在 js/api.js 中声明；此处重复 const 会使整段脚本解析失败。需要时用 window.API.base。 */
+/* API_BASE 由上方引入的 js/api.js 定义（与当前页面同源） */
 const TASKS = {
     1: {
         name: '颜色识别与分拣', icon: '🎨',
@@ -935,22 +1059,23 @@ function init() {
         } catch (e) { /* ignore */ }
     }
 
-    buildTabs();
+    buildModuleNav();
+    checkAuth();
     selectTask(1);
     initWebSocket();
 }
 
 /* ─────────────────────────  LOGOUT  ───────────────────────── */
-function handleLogout() {
-    localStorage.removeItem('ag_access_token');
-    localStorage.removeItem('ag_refresh_token');
-    localStorage.removeItem('ag_user_info');
-    window.location.href = '/login.html';
+async function handleLogout() {
+    if (window.API) {
+        await window.API.auth.logout();
+    }
+    window.location.href = 'login.html';
 }
 
 /* ─────────────────────────  ARM CONNECTION  ───────────────────────── */
 async function toggleArmConnect() {
-    if (!window.API) {
+    if (!window.API || !window.API.token.isLoggedIn()) {
         showToast('请先登录后再操作', 'error');
         return;
     }
@@ -1010,12 +1135,24 @@ function updateArmConnectUI(connected) {
     }
 }
 
-function refreshArmStatus() {
-    if (!window.API) return;
+function checkAuth() {
+    const isLoggedIn = window.API && window.API.token.isLoggedIn();
+    document.getElementById('loginOverlay').style.display = isLoggedIn ? 'none' : 'flex';
+
+    if (isLoggedIn) {
+        const user = window.API.token.getUserInfo();
+        if (user) {
+            document.getElementById('userInfo').style.display = 'flex';
+            document.getElementById('userAvatar').textContent = user.username.charAt(0).toUpperCase();
+            document.getElementById('username').textContent = user.username;
+        }
+    }
 }
 
 function initWebSocket() {
-    if (!window.API) return;
+    if (!window.API || !window.API.token.isLoggedIn()) return;
+
+    const token = window.API.token.getAccessToken();
 
     // 订阅机械臂状态变化
     window.WS.armStatus.onStatus((data) => {
@@ -1036,11 +1173,11 @@ function initWebSocket() {
     });
 
     // 尝试连接 WS
-    window.WS.armStatus.connect();
+    window.WS.armStatus.connect(token);
 }
 
-async function _refreshArmStatus() {
-    if (!window.API) return;
+async function refreshArmStatus() {
+    if (!window.API || !window.API.token.isLoggedIn()) return;
     try {
         const status = await window.API.arm.getStatus();
         updateArmPositionDisplay({
@@ -1100,18 +1237,33 @@ function updateArmPositionDisplay(data) {
     }
 }
 
-/* ─────────────────────────  TABS  ───────────────────────── */
-function buildTabs() {
-    const el = document.getElementById('taskTabs');
+/* ─────────────────────────  功能模块导航  ───────────────────────── */
+function buildModuleNav() {
+    const el = document.getElementById('moduleNav');
+    if (!el) return;
     el.innerHTML = '';
+    const label = document.createElement('span');
+    label.className = 'module-nav-label';
+    label.textContent = '功能模块';
+    el.appendChild(label);
     for (let i = 1; i <= 5; i++) {
         const t = TASKS[i];
-        const d = document.createElement('div');
-        d.className = 'tab' + (i === current ? ' active' : '');
-        d.innerHTML = `<span>${t.icon}</span><span>任务${i}：${t.name}</span><span class="tnum">T${i}</span>`;
-        d.onclick = () => selectTask(i);
-        el.appendChild(d);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'nav-item' + (i === current ? ' active' : '');
+        btn.setAttribute('aria-current', i === current ? 'true' : 'false');
+        btn.innerHTML = `<span class="nav-ico">${t.icon}</span><span>${t.name}</span><span class="nav-num">${i}</span>`;
+        btn.onclick = () => selectTask(i);
+        el.appendChild(btn);
     }
+    updateTermTitleForModule();
+}
+
+function updateTermTitleForModule() {
+    const titleEl = document.querySelector('.term-title');
+    if (!titleEl) return;
+    const t = TASKS[current];
+    titleEl.textContent = `当前模块 · ${t.icon} ${t.name} · agent@robotic-arm`;
 }
 
 /* ─────────────────────────  SELECT TASK  ───────────────────── */
@@ -1119,7 +1271,7 @@ function selectTask(id) {
     if (playing) resetTask();
     current = id;
     step    = -1;
-    buildTabs();
+    buildModuleNav();
     renderBanner();
     renderWorkflow(-1, []);
     document.getElementById('progBar').style.width = '0%';
@@ -1164,8 +1316,13 @@ function selectColor(color, event) {
 
 /* ─────────────────────────  WORKFLOW  ───────────────────────── */
 function renderWorkflow(activeStep, doneSteps, errorStep = -1) {
-    const t   = TASKS[current];
-    const el  = document.getElementById('workflowScroll');
+    const t  = TASKS[current];
+    const el = document.getElementById('workflowScroll');
+    const stepEl = document.getElementById('stepCount');
+    if (!el || !t || !Array.isArray(t.states)) {
+        if (stepEl) stepEl.textContent = '—';
+        return;
+    }
     el.innerHTML = '';
 
     t.states.forEach((s, i) => {
@@ -1216,7 +1373,7 @@ function renderWorkflow(activeStep, doneSteps, errorStep = -1) {
 
     const done  = doneSteps.length;
     const total = t.states.length;
-    document.getElementById('stepCount').textContent = `${done} / ${total} 步`;
+    if (stepEl) stepEl.textContent = `${done} / ${total} 步`;
 }
 
 /* ─────────────────────────  LOG LINE  ───────────────────────── */
@@ -1241,7 +1398,7 @@ function appendLog(log) {
 
 /* ─────────────────────────  PLAY / PAUSE  ───────────────────── */
 function togglePlay() {
-    if (!window.API) {
+    if (!window.API || !window.API.token.isLoggedIn()) {
         showToast('请先登录后再操作', 'error');
         return;
     }
@@ -1278,7 +1435,7 @@ async function runClampTask() {
     const logTime = getLogTime();
 
     // 检查登录
-    if (!window.API) {
+    if (!window.API || !window.API.token.isLoggedIn()) {
         showToast('请先登录后再操作', 'error');
         finishTaskWithError(1);
         return;
@@ -1575,8 +1732,62 @@ let agentConnected = false;
 let agentSessionState = 'idle';
 let agentTyping = false;
 let agentMessages = [];  // {role, content, time}
+const AGENT_DEBUG_STORAGE_KEY = 'ruisa_agent_debug_keyboard';
 
 /* ── 初始化 Agent 连接 ── */
+function updateAgentDebugUI() {
+    const bar = document.getElementById('agentDebugBar');
+    const hint = document.getElementById('agentDebugHint');
+    const wakeBtn = document.getElementById('agentDebugWakeBtn');
+    const dbgToggle = document.getElementById('agentDebugToggleBtn');
+    const sendBtn = document.getElementById('agentSendBtn');
+    const input = document.getElementById('agentInput');
+    if (!bar) return;
+    const dk = !!AgentWS.debugKeyboard && agentConnected;
+    const need = dk && !!AgentWS.needsAgentWake;
+    bar.style.display = dk ? 'flex' : 'none';
+    if (hint) {
+        hint.textContent = need
+            ? '等待唤醒：输入框留空按 Enter，或点「模拟唤醒」（等同 DEBUG=1 python agent.py 后按 Enter）'
+            : '已唤醒，可正常对话。';
+    }
+    document.querySelectorAll('#quickActions .quick-btn').forEach(b => {
+        b.disabled = need;
+    });
+    if (sendBtn) sendBtn.disabled = need;
+    if (wakeBtn) wakeBtn.disabled = !agentConnected || !need;
+    if (dbgToggle) {
+        dbgToggle.disabled = !agentConnected;
+        dbgToggle.classList.toggle('active', dk);
+        dbgToggle.textContent = AgentWS.debugKeyboard ? '键盘DEBUG·开' : '键盘DEBUG·关';
+    }
+    if (input) {
+        input.placeholder = need
+            ? '留空按 Enter = 唤醒；唤醒后再输入指令'
+            : '输入指令（对应 tasks.py：分拣/台灯/人脸/解答/动作回放；意图见 dialogue.parse）';
+    }
+}
+
+/** 用本地偏好覆盖服务端默认（重连后恢复上次开关） */
+function applyStoredAgentDebugMode(connectedData) {
+    if (!AgentWS.isConnected()) return;
+    const pref = localStorage.getItem(AGENT_DEBUG_STORAGE_KEY);
+    const serverOn = !!(connectedData && connectedData.agent_debug_keyboard);
+    if (pref === '1' && !serverOn) {
+        AgentWS.sendSetDebugKeyboard(true);
+    } else if (pref === '0' && serverOn) {
+        AgentWS.sendSetDebugKeyboard(false);
+    }
+}
+
+function toggleAgentDebugMode() {
+    if (!agentConnected || !AgentWS.isConnected()) {
+        showToast('小助手未连接，请登录后刷新页面', 'error');
+        return;
+    }
+    AgentWS.sendSetDebugKeyboard(!AgentWS.debugKeyboard);
+}
+
 function initAgent() {
     if (!window.API) {
         return;
@@ -1590,6 +1801,7 @@ function initAgent() {
     AgentWS.on('onDisconnected', onAgentDisconnected);
     AgentWS.on('onError', onAgentError);
     AgentWS.on('onResponse', onAgentResponse);
+    AgentWS.on('onDebugMode', onAgentDebugMode);
     AgentWS.on('onTaskStart', onTaskStart);
     AgentWS.on('onTaskLog', onTaskLog);
     AgentWS.on('onTaskProgress', onTaskProgress);
@@ -1604,20 +1816,50 @@ function initAgent() {
     });
 }
 
-function onAgentConnected() {
+function onAgentConnected(data) {
     agentConnected = true;
     updateAgentStatus('在线', true);
+    if (data && data.agent_debug_keyboard) {
+        const container = document.getElementById('agentMessages');
+        if (container) {
+            container.innerHTML = '';
+            agentMessages = [];
+            addMessageToUI('assistant',
+                '【键盘 DEBUG】已启用：请先「模拟唤醒」或在输入框留空按 Enter（等同 DEBUG=1 运行 agent.py 后按一次 Enter），再键盘输入指令或使用快捷按钮驱动机械臂任务。');
+        }
+    }
+    updateAgentDebugUI();
+    applyStoredAgentDebugMode(data);
+}
+
+function onAgentDebugMode(data) {
+    try {
+        localStorage.setItem(AGENT_DEBUG_STORAGE_KEY, AgentWS.debugKeyboard ? '1' : '0');
+    } catch (e) { /* ignore */ }
+    updateAgentDebugUI();
+    showToast(
+        AgentWS.debugKeyboard
+            ? '键盘 DEBUG 已开启：请先「模拟唤醒」，再键盘输入指令'
+            : '键盘 DEBUG 已关闭：可直接键盘输入指令',
+        'success'
+    );
 }
 
 function onAgentDisconnected(event) {
     agentConnected = false;
+    AgentWS.debugKeyboard = false;
+    AgentWS.needsAgentWake = false;
     updateAgentStatus('已断开', false);
+    updateAgentDebugUI();
     console.log('[Agent] 断开连接:', event?.reason);
 }
 
 function onAgentError(error) {
     agentConnected = false;
+    AgentWS.debugKeyboard = false;
+    AgentWS.needsAgentWake = false;
     updateAgentStatus('错误', false);
+    updateAgentDebugUI();
     console.error('[Agent] 错误:', error);
 }
 
@@ -1630,9 +1872,22 @@ function updateAgentStatus(text, online) {
 }
 
 /* ── 发送消息 ── */
+function sendAgentDebugWake() {
+    if (!agentConnected || !AgentWS.isConnected()) {
+        showToast('小臂未连接，请登录后刷新页面', 'error');
+        return;
+    }
+    showTypingIndicator();
+    AgentWS.sendDebugWake();
+}
+
 function sendAgentMessage() {
     if (!agentConnected) {
-        showToast('AI 助手未连接，请刷新页面', 'error');
+        showToast('小臂未连接，请登录后刷新页面', 'error');
+        return;
+    }
+    if (AgentWS.debugKeyboard && AgentWS.needsAgentWake) {
+        showToast('DEBUG：请先模拟唤醒（输入框留空按 Enter，或点「模拟唤醒」）', 'error');
         return;
     }
 
@@ -1646,18 +1901,32 @@ function sendAgentMessage() {
     // 添加用户消息到 UI
     addMessageToUI('user', text);
 
-    // 发送消息
+    showTypingIndicator();
+    // 发送至后端（意图解析与 agent.py 共用 dialogue 模块）
     AgentWS.sendMessage(text);
 }
 
 function handleAgentInput(event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        sendAgentMessage();
+    if (event.key !== 'Enter' || event.shiftKey) return;
+    event.preventDefault();
+    if (AgentWS.debugKeyboard && AgentWS.needsAgentWake) {
+        const input = document.getElementById('agentInput');
+        const t = (input && input.value.trim()) || '';
+        if (!t) {
+            sendAgentDebugWake();
+        } else {
+            showToast('DEBUG：请先模拟唤醒（先清空输入框再按 Enter）', 'error');
+        }
+        return;
     }
+    sendAgentMessage();
 }
 
 function sendQuickMessage(text) {
+    if (AgentWS.debugKeyboard && AgentWS.needsAgentWake) {
+        showToast('DEBUG：请先模拟唤醒后再使用快捷按钮', 'error');
+        return;
+    }
     // 确保面板展开
     const panel = document.getElementById('agentPanel');
     if (panel && panel.classList.contains('collapsed')) {
@@ -1728,22 +1997,22 @@ function onAgentResponse(data) {
     }
 
     agentSessionState = data.sessionState || 'idle';
-
-    if (data.shouldEnd) {
-        // 会话结束
-        setTimeout(() => {
-            addMessageToUI('assistant', '会话已结束，下次见！👋');
-        }, 500);
+    if (typeof data.needsWake === 'boolean') {
+        AgentWS.needsAgentWake = data.needsWake;
     }
+    updateAgentDebugUI();
+
+    /* 告别语已由后端 dialogue.generate_farewell_response() 写入 data.response，勿重复插一条 */
 }
 
 /* ── 任务处理 ── */
+/* 与 agent/tasks.py 中 task_* 五项标题一致 */
 const TASK_LABELS = {
-    clamp: '🎨 颜色分拣',
-    led: '💡 台灯控制',
-    face: '👁️ 人脸追踪',
+    clamp: '🎨 颜色识别与分拣',
+    led: '💡 智能台灯',
+    face: '👁️ 人脸识别追踪',
     answer: '📐 题目解答',
-    action: '🎭 动作表演',
+    action: '🎭 动作回放',
 };
 
 const TASK_ICONS = {
@@ -1785,7 +2054,7 @@ function onTaskLog(data) {
     appendLog({
         t: formatTime(new Date()),
         l: data.level || 'INFO',
-        m: `[AI助手] ${data.message}`,
+        m: `[小臂] ${data.message}`,
     });
 }
 
@@ -1812,11 +2081,12 @@ function onTaskComplete(data) {
         addMessageToUI('assistant', data.result.message);
     }
 
-    // 终端日志
+    const ok = !data.result || data.result.success !== false;
+    // 终端日志（业务失败时勿标 SUCCESS，避免与真实硬件状态不符）
     appendLog({
         t: formatTime(new Date()),
-        l: 'SUCCESS',
-        m: `[AI助手] 任务完成: ${data.task}`,
+        l: ok ? 'SUCCESS' : 'WARNING',
+        m: ok ? `[小臂] 任务完成: ${data.task}` : `[小臂] 任务未成功: ${data.task}`,
     });
 }
 
@@ -1836,7 +2106,7 @@ function onTaskError(data) {
     appendLog({
         t: formatTime(new Date()),
         l: 'ERROR',
-        m: `[AI助手] 任务错误: ${data.error}`,
+        m: `[小臂] 任务错误: ${data.error}`,
     });
 }
 
