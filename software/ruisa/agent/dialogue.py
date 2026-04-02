@@ -530,8 +530,9 @@ def parse(text: str) -> Tuple[str, dict]:
         return _keyword_parse(text)
 
     try:
-        from openai import OpenAI
-        client = OpenAI(api_key=config.DASHSCOPE_API_KEY, base_url=config.DASHSCOPE_BASE_URL)
+        import dashscope_client
+
+        client = dashscope_client.openai_client()
         resp   = client.chat.completions.create(
             model=config.LLM_MODEL,
             messages=[

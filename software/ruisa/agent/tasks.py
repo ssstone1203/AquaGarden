@@ -4,17 +4,19 @@ tasks.py  ——  四个任务函数
 任务内部管理摄像头等资源，执行完毕后释放。
 """
 
-import cv2
-import json
-import time
 import base64
+import json
 import mimetypes
-import numpy as np
+import time
 from pathlib import Path
-from openai import OpenAI
+
+import cv2
+import numpy as np
+from openai import APIConnectionError, APIStatusError, APITimeoutError
 
 from camera_util import normalize_bgr_frame, try_open_camera
 import config
+import dashscope_client
 import dialogue
 from arm import Arm
 import camera_preview
@@ -430,7 +432,7 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
     print("[解答] 正在请求大模型，请稍候（网络较慢时可能需十余秒）…", flush=True)
 
     try:
-        client    = OpenAI(api_key=config.DASHSCOPE_API_KEY, base_url=config.DASHSCOPE_BASE_URL)
+        client    = dashscope_client.openai_client()
         mime, _   = mimetypes.guess_type(str(photo_path))
         mime      = mime or "image/jpeg"
         b64       = base64.b64encode(photo_path.read_bytes()).decode("ascii")
@@ -465,8 +467,27 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
         if answer:
             dialogue.tts_only(answer)
 
+    except APIConnectionError as e:
+        hint = (
+            "无法连接阿里云 DashScope（需访问 dashscope.aliyuncs.com）。"
+            "请检查网络、防火墙；若在公司网/校园网，可在 .env 或系统环境变量中设置 "
+            "HTTPS_PROXY=http://主机:端口 后重启后端。"
+        )
+        print(f"[解答] {hint}", flush=True)
+        print(f"[解答] 连接错误详情: {e!r}", flush=True)
+        raise RuntimeError(hint) from e
+    except APITimeoutError as e:
+        hint = "请求 DashScope 超时，请稍后重试或检查网络稳定性。"
+        print(f"[解答] {hint} ({e!r})", flush=True)
+        raise RuntimeError(hint) from e
+    except APIStatusError as e:
+        sc = getattr(e, "status_code", None)
+        body = getattr(e, "body", None) or str(e)
+        print(f"[解答] API 返回错误: HTTP {sc} — {body}", flush=True)
+        raise RuntimeError(f"DashScope 接口错误 ({sc}): {body}") from e
     except Exception as e:
-        print(f"[解答] 请求失败: {e}", flush=True)
+        print(f"[解答] 请求失败: {e!r}", flush=True)
+        raise RuntimeError(f"题目解答失败: {e}") from e
 
 
 # ================================================================
