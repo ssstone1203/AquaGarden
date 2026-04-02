@@ -331,23 +331,33 @@ class AgentBridge:
                     "mjpeg_path": "/api/v1/camera/mjpeg",
                 },
             )
+        agent_tasks_mod = None
         try:
             async with _task_sem:
                 ok, stdout_text, err = await asyncio.to_thread(
                     _run_task_blocking, task_name, params, user_text
                 )
+            _insert_agent_path()
+            import tasks as agent_tasks_mod  # noqa: WPS433
+
             for line in stdout_text.splitlines():
                 line = line.strip()
                 if line:
                     await self.send_to_client(session_id, {"type": "task_log", "message": line})
+
+            result: dict[str, Any] = {
+                "success": True,
+                "message": "任务流程已结束（详见日志）。",
+            }
+            if ok and task_name == "answer":
+                ans = getattr(agent_tasks_mod, "last_answer_for_web", None)
+                if ans:
+                    result["answer"] = ans
+
             if ok:
                 await self.send_to_client(
                     session_id,
-                    {
-                        "type": "task_complete",
-                        "task": task_name,
-                        "result": {"success": True, "message": "任务流程已结束（详见日志）。"},
-                    },
+                    {"type": "task_complete", "task": task_name, "result": result},
                 )
             else:
                 await self.send_to_client(
@@ -355,6 +365,11 @@ class AgentBridge:
                     {"type": "task_error", "task": task_name, "error": err or "unknown"},
                 )
         finally:
+            if agent_tasks_mod is not None:
+                try:
+                    agent_tasks_mod.last_answer_for_web = None
+                except Exception:
+                    pass
             if use_cam:
                 _insert_agent_path()
                 try:

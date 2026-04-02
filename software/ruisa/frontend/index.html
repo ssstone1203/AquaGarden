@@ -840,6 +840,9 @@ AgentWS.on('onTaskLog', (d) => {
 AgentWS.on('onTaskComplete', (d) => {
     document.getElementById('agentTaskIndicator').classList.remove('running');
     appendTerm('SUCCESS', `task_complete → ${d.task}: ${JSON.stringify(d.result || {})}`);
+    if (d.task === 'answer' && d.result && d.result.answer) {
+        addMsg('assistant', '【题目解答】\n' + d.result.answer);
+    }
 });
 
 AgentWS.on('onTaskError', (d) => {

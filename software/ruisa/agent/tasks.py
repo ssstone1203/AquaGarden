@@ -19,6 +19,9 @@ import dialogue
 from arm import Arm
 import camera_preview
 
+# Web 端任务完成后由 agent_bridge 读取并下发到聊天区（避免解答只出现在终端日志）
+last_answer_for_web: str | None = None
+
 
 def _open_camera(buffer_size=None):
     """
@@ -365,6 +368,9 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
     移到观测位置 → 拍照 → 调用多模态大模型 → 打印并语音播报分析与解答
     question 由 dialogue 模块根据用户语音传入
     """
+    global last_answer_for_web
+
+    last_answer_for_web = None
     if not config.DASHSCOPE_API_KEY:
         print("[解答] 错误：未配置 DASHSCOPE_API_KEY，请在 config.py 或环境变量中设置")
         return
@@ -375,29 +381,40 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
     for _ in range(10):
         time.sleep(0.05)
 
-    # 拍照
+    # 拍照：预热多帧并持续 publish，避免 Web 预览只闪一帧就卡住像「没反应」
     cap, cam_idx = _open_camera()
     if cap is None:
         print(f"[解答] 错误：未找到可用摄像头。请检查 CAMERA_INDEX={config.CAMERA_INDEX} 和设备连接。")
         return
-    print(f"[解答] 使用摄像头: {cam_idx}")
-    ret, raw = cap.read()
-    cap.release()
+    print(f"[解答] 使用摄像头: {cam_idx}", flush=True)
+    print("[解答] 正在取景预览（约 1～2 秒）…", flush=True)
 
-    if not ret:
-        print("[解答] 错误：摄像头读取失败")
-        return
-    frame = normalize_bgr_frame(raw)
-    if frame is None:
-        print("[解答] 错误：摄像头帧无效（尺寸或内存布局异常）")
-        return
-    if config.CAMERA_ROT:
-        frame = cv2.rotate(frame, cv2.ROTATE_180)
-        frame = normalize_bgr_frame(frame)
-    if frame is None:
-        print("[解答] 错误：摄像头帧处理后无效")
+    last_frame = None
+    try:
+        for _ in range(40):
+            ret, raw = cap.read()
+            if not ret:
+                time.sleep(0.04)
+                continue
+            frame = normalize_bgr_frame(raw)
+            if frame is None:
+                continue
+            if config.CAMERA_ROT:
+                frame = cv2.rotate(frame, cv2.ROTATE_180)
+                frame = normalize_bgr_frame(frame)
+            if frame is None:
+                continue
+            last_frame = frame
+            camera_preview.publish_bgr(frame)
+            time.sleep(0.05)
+    finally:
+        cap.release()
+
+    if last_frame is None:
+        print("[解答] 错误：无法从摄像头获得有效画面", flush=True)
         return
 
+    frame = last_frame
     camera_preview.publish_bgr(frame)
 
     photo_path = config.PHOTO_PATH
@@ -410,7 +427,7 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
     photo_path.write_bytes(enc.tobytes())
     print(f"[解答] 已拍照: {photo_path}")
     print(f"[解答] 问题: {question}")
-    print("[解答] 正在请求大模型，请稍候...")
+    print("[解答] 正在请求大模型，请稍候（网络较慢时可能需十余秒）…", flush=True)
 
     try:
         client    = OpenAI(api_key=config.DASHSCOPE_API_KEY, base_url=config.DASHSCOPE_BASE_URL)
@@ -439,16 +456,17 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
             max_tokens=400,
         )
         answer = (resp.choices[0].message.content or "").strip()
+        last_answer_for_web = answer or None
         dialogue.speak("解答如下。")
-        print("\n" + "=" * 50)
-        print("【模型解答】")
-        print(answer)
-        print("=" * 50 + "\n")
+        print("\n" + "=" * 50, flush=True)
+        print("【模型解答】", flush=True)
+        print(answer, flush=True)
+        print("=" * 50 + "\n", flush=True)
         if answer:
             dialogue.tts_only(answer)
 
     except Exception as e:
-        print(f"[解答] 请求失败: {e}")
+        print(f"[解答] 请求失败: {e}", flush=True)
 
 
 # ================================================================
