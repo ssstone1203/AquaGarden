@@ -1,0 +1,46 @@
+# AquaGarden 瑞萨软件统一依赖
+# 安装所有依赖: pip install -r requirements.txt
+
+# ===========================================
+# 通用依赖
+# ===========================================
+pyserial>=3.5
+numpy>=1.26.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# ===========================================
+# Agent 端（语音/视觉）
+# ===========================================
+opencv-python>=4.9.0
+pyaudio>=0.2.14
+pygame>=2.5.0
+dashscope>=1.20.0
+openai>=1.12.0
+
+# 唤醒词检测（可选）
+# openwakeword>=0.6.0
+
+# ===========================================
+# Backend 端（API服务）
+# ===========================================
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.9
+sqlalchemy[asyncio]>=2.0.25
+aiosqlite>=0.19.0
+redis>=5.0.0
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.1.0
+pydantic>=2.6.0
+pydantic-settings>=2.1.0
+email-validator>=2.1.0
+httpx>=0.26.0
+opencv-python-headless>=4.9.0
+
+# ===========================================
+# 测试（可选）
+# ===========================================
+pytest>=8.0.0
+pytest-asyncio>=0.23.0

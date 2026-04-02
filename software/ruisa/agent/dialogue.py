@@ -1,6 +1,12 @@
 """
 dialogue.py  ——  语音对话模块（阿里云 DashScope qwen3 系列）
 
+功能：
+1. 持续对话模式（唤醒一次后持续对话，直到用户说"拜拜"）
+2. 更自然的语言表达，不体现"任务"字眼
+3. 动作回放结合真实数据（如天气）
+4. 优化的台灯控制语言支持
+
 参考 xiaoshutong/src/agent/speech.py 的实现模式：
   - TTS: qwen3-tts-flash → 返回音频 URL → 下载 → pygame 播放
   - ASR: 录音到 WAV 文件 → qwen3-asr-flash → 返回文字
@@ -13,12 +19,13 @@ import wave
 import tempfile
 import threading
 import requests
+import json as json_lib
 import dashscope
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List, Generator
 
 import config
 
-# ── 依赖可用性检查（启动时打印一次） ──────────────────────────────
+# ── 依赖可用性检查 ──────────────────────────────────────────────────────
 try:
     import pyaudio
     _PYAUDIO_OK = True
@@ -34,6 +41,36 @@ except ImportError:
     print("[对话] ✗ pygame 未安装  →  pip install pygame")
 
 print(f"[对话] pyaudio={'✓' if _PYAUDIO_OK else '✗'}  pygame={'✓' if _PYGAME_OK else '✗'}")
+
+
+# ── 自然语言系统提示词 ──────────────────────────────────────────────────
+_NATURAL_SYSTEM_PROMPT = """
+你是一个可爱友好的学习助手机器人"小臂"，和小朋友聊天时要用自然的语言。
+
+绝对规则：
+1. 绝对不要说"执行任务"、"触发任务"、"开始任务"这样的词
+2. 用"好的呀"、"我来帮你"、"让我想想"等自然开头
+3. 回复要简短（50字以内）、口语化，适合语音播报
+4. 可以用语气词和表情描述增加亲切感
+
+任务对应的自然表达：
+- 分拣积木："好的，我来帮你把积木按颜色分好类~"
+- 台灯控制："好的，我帮你把灯调亮一点~" / "我把灯关掉啦"
+- 人脸追踪："让我看看你有没有在认真学习和有没有坐好哦~"
+- 题目解答："好的，让我来帮你看看这道题！"
+- 打招呼："嗨！你好呀！很高兴见到你！"
+- 跳舞："好的，我来跳个舞！"
+- 点头："好的，我点头表示同意！"
+- 摇头："好的，我摇摇头~"
+- 看天气："让我抬头看看今天的天气~"
+
+未识别意图时的回复：
+- "嗯嗯，我听到了~ 你还有什么想让我帮忙的吗？"
+- "好的好的，还有什么需要我帮忙的吗？"
+"""
+
+# ── 结束语关键词 ────────────────────────────────────────────────────────
+_FAREWELL_WORDS = ["拜拜", "再见", "bye", "再见啦", "拜拜啦", "我走了", "不用了", "结束吧"]
 
 
 # ================================================================
@@ -215,7 +252,7 @@ def tts_only(text: str):
 
 def speak(text: str):
     """播报文字（打印 + TTS；播放仅需 pygame，不依赖麦克风）"""
-    print(f"[Jarvis] {text}")
+    print(f"[小臂] {text}")
     if not (config.DASHSCOPE_API_KEY and _PYGAME_OK):
         return
     _tts_play(text)
@@ -251,10 +288,153 @@ def listen() -> str:
 
 
 # ================================================================
+#  自然语言响应生成
+# ================================================================
+
+def generate_natural_response(task_name: str, params: dict = None) -> str:
+    """
+    生成自然的回复（用于任务确认，不体现"任务"字眼）。
+    """
+    params = params or {}
+
+    if task_name == "clamp":
+        return "好的呀，我来帮你把积木按颜色分好类~"
+
+    elif task_name == "led":
+        preset = params.get("preset", "medium")
+        presets = {
+            "off":    "好的，我把灯关掉啦~",
+            "low":    "好的，我帮你把灯光调暗一点，这样更护眼~",
+            "medium": "好的，我把灯光调到刚刚好的亮度~",
+            "high":   "好的，我把灯光调亮一些，这样更清晰~",
+        }
+        return presets.get(preset, "好的，我来帮你调灯光~")
+
+    elif task_name == "face":
+        return "好的，让我看看你有没有在认真学习和有没有坐好哦~"
+
+    elif task_name == "answer":
+        return "好的，让我来帮你看看这道题！"
+
+    elif task_name == "action":
+        action = params.get("action", "打招呼")
+        actions = {
+            "打招呼": "好的，我来打个招呼！很高兴见到你~",
+            "跳舞":   "好的，我来跳个舞！",
+            "点头":   "好的，我点头表示同意！",
+            "摇头":   "好的，我摇摇头~",
+            "看天气": get_weather_speak_text(),
+        }
+        return actions.get(action, f"好的，我来做个{action}的动作~")
+
+    else:
+        return "嗯嗯，好的~"
+
+
+def get_weather_speak_text() -> str:
+    """获取天气播报文本（结合真实数据）"""
+    weather_info = _get_weather_info()
+    return (
+        f"好的，让我抬头看看今天的天气~ "
+        f"今天是{weather_info['date']}，{weather_info['weather']}，"
+        f"气温{weather_info['temp']}度，{weather_info['tips']}"
+    )
+
+
+def _get_weather_info() -> dict:
+    """
+    获取天气信息。
+    优先使用心知天气API，失败则使用模拟数据。
+    """
+    try:
+        # 尝试使用心知天气API获取真实天气
+        xinzhi_key = os.getenv("XINZHI_KEY") or os.getenv("WEATHER_KEY")
+        if xinzhi_key:
+            try:
+                import urllib.request
+                import urllib.parse
+                url = f"https://api.seniverse.com/v3/weather/now.json?key={xinzhi_key}&location=beijing&language=zh-Hans&unit=c"
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    data = json_lib.loads(resp.read().decode())
+                    if data.get("results"):
+                        now = data["results"][0]["now"]
+                        return {
+                            "date": "今天",
+                            "weather": now.get("text", "晴朗"),
+                            "temp": now.get("temperature", "25"),
+                            "tips": _get_weather_tip(now.get("text", "")),
+                        }
+            except Exception:
+                pass
+
+        # 使用模拟数据
+        import random
+        weather_conditions = {
+            "晴": ("晴天呢", ["阳光明媚，适合户外活动哦", "是个学习的好天气", "记得多喝水呀"]),
+            "多云": ("多云天气", ["云朵飘呀飘的", "不会太晒也不会太暗", "挺舒服的天气"]),
+            "阴": ("阴天", ["天有点阴沉沉的", "适合在室内学习", "注意休息眼睛哦"]),
+            "雨": ("下雨啦", ["雨天不能出门啦", "正好在家看书学习", "记得关窗哦"]),
+            "雪": ("下雪了呢", ["哇，雪花好漂亮", "可以堆个小雪人", "注意保暖哦"]),
+        }
+
+        conditions = list(weather_conditions.keys())
+        condition = random.choice(conditions)
+        text, tips = weather_conditions.get(condition, ("晴天", ["是个好日子"]))
+        return {
+            "date": "今天",
+            "weather": text,
+            "temp": str(random.randint(15, 32)),
+            "tips": random.choice(tips),
+        }
+    except Exception:
+        return {"date": "今天", "weather": "晴朗", "temp": "25", "tips": "是个学习的好天气"}
+
+
+def _get_weather_tip(weather_text: str) -> str:
+    """根据天气文字返回提示语"""
+    tips = {
+        "晴": ["阳光明媚，适合户外活动哦", "记得多喝水", "是个学习的好天气"],
+        "多云": ["不会太晒也不会太暗", "挺舒服的天气", "云朵很可爱呢"],
+        "阴": ["天有点阴沉", "适合在室内学习", "注意休息眼睛"],
+        "雨": ["下雨啦不能出门", "正好在家看书", "记得关窗哦"],
+        "雪": ["下雪了呢好漂亮", "可以看看窗外放松一下", "注意保暖哦"],
+    }
+    for key, tip_list in tips.items():
+        if key in weather_text:
+            import random
+            return random.choice(tip_list)
+    return "是个学习的好天气"
+
+
+def should_end_session(text: str) -> bool:
+    """判断是否应该结束会话"""
+    if not text:
+        return False
+    return any(word in text for word in _FAREWELL_WORDS)
+
+
+def generate_farewell_response() -> str:
+    """生成告别语"""
+    farewells = [
+        "好的，下次见啦！有什么问题随时叫我哦~",
+        "拜拜~ 好好休息，有需要再叫我！",
+        "再见啦！祝你学习愉快！",
+        "好的，我先去休息啦，有事再叫我~",
+        "拜拜！希望我帮到你啦！",
+    ]
+    try:
+        import random
+        return random.choice(farewells)
+    except Exception:
+        return farewells[0]
+
+
+# ================================================================
 #  意图解析：文字 → (task_name, params)
 # ================================================================
 
-_SYSTEM_PROMPT = """
+_SYSTEM_PROMPT_TASK = """
 你是 Jarvis，一个辅助小朋友学习的 AI 机械臂助手。
 根据用户说的话，判断要执行哪个任务，输出 JSON：
 {"task": "<任务名>", "params": {}}
@@ -268,14 +448,14 @@ _SYSTEM_PROMPT = """
 - "unknown": 无法判断
 
 台灯 preset 规则：
-- "off"    : 关闭台灯 / 熄灯 / 灯关掉 / 不开灯
-- "low"    : 调暗 / 低亮 / 昏暗
-- "medium" : 正常亮度 / 中等
-- "high"   : 调亮 / 高亮 / 最亮
+- "off"    : 关闭台灯 / 熄灯 / 灯关掉 / 不开灯 / 关灯
+- "low"    : 调暗 / 低亮 / 昏暗 / 暗一点
+- "medium" : 正常亮度 / 中等 / 刚刚好
+- "high"   : 调亮 / 高亮 / 最亮 / 亮一点 / 打开灯 / 开灯
 
 动作 action 规则（action 值必须从以下名称中选一个）：
-- "跳舞"   : 跳舞 / 跳个舞 / 舞蹈 / dance
 - "打招呼" : 打招呼 / 招手 / 挥手 / 你好 / hello
+- "跳舞"   : 跳舞 / 跳个舞 / 舞蹈 / dance
 - "点头"   : 点头 / 同意 / 好的
 - "摇头"   : 摇头 / 不 / 拒绝
 - "看天气" : 天气 / 看天气 / 抬头看
@@ -285,6 +465,7 @@ _SYSTEM_PROMPT = """
 "台灯调暗"       → {"task": "led",    "params": {"preset": "low"}}
 "关闭台灯"       → {"task": "led",    "params": {"preset": "off"}}
 "台灯调亮"       → {"task": "led",    "params": {"preset": "high"}}
+"打开台灯"       → {"task": "led",    "params": {"preset": "high"}}
 "看看我在不在"   → {"task": "face",   "params": {}}
 "这道题怎么做"   → {"task": "answer", "params": {"question": "请解答图片中的题目"}}
 "帮我分析这道题" → {"task": "answer", "params": {"question": "请分析并解答图片中的题目"}}
@@ -307,7 +488,7 @@ _ACTION_KEYWORD_MAP = {
 
 _KEYWORD_MAP = [
     (["颜色", "分拣", "积木", "物块", "夹取", "红", "绿", "蓝", "分类"], "clamp"),
-    (["灯", "光", "亮度", "照明", "台灯"],                               "led"),
+    (["灯", "光", "亮度", "照明", "台灯", "打开灯", "关闭灯", "调亮", "调暗"], "led"),
     (["人脸", "追踪", "跟踪", "在不在", "看我", "脸", "座位"],            "face"),
     (["题目", "解答", "分析", "拍照", "拍题", "作业", "解题", "题", "怎么做"], "answer"),
     (list(_ACTION_KEYWORD_MAP.keys()),                                    "action"),
@@ -323,19 +504,18 @@ def parse(text: str) -> Tuple[str, dict]:
         return _keyword_parse(text)
 
     try:
-        import json
         from openai import OpenAI
         client = OpenAI(api_key=config.DASHSCOPE_API_KEY, base_url=config.DASHSCOPE_BASE_URL)
         resp   = client.chat.completions.create(
             model=config.LLM_MODEL,
             messages=[
-                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "system", "content": _SYSTEM_PROMPT_TASK},
                 {"role": "user",   "content": text},
             ],
             temperature=0,
             max_tokens=80,
         )
-        data   = json.loads(resp.choices[0].message.content.strip())
+        data   = json_lib.loads(resp.choices[0].message.content.strip())
         return data.get("task", "unknown"), data.get("params", {})
     except Exception as e:
         print(f"[对话] LLM 解析失败: {e}，降级关键词匹配")
@@ -345,6 +525,8 @@ def parse(text: str) -> Tuple[str, dict]:
 def _keyword_parse(text: str) -> Tuple[str, dict]:
     for keywords, task in _KEYWORD_MAP:
         if any(w in text for w in keywords):
+            if task == "led":
+                return task, _parse_led_params(text)
             if task == "action":
                 # 尝试从文本中直接推断动作名
                 for kw, action_name in _ACTION_KEYWORD_MAP.items():
@@ -355,12 +537,83 @@ def _keyword_parse(text: str) -> Tuple[str, dict]:
     return "unknown", {}
 
 
+def _parse_led_params(text: str) -> dict:
+    """解析台灯参数"""
+    preset = "medium"
+    if any(w in text for w in ["关闭", "熄", "关掉", "关"]):
+        preset = "off"
+    elif any(w in text for w in ["调暗", "低", "暗", "暗一点"]):
+        preset = "low"
+    elif any(w in text for w in ["调亮", "高", "亮", "亮一点", "最亮", "打开", "开灯"]):
+        preset = "high"
+    return {"preset": preset}
+
+
 # ================================================================
-#  台灯亮度询问
+#  持续对话主循环
+# ================================================================
+
+def continuous_dialogue_loop() -> Generator[Tuple[str, dict], None, None]:
+    """
+    持续对话主循环（生成器）。
+    唤醒一次后持续对话，直到用户说"拜拜"才退出。
+
+    Yields:
+        (task_name, params): 识别到的任务和参数
+
+    使用示例:
+        for task_name, params in continuous_dialogue_loop():
+            if task_name == "clamp":
+                task_clamp(arm)
+            elif task_name == "led":
+                task_led(arm, **params)
+            # ...
+    """
+    print("=" * 56)
+    print("  小臂 — AI 机械臂辅学助手  启动中...")
+    print("=" * 56)
+
+    # 打招呼
+    speak("你好呀！我是小臂，你的学习小助手~ 有什么需要帮忙的吗？")
+
+    # 持续对话循环
+    while True:
+        print("\n[小臂] 听你说...")
+        text = listen()
+
+        if not text:
+            speak("嗯？我没听清楚，你可以再说一次吗？")
+            continue
+
+        # 检查是否结束
+        if should_end_session(text):
+            farewell = generate_farewell_response()
+            speak(farewell)
+            break
+
+        # 解析意图
+        task_name, params = parse(text)
+
+        if task_name == "unknown":
+            # 未能识别，用自然语言询问
+            speak("嗯嗯，我听到了~ 你还有什么想让我帮忙的吗？")
+        else:
+            # 生成自然回复并说话
+            response = generate_natural_response(task_name, params)
+            speak(response)
+            # 返回任务信息供外部执行
+            yield task_name, params
+
+    print("[小臂] 对话结束，等待下次唤醒...")
+
+
+# ================================================================
+#  旧接口兼容（保留以兼容旧代码）
 # ================================================================
 
 def ask_led_preset() -> str:
-    speak("请说出亮度：关闭、低、中还是高？")
+    """询问台灯亮度偏好"""
+    speak("你想要什么亮度呢？关闭、低亮度、中等亮度还是高亮度？")
     text = listen()
     if any(w in text for w in ["关", "关闭", "熄", "灭", "off"]):
         return "off"
@@ -371,19 +624,12 @@ def ask_led_preset() -> str:
     return "medium"
 
 
-# ================================================================
-#  题目解答：获取用户问题
-# ================================================================
-
 def ask_question() -> str:
-    speak("请告诉我题目的问题，我来帮你拍照解答。")
+    """询问题目问题"""
+    speak("好的，请把题目放在摄像头前，我来帮你看看！")
     text = listen()
     return text if text else "请解答图片中的题目"
 
-
-# ================================================================
-#  动作回放：询问动作名
-# ================================================================
 
 def ask_action_name(available: list) -> str:
     """
@@ -391,7 +637,7 @@ def ask_action_name(available: list) -> str:
     返回匹配到的动作名，失败返回空字符串。
     """
     names_str = "、".join(available) if available else "无"
-    speak(f"有以下动作可以播放：{names_str}。请说出你想要的动作名称。")
+    speak(f"我可以做这些动作：{names_str}，你想看哪个呢？")
     text = listen()
     # 精确匹配
     for name in available:

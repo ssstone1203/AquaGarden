@@ -1,0 +1,22 @@
+# AquaGarden Agent 依赖
+# pip install -r requirements.txt
+
+# 机械臂 & 视觉
+pyserial>=3.5
+opencv-python>=4.9.0
+numpy>=1.26.0
+
+# 阿里云大模型（LLM / STT / TTS）
+dashscope>=1.20.0
+openai>=1.12.0
+requests>=2.31.0
+
+# 音频录制与播放
+pyaudio>=0.2.14
+pygame>=2.5.0
+
+# 唤醒词检测（可选，注释掉则使用键盘模拟唤醒）
+# openwakeword>=0.6.0
+
+# 环境变量管理
+python-dotenv>=1.0.0

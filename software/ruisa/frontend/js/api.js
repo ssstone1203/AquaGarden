@@ -407,11 +407,22 @@ const armAPI = {
     },
 };
 
+// ── Agent API ───────────────────────────────────────────────────────────────
+const agentAPI = {
+    /**
+     * Agent 对话状态
+     */
+    getStatus: async () => {
+        return apiRequest('/agent/status');
+    },
+};
+
 // ── 导出 ─────────────────────────────────────────────────────────────────────
 window.API = {
     base: API_BASE,
     auth: authAPI,
     arm: armAPI,
+    agent: agentAPI,
     token: tokenManager,
     ApiError,
 };
