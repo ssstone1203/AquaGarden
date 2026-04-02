@@ -39,8 +39,46 @@ def _serial_baud_from_env() -> int:
 # ================================================================
 SERIAL_PORT = _serial_port_from_env()
 SERIAL_BAUD = _serial_baud_from_env()
-CAMERA_INDEX = 1
-CAMERA_ROT   = True   # 摄像头倒装旋转 180°
+
+
+def _arm_camera_device_path():
+    """直连设备节点，例如 Linux `/dev/video2`；设置后不再使用序号。"""
+    for key in ("ARM_CAMERA_DEVICE", "CAMERA_DEVICE_PATH"):
+        v = os.getenv(key)
+        if v and str(v).strip():
+            return str(v).strip()
+    return None
+
+
+def _arm_camera_index() -> int:
+    """
+    机械臂 USB 摄像头序号（避免误用笔记本内置相机：内置常为 0，臂载 USB 常为 1）。
+    优先 ARM_CAMERA_INDEX，其次 CAMERA_INDEX 环境变量，默认 1。
+    """
+    for key in ("ARM_CAMERA_INDEX", "CAMERA_INDEX"):
+        v = os.getenv(key)
+        if v is not None and str(v).strip() != "":
+            try:
+                return int(v)
+            except ValueError:
+                pass
+    return 1
+
+
+def _camera_backend() -> str:
+    """Windows 建议 USB 相机用 dshow：CAMERA_BACKEND=dshow | msmf | v4l2 | auto"""
+    return (os.getenv("CAMERA_BACKEND") or "auto").strip().lower()
+
+
+ARM_CAMERA_DEVICE = _arm_camera_device_path()
+CAMERA_INDEX = _arm_camera_index()
+CAMERA_BACKEND = _camera_backend()
+# 摄像头倒装 180°；环境变量 CAMERA_ROT=0 可关闭
+_cr = os.getenv("CAMERA_ROT")
+if _cr is not None:
+    CAMERA_ROT = _cr.strip().lower() in ("1", "true", "yes", "on")
+else:
+    CAMERA_ROT = True
 
 # ================================================================
 #  初始姿态（所有任务开始/结束后回归此位置）

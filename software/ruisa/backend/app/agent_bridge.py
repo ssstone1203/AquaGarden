@@ -122,12 +122,18 @@ def _dispatch_tasks(arm, task_name: str, params: dict, user_text: str) -> None:
 
 def _run_task_blocking(task_name: str, params: dict, user_text: str) -> tuple[bool, str, Optional[str]]:
     """在后台线程中执行任务，捕获 stdout 作为日志。"""
+    _insert_agent_path()
+    from task_control import TaskCancelled, begin_task  # noqa: WPS433
+
+    begin_task()
     buf = io.StringIO()
     err: Optional[str] = None
     try:
         arm = _get_arm()
         with redirect_stdout(buf):
             _dispatch_tasks(arm, task_name, params, user_text)
+    except TaskCancelled:
+        err = "interrupted"
     except Exception as e:
         logger.exception("task failed")
         err = str(e)
@@ -189,6 +195,17 @@ class AgentBridge:
 
     def end_session(self, session_id: str) -> bool:
         return self._sessions.pop(session_id, None) is not None
+
+    async def handle_interrupt(self, session_id: str) -> dict:
+        """请求中断当前正在执行的机械臂任务（协作式，在子步骤间隙生效）。"""
+        _insert_agent_path()
+        from task_control import request_cancel  # noqa: WPS433
+
+        request_cancel()
+        return {
+            "ok": True,
+            "message": "已发送中断请求；当前动作会在下一步检测点停止（单段 MOVE 进行中无法强行打断）。",
+        }
 
     async def handle_debug_wake(self, session_id: str) -> dict:
         s = self.ensure_session(session_id)
@@ -334,6 +351,15 @@ class AgentBridge:
                     "type": "task_complete",
                     "task": task_name,
                     "result": {"success": True, "message": "任务流程已结束（详见日志）。"},
+                },
+            )
+        elif err == "interrupted":
+            await self.send_to_client(
+                session_id,
+                {
+                    "type": "task_interrupted",
+                    "task": task_name,
+                    "message": "任务已由用户中断。",
                 },
             )
         else:
