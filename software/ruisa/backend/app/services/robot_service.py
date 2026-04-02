@@ -42,15 +42,44 @@ class ArmSerial:
 
     async def connect(self) -> bool:
         """建立串口连接"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
         try:
             import serial
+            import serial.tools.list_ports
+            
+            # 检查串口是否存在
+            available_ports = [p.device for p in serial.tools.list_ports.comports()]
+            logger.info(f"可用串口: {available_ports}")
+            
+            if self.port not in available_ports:
+                logger.warning(f"串口 {self.port} 未找到，可用串口: {available_ports}")
+                return False
+            
             self._serial = serial.Serial(
                 port=self.port,
                 baudrate=self.baudrate,
                 timeout=self.timeout,
+                bytesize=serial.EIGHTBITS,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                xonxoff=False,
+                rtscts=False,
             )
+            
+            # 等待串口稳定
+            import time
+            time.sleep(0.1)
+            
+            # 清空缓冲区
+            self._serial.reset_input_buffer()
+            self._serial.reset_output_buffer()
+            
+            logger.info(f"串口 {self.port} 连接成功")
             return True
-        except Exception:
+        except Exception as e:
+            logger.error(f"串口连接失败: {e}")
             return False
 
     def is_connected(self) -> bool:
@@ -87,22 +116,30 @@ class ArmSerial:
                     min_p = params.get("min_pitch", -90.0)
                     max_p = params.get("max_pitch", 90.0)
                     dur = params.get("duration", 1000)
-                    cmd_str = f"MOVE {x} {y} {z} {pitch} {min_p} {max_p} {dur}\n"
+                    cmd_str = f"MOVE {x} {y} {z} {pitch} {min_p} {max_p} {dur}\r\n"
                 elif command == "GRIPPER_OPEN":
                     dur = params.get("duration", 500) if params else 500
-                    cmd_str = f"GRIPPER_OPEN {dur}\n"
+                    cmd_str = f"GRIPPER_OPEN {dur}\r\n"
                 elif command == "GRIPPER_CLOSE":
                     dur = params.get("duration", 500) if params else 500
-                    cmd_str = f"GRIPPER_CLOSE {dur}\n"
+                    cmd_str = f"GRIPPER_CLOSE {dur}\r\n"
                 else:
-                    cmd_str = f"{command}\n"
+                    cmd_str = f"{command}\r\n"
 
                 t0 = time.time()
-                self._serial.write(cmd_str.encode())
-                resp = self._serial.readline().decode().strip()
+                
+                # 清空接收缓冲区
+                self._serial.reset_input_buffer()
+                
+                # 发送命令
+                self._serial.write(cmd_str.encode('utf-8'))
+                self._serial.flush()
+                
+                # 读取响应（支持 \r\n 或 \n）
+                resp = self._serial.readline().decode('utf-8').strip()
                 elapsed_ms = int((time.time() - t0) * 1000)
 
-                ok = resp in ("OK", "PONG") or resp == "DONE"
+                ok = resp in ("OK", "PONG", "DONE") or resp.startswith("OK")
                 return ok, resp, elapsed_ms
 
             except asyncio.TimeoutError:
@@ -137,11 +174,21 @@ class RobotService:
     # ── 串口连接 ──────────────────────────────────────────────────────────
     async def connect(self) -> dict:
         """建立串口连接"""
-        self._online = await self._serial.connect()
-        if self._online:
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        connected = await self._serial.connect()
+        self._online = connected
+        
+        if connected:
+            logger.info(f"机械臂串口 {self._serial.port} 连接成功，发送 PING...")
             ok, resp, _ = await self._serial.send("PING")
+            logger.info(f"PING 响应: {resp}")
+            
             _, pos_resp, _ = await self._serial.send("READ_POS")
-            # 格式: "x,y,z,pitch\n"（pc_control.c）
+            logger.info(f"READ_POS 响应: {pos_resp}")
+            
+            # 格式: "x,y,z,pitch\r\n"（pc_control.c）
             try:
                 parts = pos_resp.split(",")
                 if len(parts) >= 4:
@@ -151,8 +198,12 @@ class RobotService:
                         z=float(parts[2]),
                         pitch=float(parts[3]),
                     )
+                    logger.info(f"初始位置: {self._last_pos}")
             except (ValueError, IndexError):
-                pass
+                logger.warning(f"无法解析位置数据: {pos_resp}")
+        else:
+            logger.error(f"机械臂串口连接失败: {self._serial.port}")
+            
         return {"connected": self._online, "port": self._serial.port, "baudrate": self._serial.baudrate}
 
     async def disconnect(self) -> None:
