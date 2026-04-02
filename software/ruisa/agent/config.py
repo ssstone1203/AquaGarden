@@ -6,10 +6,39 @@ config.py  ——  Agent 统一配置
 import os
 from pathlib import Path
 
+# 加载 ruisa/.env、ruisa/backend/.env，使 SERIAL_PORT 等与 uvicorn 共用同一套环境变量
+_RUISA_ROOT = Path(__file__).resolve().parent.parent
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(_RUISA_ROOT / ".env")
+    load_dotenv(_RUISA_ROOT / "backend" / ".env")
+except ImportError:
+    pass
+
+
+def _serial_port_from_env() -> str:
+    """Windows: COM3、COM16…；Linux: /dev/ttyUSB0 等。优先环境变量，便于不改代码换口。"""
+    for key in ("SERIAL_PORT", "RUISA_SERIAL_PORT"):
+        v = os.getenv(key)
+        if v and str(v).strip():
+            return str(v).strip()
+    return "COM16"
+
+
+def _serial_baud_from_env() -> int:
+    raw = os.getenv("SERIAL_BAUD", "115200")
+    try:
+        return int(raw)
+    except ValueError:
+        return 115200
+
+
 # ================================================================
-#  硬件
+#  硬件（机械臂下位机串口，协议见 arm.py cmd / MOVE / PING 等）
 # ================================================================
-SERIAL_PORT  = "COM16"
+SERIAL_PORT = _serial_port_from_env()
+SERIAL_BAUD = _serial_baud_from_env()
 CAMERA_INDEX = 1
 CAMERA_ROT   = True   # 摄像头倒装旋转 180°
 
