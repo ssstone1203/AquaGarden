@@ -3,16 +3,24 @@
 agent.py  ——  AI 机械臂辅学系统主入口
 
 工作流程：
-  初始姿态 → 等待唤醒词 → 与 AI 对话确定任务 → 执行任务 → 回归初始姿态 → 循环
+  初始姿态 → 等待唤醒词 → 持续对话直到用户说"拜拜" → 回归初始姿态 → 循环
 
 任务列表：
   1. clamp  —— 颜色识别与分拣
-  2. led    —— 智能台灯
+  2. led    —— 智能台灯（支持语言调亮调暗打开关闭）
   3. face   —— 人脸识别追踪
   4. answer —— 题目解答
 
+特点：
+  - 持续对话模式：唤醒一次后持续对话，直到用户说"拜拜"才退出
+  - 自然语言表达：不用"任务"等生硬词汇
+  - 动作回放结合真实数据（如天气）
+  - Debug 模式：键盘输入模拟唤醒和对话
+
 启动：
   python agent.py
+  # Debug 模式（不需要麦克风和语音）：
+  DEBUG=1 python agent.py
 """
 
 import sys
@@ -28,6 +36,9 @@ import dialogue
 from arm import Arm
 from tasks import task_clamp, task_led, task_face, task_answer, task_action, list_actions
 
+# Debug 模式：直接使用键盘输入，无需麦克风
+DEBUG_MODE = os.getenv("DEBUG", "0") == "1"
+
 try:
     from wakeword import WakeWordDetector
     _WAKE_AVAILABLE = True
@@ -35,7 +46,7 @@ except ImportError as _e:
     _WAKE_AVAILABLE = False
     print(f"[Agent] 唤醒词模块加载失败: {_e}")
     print("       请执行: pip install openwakeword pyaudio numpy")
-    print("[Agent] 将使用 Enter 键模拟唤醒")
+    print("[Agent] 将使用 Enter 键模拟唤醒（DEBUG 模式）")
 
 
 # ================================================================
@@ -48,7 +59,7 @@ def _dispatch(arm: Arm, task_name: str, params: dict):
         task_clamp(arm)
 
     elif task_name == "led":
-        preset = params.get("preset") or dialogue.ask_led_preset()
+        preset = params.get("preset") or "medium"
         task_led(arm, preset_key=preset)
 
     elif task_name == "face":
@@ -62,7 +73,6 @@ def _dispatch(arm: Arm, task_name: str, params: dict):
         action_name = params.get("action", "")
         available   = list_actions()
         if action_name not in available:
-            # LLM 未给出明确动作名，语音询问用户
             action_name = dialogue.ask_action_name(available)
         if action_name:
             task_action(arm, action_name)
@@ -74,13 +84,64 @@ def _dispatch(arm: Arm, task_name: str, params: dict):
 
 
 # ================================================================
+#  持续对话主循环
+# ================================================================
+
+def _continuous_session(arm: Arm):
+    """
+    一次唤醒后的持续对话会话。
+    用户说"拜拜"前会持续接收指令并执行任务。
+    """
+    # 打招呼
+    dialogue.speak("你好呀！我是小臂，你的学习小助手~ 有什么需要帮忙的吗？")
+
+    while True:
+        print("\n[小臂] 听你说...")
+        text = dialogue.listen()
+
+        if not text:
+            dialogue.speak("嗯？我没听清楚，你可以再说一次吗？")
+            continue
+
+        # 检查是否结束
+        if dialogue.should_end_session(text):
+            farewell = dialogue.generate_farewell_response()
+            dialogue.speak(farewell)
+            break
+
+        # 解析意图
+        task_name, params = dialogue.parse(text)
+
+        if task_name == "unknown":
+            dialogue.speak("嗯嗯，我听到了~ 你还有什么想让我帮忙的吗？")
+        else:
+            # 生成自然回复并说话
+            response = dialogue.generate_natural_response(task_name, params)
+            dialogue.speak(response)
+
+            # 执行任务
+            try:
+                _dispatch(arm, task_name, params)
+            except KeyboardInterrupt:
+                print("\n[小臂] 任务被中断")
+                dialogue.speak("好的，任务中断了。还想让我帮你做别的吗？")
+            except Exception as e:
+                print(f"[小臂] 任务异常: {e}")
+                dialogue.speak("抱歉，遇到了一点问题，我们继续聊吧~")
+
+    print("[小臂] 对话结束，等待下次唤醒...")
+
+
+# ================================================================
 #  主循环
 # ================================================================
 
 def main():
     print("=" * 56)
-    print("  Jarvis — AI 机械臂辅学助手  启动中...")
+    print("  小臂 — AI 机械臂辅学助手  启动中...")
     print("=" * 56)
+    if DEBUG_MODE:
+        print("  [DEBUG 模式] 所有语音输入输出在终端进行")
 
     # 初始化串口
     try:
@@ -97,7 +158,6 @@ def main():
     print("[Agent] 移到初始姿态...")
     arm.go_home()
     time.sleep(config.HOME["dur"] / 1000 + 0.5)
-    dialogue.speak("你好！我是 Jarvis，你的学习小助手，随时叫我！")
 
     # ── 唤醒模式 ─────────────────────────────────────────────────
     _wake_event = threading.Event()
@@ -106,7 +166,7 @@ def main():
         print(f"\n[唤醒] 检测到唤醒词！({model_name}, score={score:.3f})")
         _wake_event.set()
 
-    if _WAKE_AVAILABLE:
+    if _WAKE_AVAILABLE and not DEBUG_MODE:
         detector = WakeWordDetector(
             model=config.WAKE_MODEL,
             threshold=config.WAKE_THRESHOLD,
@@ -116,59 +176,30 @@ def main():
         detector.start_background()
         print(f"[Agent] 等待唤醒词 '{config.WAKE_MODEL}'...\n")
     else:
+        if not DEBUG_MODE:
+            print("[Agent] 唤醒词不可用，使用 Enter 键模拟唤醒")
         print("[Agent] 按 Enter 键模拟唤醒，Ctrl-C 退出\n")
 
     # ── 主状态机循环 ──────────────────────────────────────────────
     try:
         while True:
             # 等待唤醒
-            if _WAKE_AVAILABLE:
+            if _WAKE_AVAILABLE and not DEBUG_MODE:
                 _wake_event.wait()
                 _wake_event.clear()
             else:
                 input()   # Enter 键模拟唤醒
                 print("[唤醒] 模拟唤醒触发")
 
-            _TASK_LABELS = {
-                "clamp":  "颜色识别与分拣",
-                "led":    "智能台灯",
-                "face":   "人脸识别追踪",
-                "answer": "题目解答",
-                "action": "动作回放",
-            }
-            _TASK_HINT = "可选任务：分拣 / 台灯 / 人脸追踪 / 题目解答 / 动作回放"
-
-            # 语音识别 + 意图解析（最多重试 3 次）
-            task_name, params = "unknown", {}
-            for attempt in range(3):
-                prompt = "我在，请告诉我要做什么任务？" if attempt == 0 else f"没听清，请再说一次。（{_TASK_HINT}）"
-                dialogue.speak(prompt)
-                text              = dialogue.listen()
-                task_name, params = dialogue.parse(text)
-                if task_name != "unknown":
-                    break
-
-            if task_name == "unknown":
-                dialogue.speak("多次未能识别，退出等待下次唤醒。")
-                arm.go_home()
-                continue
-
-            dialogue.speak(f"好的，开始执行：{_TASK_LABELS.get(task_name, task_name)}")
-
-            # 执行任务
-            try:
-                _dispatch(arm, task_name, params)
-            except KeyboardInterrupt:
-                print("\n[Agent] 任务被中断")
-            except Exception as e:
-                print(f"[Agent] 任务异常: {e}")
+            # 持续对话会话（直到用户说"拜拜"）
+            _continuous_session(arm)
 
             # 回归初始姿态
-            print("[Agent] 任务完成，回归初始姿态...")
+            print("[Agent] 回归初始姿态...")
             arm.go_home()
             time.sleep(config.HOME["dur"] / 1000 + 0.3)
 
-            if _WAKE_AVAILABLE:
+            if _WAKE_AVAILABLE and not DEBUG_MODE:
                 print(f"[Agent] 等待下次唤醒...\n")
             else:
                 print("[Agent] 等待 Enter 键...\n")
@@ -176,7 +207,7 @@ def main():
     except KeyboardInterrupt:
         print("\n[Agent] 收到退出信号，关闭中...")
     finally:
-        if _WAKE_AVAILABLE:
+        if _WAKE_AVAILABLE and not DEBUG_MODE:
             detector.stop()
         arm.close()
         print("[Agent] 已退出")
