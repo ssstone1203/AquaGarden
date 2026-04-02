@@ -1,180 +1,90 @@
-"""
-Agent WebSocket 路由 —— 实时对话通道
+"""Agent WebSocket — 与 agent_bridge 对接（无登录）。"""
 
-WS /api/v1/ws/agent/chat
-"""
-
-import asyncio
-import json
-import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from app.core.security import decode_token
-from app.services.agent_service import agent_service
+from app.agent_bridge import agent_bridge, new_session_id
 
 router = APIRouter()
 
 
 @router.websocket("/agent/chat")
-async def ws_agent_chat(
-    websocket: WebSocket,
-    token: str = Query(""),
-):
-    """
-    Agent 实时对话 WebSocket 通道。
-
-    客户端连接后，进入等待用户输入状态。
-    
-    客户端发送消息格式：
-    {
-        "type": "message",           // 消息类型
-        "text": "用户说的话",         // 文本内容
-        "image_data": "data:...",    // 可选，base64 图片
-    }
-    {
-        "type": "debug_wake",        // 键盘 DEBUG 开启时模拟 agent.py 按 Enter 唤醒
-    }
-    {
-        "type": "set_debug_keyboard", // 切换键盘 DEBUG（无需改环境变量）
-        "enabled": true
-    }
-
-    服务器推送格式：
-    {
-        "type": "response",          // AI 响应
-        "response": "AI说的话",
-        "task_triggered": true,      // 是否触发了任务
-        "task_name": "clamp",        // 任务名
-        "session_state": "executing",
-        "should_end": false,
-    }
-    {
-        "type": "task_start",        // 任务开始
-        "task": "clamp",
-        "params": {},
-    }
-    {
-        "type": "task_log",          // 任务日志
-        "message": "正在识别颜色...",
-    }
-    {
-        "type": "task_progress",     // 任务进度
-        "task": "clamp",
-        "step": "detecting",
-        "message": "...",
-    }
-    {
-        "type": "task_complete",      // 任务完成
-        "task": "clamp",
-        "result": {"success": true, "message": "..."},
-    }
-    {
-        "type": "task_error",         // 任务错误
-        "task": "clamp",
-        "error": "错误信息",
-    }
-    """
+async def ws_agent_chat(websocket: WebSocket):
     await websocket.accept()
-
-    # 验证 Token
-    if token:
-        payload = decode_token(token)
-        if payload is None:
-            await websocket.close(code=4001)
-            return
-        user_id = payload.get("sub", "anonymous")
-    else:
-        user_id = "anonymous"
-
-    # 创建会话 ID
-    session_id = f"{user_id}_{uuid.uuid4().hex[:8]}"
+    session_id = new_session_id()
 
     async def send_json(data: dict):
-        """发送 JSON 数据到客户端"""
         try:
             await websocket.send_json(data)
         except Exception:
             pass
 
-    # 注册 WebSocket 回调
-    agent_service.register_ws_callback(session_id, send_json)
+    agent_bridge.register_ws_callback(session_id, send_json)
+    sess = agent_bridge.ensure_session(session_id)
 
-    sess0 = agent_service.ensure_session(session_id)
-
-    # 发送连接成功消息（会话级 debug_keyboard，可由 set_debug_keyboard 覆盖）
-    await send_json({
-        "type": "connected",
-        "session_id": session_id,
-        "agent_debug_keyboard": sess0.debug_keyboard,
-        "needs_wake": sess0.debug_keyboard and not sess0.awake,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    })
+    await send_json(
+        {
+            "type": "connected",
+            "session_id": session_id,
+            "agent_debug_keyboard": sess.debug_keyboard,
+            "needs_wake": sess.debug_keyboard and not sess.awake,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+    )
 
     try:
         while True:
-            # 接收客户端消息
             data = await websocket.receive_json()
             msg_type = data.get("type", "")
 
             if msg_type == "message":
-                # 处理用户消息
                 text = data.get("text", "")
                 image_data = data.get("image_data")
-
-                # 调用 Agent 服务处理
-                result = await agent_service.handle_message(
+                result = await agent_bridge.handle_message(
                     session_id=session_id,
                     text=text,
                     image_data=image_data,
                 )
-
-                # 发送 AI 响应
-                await send_json({
-                    "type": "response",
-                    **result,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                })
+                await send_json(
+                    {
+                        "type": "response",
+                        **result,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
 
             elif msg_type == "ping":
-                # 心跳
-                await send_json({
-                    "type": "pong",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                })
+                await send_json({"type": "pong", "timestamp": datetime.now(timezone.utc).isoformat()})
 
             elif msg_type == "debug_wake":
-                result = await agent_service.handle_debug_wake(session_id)
-                await send_json({
-                    "type": "response",
-                    **result,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                })
+                result = await agent_bridge.handle_debug_wake(session_id)
+                await send_json(
+                    {
+                        "type": "response",
+                        **result,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
 
             elif msg_type == "set_debug_keyboard":
                 enabled = bool(data.get("enabled", False))
-                sess = agent_service.set_debug_keyboard(session_id, enabled)
-                await send_json({
-                    "type": "debug_mode",
-                    "agent_debug_keyboard": sess.debug_keyboard,
-                    "needs_wake": sess.debug_keyboard and not sess.awake,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                })
+                s = agent_bridge.set_debug_keyboard(session_id, enabled)
+                await send_json(
+                    {
+                        "type": "debug_mode",
+                        "agent_debug_keyboard": s.debug_keyboard,
+                        "needs_wake": s.debug_keyboard and not s.awake,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
 
             elif msg_type == "end_session":
-                # 主动结束会话
-                agent_service.end_session(session_id)
-                await send_json({
-                    "type": "session_ended",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                })
+                agent_bridge.end_session(session_id)
+                await send_json({"type": "session_ended", "timestamp": datetime.now(timezone.utc).isoformat()})
 
     except WebSocketDisconnect:
         pass
-    except Exception:
-        pass
     finally:
-        # 清理
-        agent_service.unregister_ws_callback(session_id)
-        agent_service.end_session(session_id)
+        agent_bridge.unregister_ws_callback(session_id)
+        agent_bridge.end_session(session_id)
