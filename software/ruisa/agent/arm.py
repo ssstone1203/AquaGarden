@@ -1,12 +1,23 @@
 """
 arm.py  ——  共享串口 Arm 类
 所有任务通过同一个 Arm 实例操作机械臂，避免多次开关串口。
+
+连接方式：pyserial.Serial(port, baud)；Windows 端口名为 COMx（如 COM3），
+与 config.SERIAL_PORT / 环境变量 SERIAL_PORT 一致，默认波特率 config.SERIAL_BAUD（通常 115200）。
 """
 
-import serial
-import time
-import threading
 import math
+import threading
+import time
+from typing import Optional
+
+try:
+    from serial import Serial, SerialException
+except ImportError:
+    raise ImportError(
+        "未安装 pyserial 或误装了 PyPI 上的同名包 'serial'。"
+        "请执行: pip uninstall serial -y; pip install pyserial"
+    ) from None
 
 import config
 
@@ -14,10 +25,19 @@ import config
 class Arm:
     """线程安全的机械臂串口封装"""
 
-    def __init__(self, port: str = config.SERIAL_PORT, baud: int = 115200):
-        self._s    = serial.Serial(port, baud, timeout=0)
+    def __init__(self, port: Optional[str] = None, baud: Optional[int] = None):
+        port = port if port is not None else config.SERIAL_PORT
+        baud = baud if baud is not None else getattr(config, "SERIAL_BAUD", 115200)
+        try:
+            self._s = Serial(port, baud, timeout=0)
+        except SerialException as e:
+            raise SerialException(
+                f"无法打开串口 {port!r}（波特率 {baud}）。请检查：USB 是否插好、驱动是否正常、"
+                f"设备管理器中 COM 号是否变化；可在环境变量或 .env 中设置 SERIAL_PORT=COMx "
+                f"（Linux 一般为 /dev/ttyUSB0），必要时设置 SERIAL_BAUD。"
+            ) from e
         self._lock = threading.Lock()
-        self._buf  = b""
+        self._buf = b""
         time.sleep(0.3)
         self._s.reset_input_buffer()
 
@@ -94,4 +114,5 @@ class Arm:
         return self.cmd("PING", 2) == "PONG"
 
     def close(self):
-        self._s.close()
+        if self._s and getattr(self._s, "is_open", False):
+            self._s.close()

@@ -146,7 +146,7 @@ def main():
 
     # 初始化串口
     try:
-        arm = Arm(config.SERIAL_PORT)
+        arm = Arm()  # 串口：config.SERIAL_PORT / 环境变量 SERIAL_PORT（如 COM3）
     except Exception as e:
         print(f"[Agent] 串口连接失败: {e}")
         print(f"        请检查 config.py 中 SERIAL_PORT = '{config.SERIAL_PORT}'")

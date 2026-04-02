@@ -6,12 +6,79 @@ config.py  ——  Agent 统一配置
 import os
 from pathlib import Path
 
+# 加载 ruisa/.env、ruisa/backend/.env，使 SERIAL_PORT 等与 uvicorn 共用同一套环境变量
+_RUISA_ROOT = Path(__file__).resolve().parent.parent
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(_RUISA_ROOT / ".env")
+    load_dotenv(_RUISA_ROOT / "backend" / ".env")
+except ImportError:
+    pass
+
+
+def _serial_port_from_env() -> str:
+    """Windows: COM3、COM16…；Linux: /dev/ttyUSB0 等。优先环境变量，便于不改代码换口。"""
+    for key in ("SERIAL_PORT", "RUISA_SERIAL_PORT"):
+        v = os.getenv(key)
+        if v and str(v).strip():
+            return str(v).strip()
+    return "COM8"
+
+
+def _serial_baud_from_env() -> int:
+    raw = os.getenv("SERIAL_BAUD", "115200")
+    try:
+        return int(raw)
+    except ValueError:
+        return 115200
+
+
 # ================================================================
-#  硬件
+#  硬件（机械臂下位机串口，协议见 arm.py cmd / MOVE / PING 等）
 # ================================================================
-SERIAL_PORT  = "COM16"
-CAMERA_INDEX = 1
-CAMERA_ROT   = True   # 摄像头倒装旋转 180°
+SERIAL_PORT = _serial_port_from_env()
+SERIAL_BAUD = _serial_baud_from_env()
+
+
+def _arm_camera_device_path():
+    """直连设备节点，例如 Linux `/dev/video2`；设置后不再使用序号。"""
+    for key in ("ARM_CAMERA_DEVICE", "CAMERA_DEVICE_PATH"):
+        v = os.getenv(key)
+        if v and str(v).strip():
+            return str(v).strip()
+    return None
+
+
+def _arm_camera_index() -> int:
+    """
+    机械臂 USB 摄像头序号（避免误用笔记本内置相机：内置常为 0，臂载 USB 常为 1）。
+    优先 ARM_CAMERA_INDEX，其次 CAMERA_INDEX 环境变量，默认 1。
+    """
+    for key in ("ARM_CAMERA_INDEX", "CAMERA_INDEX"):
+        v = os.getenv(key)
+        if v is not None and str(v).strip() != "":
+            try:
+                return int(v)
+            except ValueError:
+                pass
+    return 1
+
+
+def _camera_backend() -> str:
+    """Windows 建议 USB 相机用 dshow：CAMERA_BACKEND=dshow | msmf | v4l2 | auto"""
+    return (os.getenv("CAMERA_BACKEND") or "auto").strip().lower()
+
+
+ARM_CAMERA_DEVICE = _arm_camera_device_path()
+CAMERA_INDEX = _arm_camera_index()
+CAMERA_BACKEND = _camera_backend()
+# 摄像头倒装 180°；环境变量 CAMERA_ROT=0 可关闭
+_cr = os.getenv("CAMERA_ROT")
+if _cr is not None:
+    CAMERA_ROT = _cr.strip().lower() in ("1", "true", "yes", "on")
+else:
+    CAMERA_ROT = True
 
 # ================================================================
 #  初始姿态（所有任务开始/结束后回归此位置）
