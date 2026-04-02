@@ -2,7 +2,7 @@
 通用响应与分页模型
 """
 from datetime import datetime
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, Optional, TypeVar, Union
 
 from pydantic import BaseModel, ConfigDict
 
@@ -55,7 +55,7 @@ class PageParams(BaseModel):
 
 class SensorStatusValues(BaseModel):
     """传感器状态值"""
-    value: Optional[float | int] = None
+    value: Optional[Union[float, int]] = None
     unit: Optional[str] = None
     status: str = "normal"
     threshold_min: Optional[float] = None

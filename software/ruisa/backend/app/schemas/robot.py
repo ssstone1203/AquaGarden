@@ -2,6 +2,7 @@
 机械臂相关 Pydantic 模型
 """
 from datetime import datetime
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -19,14 +20,14 @@ class ArmPosition(BaseModel):
 class CalibrationResult(BaseModel):
     """标定结果"""
     name: str
-    table_z: float | None = None
-    block_height: float | None = None
-    obs_x: float | None = None
-    obs_y: float | None = None
-    obs_z: float | None = None
-    obs_pitch: float | None = None
+    table_z: Optional[float] = None
+    block_height: Optional[float] = None
+    obs_x: Optional[float] = None
+    obs_y: Optional[float] = None
+    obs_z: Optional[float] = None
+    obs_pitch: Optional[float] = None
     samples_count: int = 0
-    created_at: datetime | None = None
+    created_at: Optional[datetime] = None
 
 
 class CalibrationSave(BaseModel):
@@ -38,11 +39,11 @@ class CalibrationSave(BaseModel):
     obs_y: float = Field(..., description="观测位 Y (cm)")
     obs_z: float = Field(..., description="观测位 Z (cm)")
     obs_pitch: float = Field(..., description="观测位俯仰角 (°)")
-    affine_matrix: list[float] | None = Field(
+    affine_matrix: Optional[List[float]] = Field(
         None,
         description="仿射变换矩阵（12个float，行优先4×3）",
     )
-    teach_samples: list[dict] | None = Field(
+    teach_samples: Optional[List[dict]] = Field(
         None,
         description="示教原始数据",
     )
@@ -52,14 +53,14 @@ class CalibrationResponse(BaseModel):
     """标定响应"""
     id: str
     name: str
-    table_z: float | None = None
-    block_height: float | None = None
-    obs_x: float | None = None
-    obs_y: float | None = None
-    obs_z: float | None = None
-    obs_pitch: float | None = None
+    table_z: Optional[float] = None
+    block_height: Optional[float] = None
+    obs_x: Optional[float] = None
+    obs_y: Optional[float] = None
+    obs_z: Optional[float] = None
+    obs_pitch: Optional[float] = None
     is_active: str
-    created_at: datetime | None = None
+    created_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 
@@ -80,16 +81,16 @@ class ColorTargetResult(BaseModel):
     center_x: int
     center_y: int
     confidence: float
-    arm_x: float | None = Field(None, description="转换后的机械臂 X (cm)")
-    arm_y: float | None = Field(None, description="转换后的机械臂 Y (cm)")
-    arm_z: float | None = Field(None, description="转换后的机械臂 Z (cm)")
-    arm_pitch: float | None = Field(None, description="转换后的俯仰角 (°)")
+    arm_x: Optional[float] = Field(None, description="转换后的机械臂 X (cm)")
+    arm_y: Optional[float] = Field(None, description="转换后的机械臂 Y (cm)")
+    arm_z: Optional[float] = Field(None, description="转换后的机械臂 Z (cm)")
+    arm_pitch: Optional[float] = Field(None, description="转换后的俯仰角 (°)")
 
 
 class ColorDetectionResponse(BaseModel):
     """颜色检测响应"""
     targets: list[ColorTargetResult]
-    obs_position: ArmPosition | None = None
+    obs_position: Optional[ArmPosition] = None
 
 
 # ── 夹取任务 ───────────────────────────────────────────────────────────────
@@ -103,8 +104,8 @@ class ClampStepResponse(BaseModel):
     """夹取步骤进度"""
     step: str
     status: str  # running | ok | error
-    position: ArmPosition | None = None
-    message: str | None = None
+    position: Optional[ArmPosition] = None
+    message: Optional[str] = None
 
 
 class ClampTaskResponse(BaseModel):
@@ -120,7 +121,7 @@ class ClampTaskResponse(BaseModel):
 class SerialCommandRequest(BaseModel):
     """串口直接命令"""
     command: str = Field(..., description="命令字: PING | RESET | UNLOAD | READ_POS | MOVE | GRIPPER_OPEN | GRIPPER_CLOSE | DIST")
-    params: dict | None = Field(None, description="参数 dict")
+    params: Optional[dict] = Field(None, description="参数 dict")
 
 
 class SerialCommandResponse(BaseModel):
@@ -137,10 +138,10 @@ class OperationLogEntry(BaseModel):
     """操作日志条目"""
     id: int
     action: str
-    params: dict | None = None
-    response: str | None = None
+    params: Optional[dict] = None
+    response: Optional[str] = None
     result: str
-    duration_ms: int | None = None
+    duration_ms: Optional[int] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -150,9 +151,9 @@ class OperationLogEntry(BaseModel):
 class ArmStatusResponse(BaseModel):
     """机械臂实时状态"""
     online: bool
-    position: ArmPosition | None = None
+    position: Optional[ArmPosition] = None
     gripper_open: bool
     calibration_loaded: bool
-    calibration_name: str | None = None
-    last_command: str | None = None
-    last_updated: datetime | None = None
+    calibration_name: Optional[str] = None
+    last_command: Optional[str] = None
+    last_updated: Optional[datetime] = None

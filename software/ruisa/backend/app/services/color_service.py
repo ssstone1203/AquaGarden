@@ -5,7 +5,7 @@
 import json
 import time
 from datetime import datetime, timezone
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 
@@ -43,7 +43,7 @@ class ColorService:
     def detect_and_convert(
         self,
         frame: np.ndarray,
-        colors: list[str] | None = None,
+        colors: Optional[List[str]] = None,
         depth_image: Optional[np.ndarray] = None,
     ) -> list[dict]:
         """

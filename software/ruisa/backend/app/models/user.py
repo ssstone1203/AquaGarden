@@ -4,6 +4,7 @@
 import uuid
 from datetime import datetime, timezone
 from enum import Enum as PyEnum
+from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -32,7 +33,7 @@ class User(Base):
         nullable=False,
         index=True,
     )
-    email: Mapped[str | None] = mapped_column(
+    email: Mapped[Optional[str]] = mapped_column(
         String(255),
         unique=True,
         nullable=True,
@@ -64,8 +65,8 @@ class User(Base):
         nullable=False,
     )
     # 可选：头像 URL、个人简介等扩展字段
-    avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    bio: Mapped[str | None] = mapped_column(Text, nullable=True)
+    avatar_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    bio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     def __repr__(self) -> str:
         return f"<User {self.username}>"
