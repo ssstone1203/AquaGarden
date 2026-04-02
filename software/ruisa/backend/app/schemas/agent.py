@@ -3,7 +3,8 @@ Agent 相关 Pydantic 模型
 """
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -17,7 +18,7 @@ class SessionState(str, Enum):
 
 
 class TaskType(str, Enum):
-    """任务类型"""
+    """任务类型（与 agent/agent.py 五项一致 + unknown 由解析侧返回）"""
     CLAMP = "clamp"
     LED = "led"
     FACE = "face"
@@ -112,6 +113,13 @@ class WSMessageSend(BaseModel):
     type: str = Field(..., description="消息类型: message | ping | end_session")
     text: Optional[str] = Field(None, description="文本内容")
     image_data: Optional[str] = Field(None, description="base64 图片")
+
+
+class TrainedInferRequest(BaseModel):
+    """调用 Agent 扩展 .pyc 中的 infer / predict"""
+
+    text: str = Field(..., description="输入文本")
+    context: dict[str, Any] = Field(default_factory=dict, description="传给 infer 的可选关键字参数")
 
 
 class WSMessageReceive(BaseModel):

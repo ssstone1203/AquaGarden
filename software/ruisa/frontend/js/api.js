@@ -415,6 +415,27 @@ const agentAPI = {
     getStatus: async () => {
         return apiRequest('/agent/status');
     },
+
+    /**
+     * 是否已加载 AGENT_TRAINED_PYC 扩展
+     * GET /api/v1/agent/trained/status
+     */
+    trainedStatus: async () => {
+        return apiRequest('/agent/trained/status');
+    },
+
+    /**
+     * 调用扩展 .pyc 中的 infer / predict
+     * POST /api/v1/agent/trained/infer
+     * @param {string} text
+     * @param {object} [context] - 作为 infer(text, **context) 的关键字参数
+     */
+    trainedInfer: async (text, context = {}) => {
+        return apiRequest('/agent/trained/infer', {
+            method: 'POST',
+            body: { text, context },
+        });
+    },
 };
 
 // ── 导出 ─────────────────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@
 封装串口通信、标定管理、夹取分拣任务
 """
 import asyncio
+import logging
 import time
 from datetime import datetime, timezone
 from typing import Optional
@@ -11,6 +12,7 @@ import numpy as np
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models.robot import RobotCalibration, RobotOperationLog
 from app.schemas.robot import (
     ArmPosition,
@@ -167,7 +169,6 @@ class RobotService:
     """
 
     def __init__(self):
-        from app.config import settings
         self._serial = ArmSerial(
             port=settings.robot_serial_port,
             baudrate=settings.robot_baudrate,
@@ -269,12 +270,64 @@ class RobotService:
         )
 
     # ── 标定 ────────────────────────────────────────────────────────────
+    def _load_calibration_from_teach_map_file(self) -> bool:
+        """
+        从 collect_teach.py 生成的 teach_map.npz 加载（与 clamp.py / agent MAP_FILE 同源）。
+        仿射矩阵表示像素到机械臂坐标的绝对映射（与 target/clamp/clamp.py 一致），
+        颜色服务侧观测偏移置零，观测位姿单独存在 RobotCalibration 字段供夹取流程使用。
+        """
+        path = settings.robot_teach_map_path
+        if not path.is_file():
+            return False
+        log = logging.getLogger(__name__)
+        try:
+            data = np.load(path, allow_pickle=False)
+            A = np.asarray(data["A"], dtype=np.float64)
+            if A.shape != (4, 3):
+                log.warning("teach_map.npz 中 A 形状应为 (4,3)，实际: %s", A.shape)
+                return False
+            obs_pose = data.get("obs_pose")
+            if obs_pose is None:
+                ox, oy, oz, op = 16.0, 0.0, -3.2, -76.1
+            else:
+                opa = np.asarray(obs_pose).astype(np.float64).flatten()
+                if opa.size < 4:
+                    return False
+                ox, oy, oz, op = float(opa[0]), float(opa[1]), float(opa[2]), float(opa[3])
+            affine_flat = A.reshape(-1).astype(float).tolist()
+            self._calibration = RobotCalibration(
+                name="teach_map.npz",
+                affine_matrix=affine_flat,
+                obs_x=ox,
+                obs_y=oy,
+                obs_z=oz,
+                obs_pitch=op,
+                table_z=None,
+                block_height=3.0,
+                teach_samples=None,
+                is_active="true",
+            )
+            self._color_service.load_calibration(
+                affine_matrix=affine_flat,
+                obs_position={
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "pitch": 0.0,
+                },
+            )
+            log.info("已从示教文件加载标定: %s", path)
+            return True
+        except Exception as e:
+            log.warning("读取 teach_map 失败 (%s): %s", path, e)
+            return False
+
     async def load_calibration(
         self,
         db: AsyncSession,
         name: str = "default",
     ) -> bool:
-        """加载指定标定数据到内存"""
+        """加载指定标定到内存；数据库无对应记录且 name 为 default 时尝试 teach_map.npz。"""
         stmt = select(RobotCalibration).where(
             RobotCalibration.name == name,
             RobotCalibration.is_active == "true",
@@ -282,21 +335,23 @@ class RobotService:
         result = await db.execute(stmt)
         calib = result.scalar_one_or_none()
 
-        if calib is None:
-            return False
+        if calib is not None:
+            self._calibration = calib
+            if calib.affine_matrix:
+                self._color_service.load_calibration(
+                    affine_matrix=calib.affine_matrix,
+                    obs_position={
+                        "x": calib.obs_x or 0.0,
+                        "y": calib.obs_y or 0.0,
+                        "z": calib.obs_z or 0.0,
+                        "pitch": calib.obs_pitch or 0.0,
+                    },
+                )
+            return True
 
-        self._calibration = calib
-        if calib.affine_matrix:
-            self._color_service.load_calibration(
-                affine_matrix=calib.affine_matrix,
-                obs_position={
-                    "x": calib.obs_x or 0.0,
-                    "y": calib.obs_y or 0.0,
-                    "z": calib.obs_z or 0.0,
-                    "pitch": calib.obs_pitch or 0.0,
-                },
-            )
-        return True
+        if name == "default" and self._load_calibration_from_teach_map_file():
+            return True
+        return False
 
     async def save_calibration(
         self,
@@ -391,7 +446,12 @@ class RobotService:
             raise ValueError(f"未知颜色: {color}")
 
         if self._calibration is None:
-            raise RuntimeError("请先加载标定数据")
+            await self.load_calibration(db, "default")
+        if self._calibration is None:
+            raise RuntimeError(
+                "请先加载标定数据：数据库无 default 标定，且未找到示教文件 "
+                f"{settings.robot_teach_map_path}（可运行 software/target/clamp/collect_teach.py 生成）"
+            )
 
         table_z = self._calibration.table_z or 0.0
         block_height = self._calibration.block_height or 3.0
@@ -514,6 +574,91 @@ class RobotService:
                 duration_seconds=round(duration, 1),
                 steps=steps,
             )
+
+    async def play_action_sequence(
+        self,
+        db: AsyncSession,
+        action_name: str,
+    ) -> dict:
+        """
+        回放 agent/config.ACTIONS_DIR 下的动作 JSON（与 agent/tasks.task_action 同源逻辑）。
+        使用串口 MOVE / MOVE_NB，并写入操作日志。
+        """
+        import json
+        from pathlib import Path
+
+        from agent import config as agent_config
+
+        safe = action_name.replace("/", "_").replace("\\", "_")
+        path = Path(agent_config.ACTIONS_DIR) / f"{safe}.json"
+        if not path.is_file():
+            return {"success": False, "message": f"找不到动作文件: {action_name}"}
+
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        keyframes = data.get("keyframes") or []
+        if not keyframes:
+            return {"success": False, "message": f"动作为空: {action_name}"}
+
+        dur_ms = agent_config.ACTION_PLAYBACK_DUR_MS
+        interval_ms = agent_config.ACTION_PLAYBACK_INTERVAL_MS
+        pause_thr = agent_config.ACTION_PAUSE_THRESHOLD_MS
+
+        if not await self.is_online():
+            return {"success": False, "message": "机械臂串口未连接"}
+
+        h = agent_config.HOME
+        await self.send_command(db, "MOVE", {
+            "x": h["x"],
+            "y": h["y"],
+            "z": h["z"],
+            "pitch": h["pitch"],
+            "min_pitch": -90.0,
+            "max_pitch": 90.0,
+            "duration": int(h.get("dur", 2000)),
+        })
+        await asyncio.sleep(2.0)
+
+        total = len(keyframes)
+        for i, frame in enumerate(keyframes, 1):
+            x = float(frame["x"])
+            y = float(frame["y"])
+            z = float(frame["z"])
+            pitch = float(frame["pitch"])
+            stored_dur = int(frame.get("duration", 200))
+            is_pause = stored_dur > pause_thr
+            is_last = i == total
+
+            if is_last or is_pause:
+                block_dur = stored_dur if is_pause else dur_ms
+                await self.send_command(db, "MOVE", {
+                    "x": x,
+                    "y": y,
+                    "z": z,
+                    "pitch": pitch,
+                    "min_pitch": -90.0,
+                    "max_pitch": 90.0,
+                    "duration": block_dur,
+                })
+            else:
+                cmd = (
+                    f"MOVE_NB {x:.2f} {y:.2f} {z:.2f} {pitch:.1f} "
+                    f"-90 90 {int(dur_ms)}"
+                )
+                ok, _, _ = await self._serial.send(cmd)
+                if not ok:
+                    return {
+                        "success": False,
+                        "message": f"MOVE_NB 失败（帧 {i}/{total}）",
+                        "frames_done": i - 1,
+                    }
+                await asyncio.sleep(interval_ms / 1000.0)
+
+        return {
+            "success": True,
+            "message": f"动作「{action_name}」回放完成",
+            "frames": total,
+        }
 
     # ── 状态查询 ──────────────────────────────────────────────────────
     async def get_status(self) -> dict:

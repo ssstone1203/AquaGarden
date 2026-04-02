@@ -1,5 +1,12 @@
 """
-agent_service.py —— Agent 对话服务
+agent_service.py —— Agent 对话服务（与 agent/agent.py 五项任务一一对应）
+
+任务表（与 agent.py 文档一致）：
+  1. clamp  —— 颜色识别与分拣  → task_clamp / 后端 run_clamp_task
+  2. led    —— 智能台灯        → task_led
+  3. face   —— 人脸识别追踪    → task_face
+  4. answer —— 题目解答        → task_answer
+  5. action —— 动作执行        → task_action（JSON 关键帧）
 
 管理 AI 对话会话、任务执行和 WebSocket 实时通信。
 """
@@ -11,11 +18,16 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
+from types import ModuleType
 from typing import Any, Callable, Optional
 
+from app.config import settings
 from app.services.robot_service import robot_service
 
 logger = logging.getLogger(__name__)
+
+_RUISA_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 
 class SessionState(str, Enum):
@@ -44,6 +56,9 @@ class AgentSession:
     current_task: Optional[str] = None
     task_params: dict = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)
+    # 键盘 DEBUG：与 AGENT_DEBUG_KEYBOARD / 前端开关一致；为 True 时须先 handle_debug_wake
+    debug_keyboard: bool = False
+    awake: bool = True
 
 
 class AgentService:
@@ -61,15 +76,88 @@ class AgentService:
         self._sessions: dict[str, AgentSession] = {}
         # WebSocket 回调
         self._ws_callbacks: dict[str, Callable] = {}
+        # agent/pyc_loader：可选 .pyc 扩展（AGENT_TRAINED_PYC）
+        self._trained_module: Optional[ModuleType] = None
+        self._trained_load_attempted: bool = False
+        self._trained_resolved_path: Optional[Path] = None
 
     # ── 会话管理 ────────────────────────────────────────────────────────────
 
     def create_session(self, session_id: str) -> AgentSession:
         """创建新会话"""
-        session = AgentSession(session_id=session_id)
+        dk = settings.agent_debug_keyboard
+        session = AgentSession(
+            session_id=session_id,
+            debug_keyboard=dk,
+            awake=not dk,
+        )
         self._sessions[session_id] = session
-        logger.info(f"[Agent] 创建会话: {session_id}")
+        logger.info(
+            f"[Agent] 创建会话: {session_id} (debug_keyboard={session.debug_keyboard}, awake={session.awake})"
+        )
         return session
+
+    def ensure_session(self, session_id: str) -> AgentSession:
+        """获取或创建会话（WebSocket 连接建立后调用）"""
+        if session_id in self._sessions:
+            return self._sessions[session_id]
+        return self.create_session(session_id)
+
+    def set_debug_keyboard(self, session_id: str, enabled: bool) -> AgentSession:
+        """
+        切换当前会话的键盘 DEBUG 模式（前端按钮，等同可选的 AGENT_DEBUG_KEYBOARD）。
+        开启：需模拟唤醒后再对话；关闭：可直接键盘输入对话。
+
+        注意：开启 DEBUG 时仅在「刚从非 DEBUG 切入」时把 awake 置 False。
+        若会话已是 DEBUG，重复的 set_debug_keyboard(true)（如本地存储与连接先后各发一次）
+        不得清空已模拟唤醒状态，否则用户唤醒后下一条指令会再次被未唤醒门禁拦住。
+        """
+        session = self.ensure_session(session_id)
+        prev_dk = session.debug_keyboard
+        session.debug_keyboard = bool(enabled)
+
+        if session.debug_keyboard:
+            if not prev_dk:
+                session.awake = False
+                session.state = SessionState.IDLE
+        else:
+            session.awake = True
+            if session.state in (SessionState.IDLE, SessionState.ENDED):
+                session.state = SessionState.WAITING_TASK
+
+        logger.info(
+            f"[Agent] 会话 {session_id} debug_keyboard={session.debug_keyboard} awake={session.awake}"
+        )
+        return session
+
+    AGENT_GREETING = "你好呀！我是小臂，你的学习小助手~ 有什么需要帮忙的吗？"
+
+    async def handle_debug_wake(self, session_id: str) -> dict:
+        """DEBUG 模式：模拟 agent.py 中按 Enter 唤醒，并播报与 _continuous_session 相同的 greeting。"""
+        session = self.get_session(session_id) or self.create_session(session_id)
+        if not session.debug_keyboard:
+            return {
+                "response": "当前为普通模式，无需模拟唤醒，可直接在输入框用键盘发送指令。",
+                "task_triggered": False,
+                "task_name": None,
+                "task_params": {},
+                "session_state": session.state.value,
+                "should_end": False,
+                "needs_wake": False,
+            }
+        session.awake = True
+        if session.state == SessionState.IDLE:
+            session.state = SessionState.WAITING_TASK
+        session.messages.append(DialogueMessage(role="assistant", content=self.AGENT_GREETING))
+        return {
+            "response": self.AGENT_GREETING,
+            "task_triggered": False,
+            "task_name": None,
+            "task_params": {},
+            "session_state": session.state.value,
+            "should_end": False,
+            "needs_wake": False,
+        }
 
     def get_session(self, session_id: str) -> Optional[AgentSession]:
         """获取会话"""
@@ -135,27 +223,47 @@ class AgentService:
         if not session:
             session = self.create_session(session_id)
 
+        # 键盘 DEBUG：未唤醒时拒绝对话（与 agent.py 等待 Enter 一致）
+        if session.debug_keyboard and not session.awake:
+            return {
+                "response": (
+                    "【DEBUG】尚未唤醒。请点击「模拟唤醒」或发送 WebSocket `{type:\"debug_wake\"}`，"
+                    "等价于本地 `DEBUG=1 python agent.py` 后按一次 Enter。"
+                ),
+                "task_triggered": False,
+                "task_name": None,
+                "task_params": {},
+                "session_state": session.state.value,
+                "should_end": False,
+                "needs_wake": True,
+            }
+
         # 添加用户消息
         session.messages.append(DialogueMessage(
             role="user",
             content=text,
         ))
 
-        # 检测是否结束会话
-        farewell_words = ["拜拜", "再见", "bye", "再见啦", "拜拜啦", "我走了"]
-        should_end = any(word in text for word in farewell_words)
+        # 与 agent/agent.py + dialogue.should_end_session 一致
+        from agent import dialogue
 
-        if should_end:
-            response = "好的，下次见！有问题随时叫我哦~"
-            session.state = SessionState.ENDED
-            self.end_session(session_id)
+        if dialogue.should_end_session(text):
+            response = dialogue.generate_farewell_response()
+            # 不删除会话，保留 debug_keyboard；键盘 DEBUG 下需再次唤醒（与 agent.py 循环一致）
+            session.state = SessionState.IDLE
+            session.awake = not session.debug_keyboard
+            session.messages.append(DialogueMessage(
+                role="assistant",
+                content=response,
+            ))
             return {
                 "response": response,
                 "task_triggered": False,
                 "task_name": None,
                 "task_params": {},
-                "session_state": SessionState.ENDED.value,
+                "session_state": session.state.value,
                 "should_end": True,
+                "needs_wake": session.debug_keyboard and not session.awake,
             }
 
         # 更新状态
@@ -174,13 +282,18 @@ class AgentService:
             # 生成自然的任务确认
             response = self._generate_task_response(task_name, task_params)
 
-            # 异步执行任务（不阻塞对话）
-            asyncio.create_task(self._execute_task(session_id, task_name, task_params))
+            # 异步执行任务（不阻塞对话）；传入原句便于分拣颜色等兜底解析
+            asyncio.create_task(
+                self._execute_task(session_id, task_name, task_params, text)
+            )
 
         else:
-            # 自由对话或未识别
+            # 与 agent/agent.py _continuous_session：unknown 时固定提示（无图）
             session.state = SessionState.DIALOGUE
-            response = await self._generate_free_response(session, text, image_data)
+            response = "嗯嗯，我听到了~ 你还有什么想让我帮忙的吗？"
+            if image_data:
+                # 带图时仍走多模态，便于后续扩展拍题以外的识图
+                response = await self._generate_free_response(session, text, image_data)
 
         # 添加 AI 响应
         session.messages.append(DialogueMessage(
@@ -195,25 +308,115 @@ class AgentService:
             "task_params": task_params,
             "session_state": session.state.value,
             "should_end": False,
+            "needs_wake": False,
         }
+
+    def _resolve_agent_trained_pyc_path(self) -> Optional[Path]:
+        raw = settings.agent_trained_pyc
+        if raw is None:
+            return None
+        p = Path(raw).expanduser()
+        if not p.is_absolute():
+            p = (_RUISA_ROOT / p).resolve()
+        else:
+            p = p.resolve()
+        return p
+
+    def _ensure_trained_resolved_path(self) -> Optional[Path]:
+        if self._trained_resolved_path is None:
+            self._trained_resolved_path = self._resolve_agent_trained_pyc_path()
+        return self._trained_resolved_path
+
+    def get_trained_pyc_path(self) -> Optional[Path]:
+        """配置中的 .pyc 绝对路径（不触发加载）。"""
+        return self._ensure_trained_resolved_path()
+
+    def _load_trained_module_if_needed(self) -> Optional[ModuleType]:
+        if self._trained_load_attempted:
+            return self._trained_module
+        self._trained_load_attempted = True
+        path = self._ensure_trained_resolved_path()
+        if path is None or not path.is_file():
+            return None
+        from agent.pyc_loader import load_pyc_module
+
+        self._trained_module = load_pyc_module(path)
+        return self._trained_module
+
+    def get_trained_module(self) -> Optional[ModuleType]:
+        """已加载的 AGENT_TRAINED_PYC 模块（若失败则为 None）。"""
+        return self._load_trained_module_if_needed()
 
     def _parse_intent(self, text: str) -> tuple[Optional[str], dict]:
         """
         解析用户意图。
-        这里复用 dialogue.py 的 parse 函数。
+        若 AGENT_TRAINED_PYC 提供 parse_intent(text) 且返回非 unknown，优先采用；
+        否则复用 dialogue.parse，再降级关键词。
         """
+        mod = self._load_trained_module_if_needed()
+        if mod is not None:
+            fn = getattr(mod, "parse_intent", None)
+            if callable(fn):
+                try:
+                    out = fn(text)
+                    if isinstance(out, tuple) and len(out) >= 2:
+                        task, params = out[0], out[1]
+                        if task not in (None, "unknown"):
+                            return task, params if isinstance(params, dict) else {}
+                except Exception as e:
+                    logger.warning("[Agent] 扩展 parse_intent 异常，回退内置逻辑: %s", e)
         try:
             from agent.dialogue import parse
-            return parse(text)
+
+            task_n, params_n = parse(text)
         except ImportError:
-            # 后端可能没有完整的 agent 依赖，使用简单关键词匹配
             return self._keyword_parse(text)
+        if task_n in (None, "unknown"):
+            kw_t, kw_p = self._keyword_parse(text)
+            if kw_t not in (None, "unknown"):
+                return kw_t, kw_p
+        return task_n, params_n
+
+    def _resolve_clamp_color(self, params: dict, user_text: str) -> str:
+        """分拣目标颜色：优先 LLM params，再从中文/英文原句推断，默认 red。"""
+        c = params.get("color")
+        if isinstance(c, str):
+            cl = c.strip().lower()
+            zh = {"红": "red", "红色": "red", "绿": "green", "绿色": "green", "蓝": "blue", "蓝色": "blue"}
+            if cl in zh:
+                return zh[cl]
+            if cl in ("red", "green", "blue"):
+                return cl
+        t = user_text or ""
+        if "绿" in t or "green" in t.lower():
+            return "green"
+        if "蓝" in t or "blue" in t.lower():
+            return "blue"
+        if "红" in t or "red" in t.lower():
+            return "red"
+        return "red"
+
+    @staticmethod
+    def _agent_script_worker_preamble():
+        """与 agent.py 一致：把 agent 目录插入 path，以便 tasks/arm 的本地 import。"""
+        import sys
+
+        agent_dir = str(_RUISA_ROOT / "agent")
+        if agent_dir not in sys.path:
+            sys.path.insert(0, agent_dir)
 
     def _keyword_parse(self, text: str) -> tuple[str, dict]:
         """简单的关键词匹配降级"""
         keywords_map = [
             (["颜色", "分拣", "积木", "物块", "夹取", "分类"], "clamp", {}),
-            (["灯", "光", "亮度", "调亮", "调暗", "打开灯", "关闭灯"], "led", self._parse_led_params(text)),
+            (
+                [
+                    "台灯", "照明", "灯", "光", "亮度",
+                    "调亮", "调暗", "打开灯", "开灯", "关闭灯", "关灯",
+                ],
+                "led",
+                self._parse_led_params(text),
+            ),
             (["人脸", "追踪", "跟踪", "在不在", "看我"], "face", {}),
             (["题目", "解答", "分析", "拍照", "作业", "解题", "题"], "answer", {}),
             (["跳舞", "招手", "挥手", "点头", "摇头", "看天气", "动作"], "action", self._parse_action_params(text)),
@@ -226,13 +429,13 @@ class AgentService:
         return "unknown", {}
 
     def _parse_led_params(self, text: str) -> dict:
-        """解析台灯参数"""
+        """解析台灯参数（与 agent/dialogue._parse_led_params 对齐）"""
         preset = "medium"
-        if any(w in text for w in ["关闭", "熄", "关掉"]):
+        if any(w in text for w in ["关闭", "熄", "关掉", "关灯", "关"]):
             preset = "off"
-        elif any(w in text for w in ["调暗", "低", "暗"]):
+        elif any(w in text for w in ["调暗", "低", "暗", "暗一点"]):
             preset = "low"
-        elif any(w in text for w in ["调亮", "高", "亮", "最亮"]):
+        elif any(w in text for w in ["调亮", "高", "亮", "亮一点", "最亮", "打开", "开灯"]):
             preset = "high"
         return {"preset": preset}
 
@@ -251,36 +454,10 @@ class AgentService:
         return {"action": "打招呼"}  # 默认打招呼
 
     def _generate_task_response(self, task_name: str, params: dict) -> str:
-        """生成自然的任务确认响应"""
-        responses = {
-            "clamp": "好的，我来帮你分拣积木！让我先看看有什么颜色的。",
-            "led": self._generate_led_response(params.get("preset", "medium")),
-            "face": "好的，我来帮你看看你有没有在认真学习和有没有坐好！",
-            "answer": "好的，我来帮你拍照看看这道题！",
-            "action": self._generate_action_response(params.get("action", "打招呼")),
-        }
-        return responses.get(task_name, "好的，我来帮你处理！")
+        """与 agent/agent.py 一致：使用 dialogue.generate_natural_response 做任务确认语"""
+        from agent import dialogue
 
-    def _generate_led_response(self, preset: str) -> str:
-        """生成台灯相关的自然响应"""
-        presets = {
-            "off": "好的，我把灯关掉。",
-            "low": "好的，我把灯光调暗一点，这样更护眼。",
-            "medium": "好的，我把灯光调到适中的亮度。",
-            "high": "好的，我把灯光调亮一些，这样更清晰。",
-        }
-        return presets.get(preset, "好的，我来调节灯光。")
-
-    def _generate_action_response(self, action: str) -> str:
-        """生成动作相关的自然响应"""
-        actions = {
-            "打招呼": "好的，我来打个招呼！",
-            "跳舞": "好的，我来跳个舞！",
-            "点头": "好的，我点头表示同意！",
-            "摇头": "好的，我摇头表示不同意！",
-            "看天气": "好的，让我抬头看看今天的天气！",
-        }
-        return actions.get(action, f"好的，我来表演{action}！")
+        return dialogue.generate_natural_response(task_name, params or {})
 
     async def _generate_free_response(
         self,
@@ -290,7 +467,7 @@ class AgentService:
     ) -> str:
         """生成自由对话响应（调用大模型）"""
         try:
-            import config as agent_config
+            from agent import config as agent_config
             from openai import OpenAI
 
             if not agent_config.DASHSCOPE_API_KEY:
@@ -356,6 +533,7 @@ class AgentService:
         session_id: str,
         task_name: str,
         params: dict,
+        user_text: str = "",
     ):
         """异步执行任务，实时推送进度到客户端"""
         try:
@@ -365,19 +543,24 @@ class AgentService:
                 "params": params,
             })
 
-            # 根据任务类型执行
+            # 根据任务类型执行（与 software/ruisa/agent 下能力对齐）
             if task_name == "clamp":
-                result = await self._execute_clamp_task(session_id)
+                result = await self._execute_clamp_task(
+                    session_id, params, user_text,
+                )
             elif task_name == "led":
                 result = await self._execute_led_task(session_id, params.get("preset", "medium"))
             elif task_name == "face":
                 result = await self._execute_face_task(session_id)
             elif task_name == "answer":
-                result = await self._execute_answer_task(session_id)
+                result = await self._execute_answer_task(session_id, params, user_text)
             elif task_name == "action":
                 result = await self._execute_action_task(session_id, params.get("action", "打招呼"))
             else:
-                result = {"success": False, "message": "未知任务"}
+                result = {
+                    "success": False,
+                    "message": "抱歉，没有理解你的意思，请再说一次。",
+                }
 
             # 发送任务结果
             await self.send_to_client(session_id, {
@@ -400,33 +583,47 @@ class AgentService:
                 "error": str(e),
             })
 
-    async def _execute_clamp_task(self, session_id: str) -> dict:
-        """执行颜色分拣任务"""
+    async def _execute_clamp_task(
+        self,
+        session_id: str,
+        params: dict,
+        user_text: str,
+    ) -> dict:
+        """① 颜色识别与分拣 — agent task_clamp；后端用 run_clamp_task 演示流程"""
         try:
+            from app.database import async_session_maker
+
+            color = self._resolve_clamp_color(params, user_text)
             await self.send_to_client(session_id, {
                 "type": "task_log",
-                "message": "正在启动颜色检测...",
+                "message": f"开始执行分拣流程（目标颜色: {color}）...",
             })
 
-            # 获取机械臂状态
             status = await robot_service.get_status()
             if not status.get("online"):
-                return {"success": False, "message": "机械臂未连接"}
+                return {"success": False, "message": "机械臂未连接，请先在控制台连接串口"}
 
-            # 发送执行信号（前端可以监听这个来显示进度）
             await self.send_to_client(session_id, {
                 "type": "task_progress",
                 "task": "clamp",
-                "step": "detecting",
-                "message": "正在识别颜色...",
+                "step": "running",
+                "message": "机械臂运动中，请远离工作区...",
             })
 
-            # 这里可以调用现有的 clamp API
-            # await robot_service.run_clamp_task(...)
+            async with async_session_maker() as db:
+                res = await robot_service.run_clamp_task(db, color, True)
 
+            msg = (
+                "颜色分拣完成！"
+                if res.success
+                else (res.steps[-1] if res.steps else "分拣未成功")
+            )
             return {
-                "success": True,
-                "message": "颜色分拣完成！",
+                "success": res.success,
+                "message": msg,
+                "color": res.color,
+                "steps": res.steps,
+                "duration_seconds": res.duration_seconds,
             }
 
         except Exception as e:
@@ -434,100 +631,172 @@ class AgentService:
             return {"success": False, "message": f"分拣失败: {str(e)}"}
 
     async def _execute_led_task(self, session_id: str, preset: str) -> dict:
-        """执行台灯控制任务"""
+        """
+        执行台灯控制任务。
+        串口协议须与 hardware/arm/app/control/pc_control.c 及 agent/arm.py 一致：
+        LED_BRIGHT n → LED_ALL r g b（不可使用单条 LED r g b bright，固件不识别）。
+        """
         try:
-            # 获取台灯预设参数
             from agent import config as agent_config
+            from app.database import async_session_maker
+
             presets = agent_config.LED_PRESETS
             preset_data = presets.get(preset, presets.get("medium"))
 
+            if not await robot_service.is_online():
+                return {"success": False, "message": "机械臂串口未连接，无法控制灯光"}
+
+            async def send_led_strip(r: int, g: int, b: int, bright: int) -> tuple[bool, str]:
+                ok_b, rb, _ = await robot_service._serial.send(f"LED_BRIGHT {int(bright)}")
+                ok_c, rc, _ = await robot_service._serial.send(
+                    f"LED_ALL {int(r)} {int(g)} {int(b)}"
+                )
+                return (ok_b and ok_c), f"{rb}|{rc}"
+
             if preset == "off":
-                # 关闭台灯
                 await self.send_to_client(session_id, {
                     "type": "task_log",
                     "message": "正在关闭台灯...",
                 })
-                ok, resp, _ = await robot_service._serial.send("LED 0 0 0 0")
+                ok, resp = await send_led_strip(0, 0, 0, 0)
             else:
-                # 设置台灯亮度
                 await self.send_to_client(session_id, {
                     "type": "task_log",
-                    "message": f"正在调节灯光到{preset}模式...",
+                    "message": f"正移动到台灯位并调节为{preset}模式...",
                 })
-                cmd = f"LED {preset_data['r']} {preset_data['g']} {preset_data['b']} {preset_data['bright']}"
-                ok, resp, _ = await robot_service._serial.send(cmd)
+                async with async_session_maker() as db:
+                    await robot_service.send_command(db, "MOVE", {
+                        "x": agent_config.LED_X,
+                        "y": agent_config.LED_Y,
+                        "z": agent_config.LED_Z,
+                        "pitch": agent_config.LED_PITCH,
+                        "min_pitch": -90.0,
+                        "max_pitch": 90.0,
+                        "duration": 2000,
+                    })
+                ok, resp = await send_led_strip(
+                    preset_data["r"],
+                    preset_data["g"],
+                    preset_data["b"],
+                    preset_data["bright"],
+                )
 
             if ok:
                 return {"success": True, "message": "灯光调节完成！"}
-            else:
-                return {"success": False, "message": "灯光调节失败"}
+            logger.warning("[Agent] 台灯串口响应异常: %s", resp)
+            return {"success": False, "message": f"灯光调节失败（下位机未确认 OK: {resp}）"}
 
         except Exception as e:
             logger.error(f"[Agent] 台灯任务失败: {e}")
             return {"success": False, "message": f"灯光调节失败: {str(e)}"}
 
     async def _execute_face_task(self, session_id: str) -> dict:
-        """执行人脸识别任务"""
+        """③ 人脸识别追踪 — tasks.task_face（独占摄像头与串口）"""
         try:
             await self.send_to_client(session_id, {
                 "type": "task_log",
-                "message": "正在启动人脸检测...",
+                "message": "人脸追踪需独占串口与摄像头，准备切换...",
             })
-            # 发送任务信号给前端，启动人脸追踪
+
+            def worker():
+                self._agent_script_worker_preamble()
+                from arm import Arm
+                from tasks import task_face
+
+                arm = Arm(settings.robot_serial_port)
+                try:
+                    task_face(arm)
+                finally:
+                    arm.close()
+
+            await robot_service.disconnect()
+            try:
+                await asyncio.to_thread(worker)
+            finally:
+                await robot_service.connect()
+
             await self.send_to_client(session_id, {
-                "type": "task_start",
-                "task": "face",
+                "type": "task_log",
+                "message": "人脸追踪已结束，串口已恢复。",
             })
-            return {
-                "success": True,
-                "message": "人脸追踪已启动！",
-            }
+            return {"success": True, "message": "人脸追踪流程已结束。"}
         except Exception as e:
             logger.error(f"[Agent] 人脸任务失败: {e}")
+            try:
+                await robot_service.connect()
+            except Exception:
+                pass
             return {"success": False, "message": f"人脸追踪失败: {str(e)}"}
 
-    async def _execute_answer_task(self, session_id: str) -> dict:
-        """执行题目解答任务"""
+    async def _execute_answer_task(
+        self,
+        session_id: str,
+        params: dict,
+        user_text: str,
+    ) -> dict:
+        """④ 题目解答 — tasks.task_answer（摄像头 + 多模态 + TTS）"""
+        question = (params.get("question") or "").strip()
+        if not question:
+            question = user_text or "请解答图片中的题目"
         try:
             await self.send_to_client(session_id, {
                 "type": "task_log",
-                "message": "正在拍照并分析题目...",
+                "message": "正在独占串口以运行拍题解答（agent/tasks.task_answer）...",
             })
-            # 发送任务信号给前端
-            await self.send_to_client(session_id, {
-                "type": "task_start",
-                "task": "answer",
-            })
-            return {
-                "success": True,
-                "message": "题目分析完成！",
-            }
+
+            def worker():
+                self._agent_script_worker_preamble()
+                from arm import Arm
+                from tasks import task_answer
+
+                arm = Arm(settings.robot_serial_port)
+                try:
+                    task_answer(arm, question=question)
+                finally:
+                    arm.close()
+
+            await robot_service.disconnect()
+            try:
+                await asyncio.to_thread(worker)
+            finally:
+                await robot_service.connect()
+
+            return {"success": True, "message": "题目解答流程已执行完毕，请查看终端或收听语音播报。"}
         except Exception as e:
             logger.error(f"[Agent] 解答任务失败: {e}")
+            try:
+                await robot_service.connect()
+            except Exception:
+                pass
             return {"success": False, "message": f"题目分析失败: {str(e)}"}
 
     async def _execute_action_task(self, session_id: str, action_name: str) -> dict:
-        """执行动作回放任务"""
+        """动作执行（agent.py 第 5 项）：与 tasks.task_action 同源 JSON，经 robot_service 下发 MOVE"""
         try:
-            # 结合真实数据（如天气）
+            from app.database import async_session_maker
+
             extra_info = ""
             if action_name == "看天气":
                 weather = await self._get_weather()
-                extra_info = f"，今天{weather}"
+                extra_info = f"（天气提示：今天{weather}）"
 
             await self.send_to_client(session_id, {
                 "type": "task_log",
-                "message": f"正在执行动作：{action_name}{extra_info}...",
+                "message": f"正在回放动作「{action_name}」...{extra_info}",
             })
-            # 发送任务信号给前端
-            await self.send_to_client(session_id, {
-                "type": "task_start",
-                "task": "action",
-                "params": {"action": action_name},
-            })
+
+            if not await robot_service.is_online():
+                return {"success": False, "message": "机械臂未连接"}
+
+            async with async_session_maker() as db:
+                result = await robot_service.play_action_sequence(db, action_name)
+
+            ok = result.get("success", False)
+            base_msg = result.get("message", "动作执行结束")
             return {
-                "success": True,
-                "message": f"{action_name}完成！{extra_info}",
+                "success": ok,
+                "message": f"{base_msg}{extra_info}" if ok else base_msg,
+                "frames": result.get("frames"),
             }
         except Exception as e:
             logger.error(f"[Agent] 动作任务失败: {e}")

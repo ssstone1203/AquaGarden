@@ -439,12 +439,12 @@ _SYSTEM_PROMPT_TASK = """
 根据用户说的话，判断要执行哪个任务，输出 JSON：
 {"task": "<任务名>", "params": {}}
 
-任务名只能是以下六个之一：
-- "clamp"  : 颜色识别与分拣积木
-- "led"    : 控制台灯（params 可含 "preset": "off"/"low"/"medium"/"high"）
-- "face"   : 人脸识别追踪（检测小朋友是否在座位上）
-- "answer" : 拍照分析并解答题目（params 可含 "question": "<具体问题>"）
-- "action" : 播放预录动作（params 含 "action": "<动作名>"）
+任务名只能是以下六个之一（前五个与 agent/agent.py 任务表一致）：
+- "clamp"  : 颜色识别与分拣（params 可含 "color": "red"|"green"|"blue"）
+- "led"    : 智能台灯（params 可含 "preset": "off"/"low"/"medium"/"high"）
+- "face"   : 人脸识别追踪
+- "answer" : 题目解答（params 可含 "question": "<具体问题>"）
+- "action" : 动作执行（预录 JSON 关键帧回放；params 含 "action": "<动作名>"）
 - "unknown": 无法判断
 
 台灯 preset 规则：
@@ -461,7 +461,10 @@ _SYSTEM_PROMPT_TASK = """
 - "看天气" : 天气 / 看天气 / 抬头看
 
 示例：
-"帮我把积木分类" → {"task": "clamp",  "params": {}}
+"帮我把积木分类"     → {"task": "clamp",  "params": {}}
+"分拣红色积木"       → {"task": "clamp",  "params": {"color": "red"}}
+"把绿色的弄过去"     → {"task": "clamp",  "params": {"color": "green"}}
+"抓蓝色方块"         → {"task": "clamp",  "params": {"color": "blue"}}
 "台灯调暗"       → {"task": "led",    "params": {"preset": "low"}}
 "关闭台灯"       → {"task": "led",    "params": {"preset": "off"}}
 "台灯调亮"       → {"task": "led",    "params": {"preset": "high"}}
@@ -495,6 +498,19 @@ _KEYWORD_MAP = [
 ]
 
 
+def _strip_json_fence(raw: str) -> str:
+    """去掉模型常套的 ```json ... ``` 包裹，便于 json.loads。"""
+    s = raw.strip()
+    if not s.startswith("```"):
+        return s
+    lines = s.split("\n")
+    if lines and lines[0].startswith("```"):
+        lines = lines[1:]
+    if lines and lines[-1].strip().startswith("```"):
+        lines = lines[:-1]
+    return "\n".join(lines).strip()
+
+
 def parse(text: str) -> Tuple[str, dict]:
     """将用户话语映射到 (task_name, kwargs)"""
     if not text:
@@ -513,10 +529,23 @@ def parse(text: str) -> Tuple[str, dict]:
                 {"role": "user",   "content": text},
             ],
             temperature=0,
-            max_tokens=80,
+            max_tokens=128,
         )
-        data   = json_lib.loads(resp.choices[0].message.content.strip())
-        return data.get("task", "unknown"), data.get("params", {})
+        raw = resp.choices[0].message.content.strip()
+        raw = _strip_json_fence(raw)
+        try:
+            data = json_lib.loads(raw)
+        except json_lib.JSONDecodeError:
+            print(f"[对话] LLM 返回非 JSON: {raw[:200]}…")
+            return _keyword_parse(text)
+        task = data.get("task", "unknown")
+        params = data.get("params") or {}
+        if not isinstance(params, dict):
+            params = {}
+        # 模型常把可操作指令判成 unknown：必须再跑关键词，否则不会触发台灯/分拣等
+        if task == "unknown":
+            return _keyword_parse(text)
+        return task, params
     except Exception as e:
         print(f"[对话] LLM 解析失败: {e}，降级关键词匹配")
         return _keyword_parse(text)

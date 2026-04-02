@@ -3,17 +3,28 @@
 仅保留机械臂控制相关配置
 """
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# backend/ 与 ruisa/.env：无论从哪级目录启动都能找到配置
+_BACKEND_ROOT = Path(__file__).resolve().parent.parent
+_RUISA_ROOT = _BACKEND_ROOT.parent
+# AquaGarden 仓库根（ruisa → software → 项目根），与 agent/config.py MAP_FILE 一致
+_REPO_ROOT = _RUISA_ROOT.parent.parent
+_DEFAULT_TEACH_MAP = _REPO_ROOT / "model" / "calibration" / "teach_map.npz"
 
 
 class Settings(BaseSettings):
     """全局配置"""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(
+            _BACKEND_ROOT / ".env",
+            _RUISA_ROOT / ".env",
+            ".env",
+        ),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -62,8 +73,23 @@ class Settings(BaseSettings):
     )
 
     # ── 机械臂硬件（RA6M5 串口协议）────────────────────────────────────────
-    robot_serial_port: str = Field(default="/dev/ttyUSB0", alias="ROBOT_SERIAL_PORT")
+    robot_serial_port: str = Field(
+        default="/dev/ttyUSB0",
+        alias="ROBOT_SERIAL_PORT",
+    )
     robot_baudrate: int = Field(default=115200, alias="ROBOT_BAUDRATE")
+
+    # 与 software/ruisa/agent/config.py MAP_FILE、target/clamp/collect_teach.py 输出路径一致
+    robot_teach_map_path: Path = Field(
+        default=_DEFAULT_TEACH_MAP,
+        alias="ROBOT_TEACH_MAP_PATH",
+    )
+
+    # Agent 单文件 .pyc 扩展（须与后端 Python 版本一致）；见 agent/pyc_loader.py
+    agent_trained_pyc: Optional[Path] = Field(default=None, alias="AGENT_TRAINED_PYC")
+
+    # 与 agent/agent.py DEBUG=1 一致：需先「模拟唤醒」再处理对话（Web 端用按钮/专用消息替代 Enter）
+    agent_debug_keyboard: bool = Field(default=False, alias="AGENT_DEBUG_KEYBOARD")
 
     # ── AI 模型路径 ───────────────────────────────────────────────────────
     model_path_yolo: Path = Field(

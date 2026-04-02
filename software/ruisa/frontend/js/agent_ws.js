@@ -1,11 +1,17 @@
 /**
- * Agent 对话 WebSocket 管理模块
- * 管理与大模型 Agent 的实时对话连接
+ * Agent 对话 WebSocket —— /api/v1/ws/agent/chat
+ *
+ * 五项任务与 agent/tasks.py 中 task_* 一致：
+ * ①颜色识别与分拣 ②智能台灯 ③人脸识别追踪 ④题目解答 ⑤动作回放
+ *（dialogue.parse + should_end_session 告别）
  */
 
 const AgentWS = {
     _ws: null,
     _sessionId: null,
+    /** 与 AGENT_DEBUG_KEYBOARD 一致：须先 debug_wake 再发 message */
+    debugKeyboard: false,
+    needsAgentWake: false,
     _reconnectAttempts: 0,
     _maxReconnectAttempts: 5,
     _reconnectDelay: 3000,
@@ -15,6 +21,7 @@ const AgentWS = {
         onDisconnected: null,
         onError: null,
         onResponse: null,
+        onDebugMode: null,
         onTaskStart: null,
         onTaskLog: null,
         onTaskProgress: null,
@@ -39,12 +46,9 @@ const AgentWS = {
             this._ws = new WebSocket(wsUrl);
 
             this._ws.onopen = () => {
-                console.log('[AgentWS] 已连接');
+                console.log('[AgentWS] 已打开（等待服务端 connected 帧…）');
                 this._reconnectAttempts = 0;
                 this._startPing();
-                if (this._callbacks.onConnected) {
-                    this._callbacks.onConnected();
-                }
                 resolve();
             };
 
@@ -116,6 +120,30 @@ const AgentWS = {
     },
 
     /**
+     * DEBUG 模式：模拟 agent.py 按 Enter 唤醒
+     */
+    sendDebugWake() {
+        if (!this._ws || this._ws.readyState !== WebSocket.OPEN) {
+            console.error('[AgentWS] 未连接');
+            return false;
+        }
+        this._ws.send(JSON.stringify({ type: 'debug_wake' }));
+        console.log('[AgentWS] 已发送 debug_wake（模拟 Enter 唤醒）');
+        return true;
+    },
+
+    /** 开关键盘 DEBUG（等同可选 AGENT_DEBUG_KEYBOARD，无需重启后端） */
+    sendSetDebugKeyboard(enabled) {
+        if (!this._ws || this._ws.readyState !== WebSocket.OPEN) {
+            console.error('[AgentWS] 未连接');
+            return false;
+        }
+        this._ws.send(JSON.stringify({ type: 'set_debug_keyboard', enabled: !!enabled }));
+        console.log('[AgentWS] set_debug_keyboard', !!enabled);
+        return true;
+    },
+
+    /**
      * 结束会话
      */
     endSession() {
@@ -159,10 +187,29 @@ const AgentWS = {
         switch (type) {
             case 'connected':
                 this._sessionId = data.session_id;
-                console.log('[AgentWS] 会话已建立:', this._sessionId);
+                this.debugKeyboard = !!data.agent_debug_keyboard;
+                this.needsAgentWake = !!data.needs_wake;
+                console.log('[AgentWS] 会话已建立:', this._sessionId,
+                    'debugKeyboard=', this.debugKeyboard, 'needsAgentWake=', this.needsAgentWake);
+                if (this._callbacks.onConnected) {
+                    this._callbacks.onConnected(data);
+                }
+                break;
+
+            case 'debug_mode':
+                this.debugKeyboard = !!data.agent_debug_keyboard;
+                this.needsAgentWake = !!data.needs_wake;
+                console.log('[AgentWS] debug_mode', 'debugKeyboard=', this.debugKeyboard,
+                    'needsAgentWake=', this.needsAgentWake);
+                if (this._callbacks.onDebugMode) {
+                    this._callbacks.onDebugMode(data);
+                }
                 break;
 
             case 'response':
+                if (typeof data.needs_wake === 'boolean') {
+                    this.needsAgentWake = data.needs_wake;
+                }
                 if (this._callbacks.onResponse) {
                     this._callbacks.onResponse({
                         response: data.response,
@@ -171,6 +218,7 @@ const AgentWS = {
                         taskParams: data.task_params,
                         sessionState: data.session_state,
                         shouldEnd: data.should_end,
+                        needsWake: data.needs_wake,
                         timestamp: data.timestamp,
                     });
                 }

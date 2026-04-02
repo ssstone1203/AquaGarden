@@ -8,8 +8,12 @@ from pathlib import Path
 # 直接执行 `python app/main.py` 时，解释器会把 app/ 当作 sys.path 根目录，
 # `from app.xxx` 会找不到包。将 backend 根目录插入 path 后与普通 `python -m app.main` 一致。
 _backend_root = Path(__file__).resolve().parent.parent
+_ruisa_root = _backend_root.parent
 if str(_backend_root) not in sys.path:
     sys.path.insert(0, str(_backend_root))
+# ruisa/agent 供后端复用语音 Agent 的 config、dialogue 等（避免 import config 误解析到第三方包）
+if str(_ruisa_root) not in sys.path:
+    sys.path.insert(0, str(_ruisa_root))
 
 import asyncio
 import uuid

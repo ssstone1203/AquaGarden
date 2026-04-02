@@ -481,6 +481,10 @@
         }
         .agent-info { flex: 1; }
         .agent-name { font-size: 14px; font-weight: 600; color: #b0ccf0; }
+        .agent-tagline {
+            font-size: 10px; color: #5a7aaa; margin-top: 2px; line-height: 1.35;
+            max-width: 220px;
+        }
         .agent-status { font-size: 11px; color: #3a6090; margin-top: 2px; }
         .agent-status.online { color: #00e87a; }
         .agent-toggle {
@@ -606,6 +610,51 @@
             transition: all 0.2s;
         }
         .quick-btn:hover { background: #1a3a7a; color: #00c8ff; border-color: #00c8ff; }
+        .quick-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        .agent-debug-bar {
+            padding: 8px 16px;
+            background: #1a1520;
+            border-top: 1px solid #4a3060;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            color: #d4b8e8;
+        }
+        .agent-debug-hint { flex: 1; line-height: 1.4; }
+        .agent-debug-wake-btn {
+            flex-shrink: 0;
+            padding: 6px 12px;
+            background: #3a2050;
+            border: 1px solid #8040a0;
+            border-radius: 8px;
+            color: #e8d4f8;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .agent-debug-wake-btn:hover { background: #502868; }
+        .agent-debug-wake-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .agent-debug-toggle {
+            flex-shrink: 0;
+            padding: 5px 10px;
+            background: #142040;
+            border: 1px solid #1e3a60;
+            border-radius: 8px;
+            color: #6a9acc;
+            font-size: 10px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .agent-debug-toggle:hover { background: #1a2e56; color: #00c8ff; }
+        .agent-debug-toggle.active {
+            background: #3a2050;
+            border-color: #8040a0;
+            color: #e8d4f8;
+        }
+        .agent-debug-toggle:disabled { opacity: 0.45; cursor: not-allowed; }
 
         /* 任务执行中提示 */
         .task-execute-panel {
@@ -686,30 +735,38 @@
     <div class="agent-header" onclick="toggleAgentPanel()">
         <div class="agent-avatar">🤖</div>
         <div class="agent-info">
-            <div class="agent-name">AI 学习助手</div>
+            <div class="agent-name">小臂 · AI 机械臂辅学助手</div>
+            <div class="agent-tagline">与 <strong>agent/tasks.py</strong> 五项一致：①颜色识别与分拣（task_clamp）②智能台灯（task_led）③人脸识别追踪（task_face）④题目解答（task_answer）⑤动作回放（task_action）</div>
             <div class="agent-status" id="agentStatus">未连接</div>
         </div>
+        <button type="button" class="agent-debug-toggle" id="agentDebugToggleBtn"
+            onclick="event.stopPropagation(); toggleAgentDebugMode();"
+            title="键盘 DEBUG：开启后须先「模拟唤醒」，再用键盘输入驱动五项任务（等同本地 DEBUG=1 python agent.py）">键盘DEBUG·关</button>
         <button class="agent-toggle" id="agentToggleBtn">▼</button>
     </div>
     <div class="agent-messages" id="agentMessages">
         <div class="msg assistant">
-            你好！我是你的 AI 学习助手，有什么可以帮助你的吗？
+            你好呀！我是小臂，你的学习小助手~ 有什么需要帮忙的吗？
             <div class="msg-time">刚刚</div>
         </div>
     </div>
     <div class="quick-actions" id="quickActions">
-        <button class="quick-btn" onclick="sendQuickMessage('帮我分拣积木')">🎨 分拣积木</button>
-        <button class="quick-btn" onclick="sendQuickMessage('打开台灯')">💡 台灯控制</button>
-        <button class="quick-btn" onclick="sendQuickMessage('帮我看这道题')">📐 题目解答</button>
-        <button class="quick-btn" onclick="sendQuickMessage('打个招呼')">👋 打招呼</button>
-        <button class="quick-btn" onclick="sendQuickMessage('跳个舞')">💃 跳舞</button>
+        <button class="quick-btn" onclick="sendQuickMessage('帮我分拣积木')" title="tasks.py 任务1 · task_clamp · 颜色识别与分拣">🎨 颜色分拣</button>
+        <button class="quick-btn" onclick="sendQuickMessage('打开台灯')" title="tasks.py 任务2 · task_led · 智能台灯">💡 智能台灯</button>
+        <button class="quick-btn" onclick="sendQuickMessage('看看我在不在')" title="tasks.py 任务3 · task_face · 人脸识别追踪">👁️ 人脸追踪</button>
+        <button class="quick-btn" onclick="sendQuickMessage('帮我看这道题')" title="tasks.py 任务4 · task_answer · 题目解答">📐 题目解答</button>
+        <button class="quick-btn" onclick="sendQuickMessage('打个招呼')" title="tasks.py 任务5 · task_action · 动作回放（actions 目录 JSON，默认触发「打招呼」）">🎭 动作回放</button>
     </div>
     <div class="agent-task-indicator" id="agentTaskIndicator" style="display: none;">
         <div class="agent-task-spinner"></div>
         <span id="agentTaskText">正在执行任务...</span>
     </div>
+    <div class="agent-debug-bar" id="agentDebugBar" aria-live="polite">
+        <span class="agent-debug-hint" id="agentDebugHint"></span>
+        <button type="button" class="agent-debug-wake-btn" id="agentDebugWakeBtn" onclick="sendAgentDebugWake()">模拟唤醒</button>
+    </div>
     <div class="agent-input">
-        <input type="text" id="agentInput" placeholder="输入你的问题或指令..." onkeypress="handleAgentInput(event)">
+        <input type="text" id="agentInput" placeholder="输入指令（对应 tasks.py：分拣/台灯/人脸/解答/动作回放；意图见 dialogue.parse）" onkeypress="handleAgentInput(event)">
         <button class="agent-send-btn" id="agentSendBtn" onclick="sendAgentMessage()">▶</button>
     </div>
 </div>
@@ -1675,8 +1732,62 @@ let agentConnected = false;
 let agentSessionState = 'idle';
 let agentTyping = false;
 let agentMessages = [];  // {role, content, time}
+const AGENT_DEBUG_STORAGE_KEY = 'ruisa_agent_debug_keyboard';
 
 /* ── 初始化 Agent 连接 ── */
+function updateAgentDebugUI() {
+    const bar = document.getElementById('agentDebugBar');
+    const hint = document.getElementById('agentDebugHint');
+    const wakeBtn = document.getElementById('agentDebugWakeBtn');
+    const dbgToggle = document.getElementById('agentDebugToggleBtn');
+    const sendBtn = document.getElementById('agentSendBtn');
+    const input = document.getElementById('agentInput');
+    if (!bar) return;
+    const dk = !!AgentWS.debugKeyboard && agentConnected;
+    const need = dk && !!AgentWS.needsAgentWake;
+    bar.style.display = dk ? 'flex' : 'none';
+    if (hint) {
+        hint.textContent = need
+            ? '等待唤醒：输入框留空按 Enter，或点「模拟唤醒」（等同 DEBUG=1 python agent.py 后按 Enter）'
+            : '已唤醒，可正常对话。';
+    }
+    document.querySelectorAll('#quickActions .quick-btn').forEach(b => {
+        b.disabled = need;
+    });
+    if (sendBtn) sendBtn.disabled = need;
+    if (wakeBtn) wakeBtn.disabled = !agentConnected || !need;
+    if (dbgToggle) {
+        dbgToggle.disabled = !agentConnected;
+        dbgToggle.classList.toggle('active', dk);
+        dbgToggle.textContent = AgentWS.debugKeyboard ? '键盘DEBUG·开' : '键盘DEBUG·关';
+    }
+    if (input) {
+        input.placeholder = need
+            ? '留空按 Enter = 唤醒；唤醒后再输入指令'
+            : '输入指令（对应 tasks.py：分拣/台灯/人脸/解答/动作回放；意图见 dialogue.parse）';
+    }
+}
+
+/** 用本地偏好覆盖服务端默认（重连后恢复上次开关） */
+function applyStoredAgentDebugMode(connectedData) {
+    if (!AgentWS.isConnected()) return;
+    const pref = localStorage.getItem(AGENT_DEBUG_STORAGE_KEY);
+    const serverOn = !!(connectedData && connectedData.agent_debug_keyboard);
+    if (pref === '1' && !serverOn) {
+        AgentWS.sendSetDebugKeyboard(true);
+    } else if (pref === '0' && serverOn) {
+        AgentWS.sendSetDebugKeyboard(false);
+    }
+}
+
+function toggleAgentDebugMode() {
+    if (!agentConnected || !AgentWS.isConnected()) {
+        showToast('小助手未连接，请登录后刷新页面', 'error');
+        return;
+    }
+    AgentWS.sendSetDebugKeyboard(!AgentWS.debugKeyboard);
+}
+
 function initAgent() {
     if (!window.API) {
         return;
@@ -1690,6 +1801,7 @@ function initAgent() {
     AgentWS.on('onDisconnected', onAgentDisconnected);
     AgentWS.on('onError', onAgentError);
     AgentWS.on('onResponse', onAgentResponse);
+    AgentWS.on('onDebugMode', onAgentDebugMode);
     AgentWS.on('onTaskStart', onTaskStart);
     AgentWS.on('onTaskLog', onTaskLog);
     AgentWS.on('onTaskProgress', onTaskProgress);
@@ -1704,20 +1816,50 @@ function initAgent() {
     });
 }
 
-function onAgentConnected() {
+function onAgentConnected(data) {
     agentConnected = true;
     updateAgentStatus('在线', true);
+    if (data && data.agent_debug_keyboard) {
+        const container = document.getElementById('agentMessages');
+        if (container) {
+            container.innerHTML = '';
+            agentMessages = [];
+            addMessageToUI('assistant',
+                '【键盘 DEBUG】已启用：请先「模拟唤醒」或在输入框留空按 Enter（等同 DEBUG=1 运行 agent.py 后按一次 Enter），再键盘输入指令或使用快捷按钮驱动机械臂任务。');
+        }
+    }
+    updateAgentDebugUI();
+    applyStoredAgentDebugMode(data);
+}
+
+function onAgentDebugMode(data) {
+    try {
+        localStorage.setItem(AGENT_DEBUG_STORAGE_KEY, AgentWS.debugKeyboard ? '1' : '0');
+    } catch (e) { /* ignore */ }
+    updateAgentDebugUI();
+    showToast(
+        AgentWS.debugKeyboard
+            ? '键盘 DEBUG 已开启：请先「模拟唤醒」，再键盘输入指令'
+            : '键盘 DEBUG 已关闭：可直接键盘输入指令',
+        'success'
+    );
 }
 
 function onAgentDisconnected(event) {
     agentConnected = false;
+    AgentWS.debugKeyboard = false;
+    AgentWS.needsAgentWake = false;
     updateAgentStatus('已断开', false);
+    updateAgentDebugUI();
     console.log('[Agent] 断开连接:', event?.reason);
 }
 
 function onAgentError(error) {
     agentConnected = false;
+    AgentWS.debugKeyboard = false;
+    AgentWS.needsAgentWake = false;
     updateAgentStatus('错误', false);
+    updateAgentDebugUI();
     console.error('[Agent] 错误:', error);
 }
 
@@ -1730,9 +1872,22 @@ function updateAgentStatus(text, online) {
 }
 
 /* ── 发送消息 ── */
+function sendAgentDebugWake() {
+    if (!agentConnected || !AgentWS.isConnected()) {
+        showToast('小臂未连接，请登录后刷新页面', 'error');
+        return;
+    }
+    showTypingIndicator();
+    AgentWS.sendDebugWake();
+}
+
 function sendAgentMessage() {
     if (!agentConnected) {
-        showToast('AI 助手未连接，请刷新页面', 'error');
+        showToast('小臂未连接，请登录后刷新页面', 'error');
+        return;
+    }
+    if (AgentWS.debugKeyboard && AgentWS.needsAgentWake) {
+        showToast('DEBUG：请先模拟唤醒（输入框留空按 Enter，或点「模拟唤醒」）', 'error');
         return;
     }
 
@@ -1746,18 +1901,32 @@ function sendAgentMessage() {
     // 添加用户消息到 UI
     addMessageToUI('user', text);
 
-    // 发送消息
+    showTypingIndicator();
+    // 发送至后端（意图解析与 agent.py 共用 dialogue 模块）
     AgentWS.sendMessage(text);
 }
 
 function handleAgentInput(event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        sendAgentMessage();
+    if (event.key !== 'Enter' || event.shiftKey) return;
+    event.preventDefault();
+    if (AgentWS.debugKeyboard && AgentWS.needsAgentWake) {
+        const input = document.getElementById('agentInput');
+        const t = (input && input.value.trim()) || '';
+        if (!t) {
+            sendAgentDebugWake();
+        } else {
+            showToast('DEBUG：请先模拟唤醒（先清空输入框再按 Enter）', 'error');
+        }
+        return;
     }
+    sendAgentMessage();
 }
 
 function sendQuickMessage(text) {
+    if (AgentWS.debugKeyboard && AgentWS.needsAgentWake) {
+        showToast('DEBUG：请先模拟唤醒后再使用快捷按钮', 'error');
+        return;
+    }
     // 确保面板展开
     const panel = document.getElementById('agentPanel');
     if (panel && panel.classList.contains('collapsed')) {
@@ -1828,22 +1997,22 @@ function onAgentResponse(data) {
     }
 
     agentSessionState = data.sessionState || 'idle';
-
-    if (data.shouldEnd) {
-        // 会话结束
-        setTimeout(() => {
-            addMessageToUI('assistant', '会话已结束，下次见！👋');
-        }, 500);
+    if (typeof data.needsWake === 'boolean') {
+        AgentWS.needsAgentWake = data.needsWake;
     }
+    updateAgentDebugUI();
+
+    /* 告别语已由后端 dialogue.generate_farewell_response() 写入 data.response，勿重复插一条 */
 }
 
 /* ── 任务处理 ── */
+/* 与 agent/tasks.py 中 task_* 五项标题一致 */
 const TASK_LABELS = {
-    clamp: '🎨 颜色分拣',
-    led: '💡 台灯控制',
-    face: '👁️ 人脸追踪',
+    clamp: '🎨 颜色识别与分拣',
+    led: '💡 智能台灯',
+    face: '👁️ 人脸识别追踪',
     answer: '📐 题目解答',
-    action: '🎭 动作表演',
+    action: '🎭 动作回放',
 };
 
 const TASK_ICONS = {
@@ -1885,7 +2054,7 @@ function onTaskLog(data) {
     appendLog({
         t: formatTime(new Date()),
         l: data.level || 'INFO',
-        m: `[AI助手] ${data.message}`,
+        m: `[小臂] ${data.message}`,
     });
 }
 
@@ -1912,11 +2081,12 @@ function onTaskComplete(data) {
         addMessageToUI('assistant', data.result.message);
     }
 
-    // 终端日志
+    const ok = !data.result || data.result.success !== false;
+    // 终端日志（业务失败时勿标 SUCCESS，避免与真实硬件状态不符）
     appendLog({
         t: formatTime(new Date()),
-        l: 'SUCCESS',
-        m: `[AI助手] 任务完成: ${data.task}`,
+        l: ok ? 'SUCCESS' : 'WARNING',
+        m: ok ? `[小臂] 任务完成: ${data.task}` : `[小臂] 任务未成功: ${data.task}`,
     });
 }
 
@@ -1936,7 +2106,7 @@ function onTaskError(data) {
     appendLog({
         t: formatTime(new Date()),
         l: 'ERROR',
-        m: `[AI助手] 任务错误: ${data.error}`,
+        m: `[小臂] 任务错误: ${data.error}`,
     });
 }
 

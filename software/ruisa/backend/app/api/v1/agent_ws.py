@@ -33,6 +33,13 @@ async def ws_agent_chat(
         "text": "用户说的话",         // 文本内容
         "image_data": "data:...",    // 可选，base64 图片
     }
+    {
+        "type": "debug_wake",        // 键盘 DEBUG 开启时模拟 agent.py 按 Enter 唤醒
+    }
+    {
+        "type": "set_debug_keyboard", // 切换键盘 DEBUG（无需改环境变量）
+        "enabled": true
+    }
 
     服务器推送格式：
     {
@@ -94,10 +101,14 @@ async def ws_agent_chat(
     # 注册 WebSocket 回调
     agent_service.register_ws_callback(session_id, send_json)
 
-    # 发送连接成功消息
+    sess0 = agent_service.ensure_session(session_id)
+
+    # 发送连接成功消息（会话级 debug_keyboard，可由 set_debug_keyboard 覆盖）
     await send_json({
         "type": "connected",
         "session_id": session_id,
+        "agent_debug_keyboard": sess0.debug_keyboard,
+        "needs_wake": sess0.debug_keyboard and not sess0.awake,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     })
 
@@ -130,6 +141,24 @@ async def ws_agent_chat(
                 # 心跳
                 await send_json({
                     "type": "pong",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+
+            elif msg_type == "debug_wake":
+                result = await agent_service.handle_debug_wake(session_id)
+                await send_json({
+                    "type": "response",
+                    **result,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+
+            elif msg_type == "set_debug_keyboard":
+                enabled = bool(data.get("enabled", False))
+                sess = agent_service.set_debug_keyboard(session_id, enabled)
+                await send_json({
+                    "type": "debug_mode",
+                    "agent_debug_keyboard": sess.debug_keyboard,
+                    "needs_wake": sess.debug_keyboard and not sess.awake,
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 })
 
