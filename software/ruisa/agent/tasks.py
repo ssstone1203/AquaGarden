@@ -17,6 +17,7 @@ from openai import OpenAI
 import config
 import dialogue
 from arm import Arm
+import camera_preview
 
 # Windows 上优先使用 DirectShow，避免部分机器走 FFMPEG 枚举时报错
 _CAM_BACKEND = cv2.CAP_DSHOW if os.name == "nt" else cv2.CAP_ANY
@@ -117,7 +118,6 @@ def task_clamp(arm: Arm):
     try:
         # 移到观测位姿
         print("[分拣] 移到观测位姿...")
-        check_cancelled("[分拣] 已中断")
         arm.move(config.OBS_X, config.OBS_Y, config.OBS_Z, config.OBS_PITCH, dur=1500)
 
         # 检测物块（按空格确认，Q 放弃）
@@ -125,7 +125,6 @@ def task_clamp(arm: Arm):
         bx = by = bz = bp = block_color = None
 
         while True:
-            check_cancelled("[分拣] 已中断")
             ret, frame = cap.read()
             if not ret:
                 continue
@@ -139,6 +138,7 @@ def task_clamp(arm: Arm):
                             (10, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 220, 0), 2)
             cv2.putText(disp, "SPACE=confirm  Q=cancel",
                         (10, disp.shape[0]-12), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (180,180,180), 1)
+            camera_preview.publish_bgr(disp)
             cv2.imshow("clamp", disp)
             key = cv2.waitKey(30) & 0xFF
 
@@ -169,32 +169,22 @@ def task_clamp(arm: Arm):
               f"→ {zone['name'] if zone else '未知区'}")
 
         # 夹取流程
-        check_cancelled("[分拣] 已中断")
         arm.gripper_open()
-        check_cancelled("[分拣] 已中断")
         arm.move(bx, by, above_z, bp, dur=1000)
-        check_cancelled("[分拣] 已中断")
         arm.move(bx, by, grasp_z,  bp, dur=600)
-        check_cancelled("[分拣] 已中断")
         arm.gripper_close()
         time.sleep(0.4)
-        check_cancelled("[分拣] 已中断")
         arm.move(bx, by, config.SAFE_Z, bp, dur=800)
-        check_cancelled("[分拣] 已中断")
         arm.move(config.HORIZ_X, config.HORIZ_Y, config.SAFE_Z, config.HORIZ_PITCH, dur=1000)
 
         # 放置
         if zone:
-            check_cancelled("[分拣] 已中断")
             above_zone_z = max(config.SAFE_Z, zone['z'] + 3.0)
             arm.move(zone['x'], zone['y'], above_zone_z, zone['pitch'], dur=1400)
-            check_cancelled("[分拣] 已中断")
             arm.move(zone['x'], zone['y'], zone['z'],    zone['pitch'], dur=800)
             time.sleep(0.3)
-            check_cancelled("[分拣] 已中断")
             arm.gripper_open()
             time.sleep(0.4)
-            check_cancelled("[分拣] 已中断")
             arm.move(zone['x'], zone['y'], above_zone_z, zone['pitch'], dur=700)
         print("[分拣] 完成")
 
@@ -217,16 +207,13 @@ def task_led(arm: Arm, preset_key: str = config.LED_DEFAULT):
 
     if preset_key == "off":
         print("[台灯] 关闭台灯（亮度归零）")
-        check_cancelled("[台灯] 已中断")
         arm.led(0, 0, 0, 0)
         print("[台灯] 已关闭")
         return
 
     print(f"[台灯] 移到台灯位置，亮度档位: {preset_key}")
-    check_cancelled("[台灯] 已中断")
     arm.move(config.LED_X, config.LED_Y, config.LED_Z, config.LED_PITCH, dur=2000)
     time.sleep(0.3)
-    check_cancelled("[台灯] 已中断")
     arm.led(preset['r'], preset['g'], preset['b'], preset['bright'])
     print(f"[台灯] 已设置: R={preset['r']} G={preset['g']} B={preset['b']} "
           f"bright={preset['bright']}")
@@ -275,7 +262,6 @@ def task_face(arm: Arm):
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
     print("[人脸] 移到追踪起始位置...")
-    check_cancelled("[人脸] 已中断")
     arm.move_angle(config.FACE_ANGLE_CENTER, config.FACE_Z, config.FACE_PITCH, dur=2000)
     time.sleep(2.2)
 
@@ -290,7 +276,6 @@ def task_face(arm: Arm):
 
     try:
         while time.time() < deadline:
-            check_cancelled("[人脸] 已中断")
             ret, frame = cap.read()
             if not ret:
                 continue
@@ -319,7 +304,6 @@ def task_face(arm: Arm):
                     new_angle = max(config.FACE_ANGLE_MIN,
                                    min(config.FACE_ANGLE_MAX, current_angle + d_angle))
                     if abs(new_angle - current_angle) > 0.1:
-                        check_cancelled("[人脸] 已中断")
                         arm.move_angle(new_angle, config.FACE_Z, config.FACE_PITCH,
                                        dur=config.FACE_MOVE_DUR)
                         current_angle  = new_angle
@@ -337,7 +321,6 @@ def task_face(arm: Arm):
 
                 if state == "SCANNING":
                     if scan_idx < len(scan_pts):
-                        check_cancelled("[人脸] 已中断")
                         arm.move_angle(scan_pts[scan_idx], config.FACE_Z, config.FACE_PITCH,
                                        dur=config.FACE_SCAN_DUR)
                         current_angle = scan_pts[scan_idx]
@@ -354,7 +337,6 @@ def task_face(arm: Arm):
                     if not scan_pts:
                         scan_pts = _scan_waypoints()
                     if scan_idx < len(scan_pts):
-                        check_cancelled("[人脸] 已中断")
                         arm.move_angle(scan_pts[scan_idx], config.FACE_Z, config.FACE_PITCH,
                                        dur=config.FACE_SCAN_DUR * 2)
                         current_angle = scan_pts[scan_idx]
@@ -365,6 +347,7 @@ def task_face(arm: Arm):
             remaining = int(deadline - time.time())
             cv2.putText(frame, f"Q=quit  {remaining}s", (10, h_img-14),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (180,180,180), 1)
+            camera_preview.publish_bgr(frame)
             cv2.imshow("face_track", frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -391,11 +374,9 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
         return
 
     print("[解答] 移到拍照位置...")
-    check_cancelled("[解答] 已中断")
     arm.move(config.ANSWER_OBS_X, config.ANSWER_OBS_Y,
              config.ANSWER_OBS_Z, config.ANSWER_OBS_PITCH, dur=1500)
     for _ in range(10):
-        check_cancelled("[解答] 已中断")
         time.sleep(0.05)
 
     # 拍照
@@ -413,6 +394,8 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
     if config.CAMERA_ROT:
         frame = cv2.rotate(frame, cv2.ROTATE_180)
 
+    camera_preview.publish_bgr(frame)
+
     photo_path = config.PHOTO_PATH
     # Windows 上 cv2.imwrite 对含中文等非 ASCII 的路径常会失败且不写入文件，
     # 后续 read_bytes 会报 FileNotFoundError；用 imencode + write_bytes 可规避。
@@ -424,7 +407,6 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
     print(f"[解答] 已拍照: {photo_path}")
     print(f"[解答] 问题: {question}")
     print("[解答] 正在请求大模型，请稍候...")
-    check_cancelled("[解答] 已中断")
 
     try:
         client    = OpenAI(api_key=config.DASHSCOPE_API_KEY, base_url=config.DASHSCOPE_BASE_URL)
@@ -453,18 +435,14 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
             max_tokens=400,
         )
         answer = (resp.choices[0].message.content or "").strip()
-        check_cancelled("[解答] 已中断")
         dialogue.speak("解答如下。")
         print("\n" + "=" * 50)
         print("【模型解答】")
         print(answer)
         print("=" * 50 + "\n")
         if answer:
-            check_cancelled("[解答] 已中断")
             dialogue.tts_only(answer)
 
-    except TaskCancelled:
-        raise
     except Exception as e:
         print(f"[解答] 请求失败: {e}")
 
@@ -518,13 +496,11 @@ def task_action(arm: Arm, action_name: str):
           f"  {len(keyframes)} 帧  预计 {est_ms / 1000:.1f}s")
 
     # 归位等待机械臂就绪
-    check_cancelled("[动作] 已中断")
     arm.go_home()
     time.sleep(2.0)
 
     total = len(keyframes)
     for i, frame in enumerate(keyframes, 1):
-        check_cancelled("[动作] 已中断")
         x, y, z, pitch = frame["x"], frame["y"], frame["z"], frame["pitch"]
         stored_dur = frame.get("duration", 200)
         is_pause   = stored_dur > pause_thr

@@ -22,8 +22,7 @@ const AgentWS = {
         onTaskProgress: null,
         onTaskComplete: null,
         onTaskError: null,
-        onTaskInterrupted: null,
-        onInterruptAck: null,
+        onCameraPreview: null,
         onSessionEnded: null,
     },
 
@@ -110,13 +109,6 @@ const AgentWS = {
         return true;
     },
 
-    /** 请求中断当前机械臂任务（协作式） */
-    sendInterrupt() {
-        if (!this._ws || this._ws.readyState !== WebSocket.OPEN) return false;
-        this._ws.send(JSON.stringify({ type: 'interrupt' }));
-        return true;
-    },
-
     on(event, callback) {
         if (Object.prototype.hasOwnProperty.call(this._callbacks, event)) {
             this._callbacks[event] = callback;
@@ -197,19 +189,11 @@ const AgentWS = {
                     this._callbacks.onTaskError({ task: data.task, error: data.error });
                 }
                 break;
-            case 'task_interrupted':
-                if (this._callbacks.onTaskInterrupted) {
-                    this._callbacks.onTaskInterrupted({
-                        task: data.task,
-                        message: data.message,
-                    });
-                }
-                break;
-            case 'interrupt_ack':
-                if (this._callbacks.onInterruptAck) {
-                    this._callbacks.onInterruptAck({
-                        ok: data.ok,
-                        message: data.message,
+            case 'camera_preview':
+                if (this._callbacks.onCameraPreview) {
+                    this._callbacks.onCameraPreview({
+                        show: !!data.show,
+                        mjpegPath: data.mjpeg_path || '/api/v1/camera/mjpeg',
                     });
                 }
                 break;

@@ -26,6 +26,8 @@ logger = logging.getLogger(__name__)
 _RUISA_ROOT = Path(__file__).resolve().parent.parent.parent
 _AGENT_DIR = str(_RUISA_ROOT / "agent")
 
+_CAMERA_TASKS = frozenset({"clamp", "face", "answer"})
+
 _arm = None
 _arm_lock = threading.Lock()
 _task_sem = asyncio.Semaphore(1)  # 全局串行任务，避免串口/camera 冲突
@@ -122,18 +124,12 @@ def _dispatch_tasks(arm, task_name: str, params: dict, user_text: str) -> None:
 
 def _run_task_blocking(task_name: str, params: dict, user_text: str) -> tuple[bool, str, Optional[str]]:
     """在后台线程中执行任务，捕获 stdout 作为日志。"""
-    _insert_agent_path()
-    from task_control import TaskCancelled, begin_task  # noqa: WPS433
-
-    begin_task()
     buf = io.StringIO()
     err: Optional[str] = None
     try:
         arm = _get_arm()
         with redirect_stdout(buf):
             _dispatch_tasks(arm, task_name, params, user_text)
-    except TaskCancelled:
-        err = "interrupted"
     except Exception as e:
         logger.exception("task failed")
         err = str(e)
@@ -195,17 +191,6 @@ class AgentBridge:
 
     def end_session(self, session_id: str) -> bool:
         return self._sessions.pop(session_id, None) is not None
-
-    async def handle_interrupt(self, session_id: str) -> dict:
-        """请求中断当前正在执行的机械臂任务（协作式，在子步骤间隙生效）。"""
-        _insert_agent_path()
-        from task_control import request_cancel  # noqa: WPS433
-
-        request_cancel()
-        return {
-            "ok": True,
-            "message": "已发送中断请求；当前动作会在下一步检测点停止（单段 MOVE 进行中无法强行打断）。",
-        }
 
     async def handle_debug_wake(self, session_id: str) -> dict:
         s = self.ensure_session(session_id)
@@ -335,41 +320,56 @@ class AgentBridge:
         params: dict,
         user_text: str,
     ):
+        use_cam = task_name in _CAMERA_TASKS
         await self.send_to_client(session_id, {"type": "task_start", "task": task_name, "params": params})
-        async with _task_sem:
-            ok, stdout_text, err = await asyncio.to_thread(
-                _run_task_blocking, task_name, params, user_text
-            )
-        for line in stdout_text.splitlines():
-            line = line.strip()
-            if line:
-                await self.send_to_client(session_id, {"type": "task_log", "message": line})
-        if ok:
+        if use_cam:
             await self.send_to_client(
                 session_id,
                 {
-                    "type": "task_complete",
-                    "task": task_name,
-                    "result": {"success": True, "message": "任务流程已结束（详见日志）。"},
+                    "type": "camera_preview",
+                    "show": True,
+                    "mjpeg_path": "/api/v1/camera/mjpeg",
                 },
             )
-        elif err == "interrupted":
-            await self.send_to_client(
-                session_id,
-                {
-                    "type": "task_interrupted",
-                    "task": task_name,
-                    "message": "任务已由用户中断。",
-                },
-            )
-        else:
-            await self.send_to_client(
-                session_id,
-                {"type": "task_error", "task": task_name, "error": err or "unknown"},
-            )
-        sess = self.get_session(session_id)
-        if sess:
-            sess.state = SessionState.WAITING_TASK
+        try:
+            async with _task_sem:
+                ok, stdout_text, err = await asyncio.to_thread(
+                    _run_task_blocking, task_name, params, user_text
+                )
+            for line in stdout_text.splitlines():
+                line = line.strip()
+                if line:
+                    await self.send_to_client(session_id, {"type": "task_log", "message": line})
+            if ok:
+                await self.send_to_client(
+                    session_id,
+                    {
+                        "type": "task_complete",
+                        "task": task_name,
+                        "result": {"success": True, "message": "任务流程已结束（详见日志）。"},
+                    },
+                )
+            else:
+                await self.send_to_client(
+                    session_id,
+                    {"type": "task_error", "task": task_name, "error": err or "unknown"},
+                )
+        finally:
+            if use_cam:
+                _insert_agent_path()
+                try:
+                    import camera_preview  # noqa: WPS433
+
+                    camera_preview.clear()
+                except Exception:
+                    pass
+                await self.send_to_client(
+                    session_id,
+                    {"type": "camera_preview", "show": False},
+                )
+            sess = self.get_session(session_id)
+            if sess:
+                sess.state = SessionState.WAITING_TASK
 
 
 agent_bridge = AgentBridge()
