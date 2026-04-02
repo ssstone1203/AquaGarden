@@ -139,7 +139,14 @@ class ArmSerial:
                 resp = self._serial.readline().decode('utf-8').strip()
                 elapsed_ms = int((time.time() - t0) * 1000)
 
-                ok = resp in ("OK", "PONG", "DONE") or resp.startswith("OK")
+                ru = resp.upper()
+                if command == "READ_POS":
+                    # 成功为 "x,y,z,pitch"，失败常为 ERR / 空
+                    ok = bool(resp) and ru != "ERR" and resp.count(",") >= 3
+                elif command == "DIST":
+                    ok = bool(resp) and ru != "ERR" and ru != "TIMEOUT"
+                else:
+                    ok = resp in ("OK", "PONG", "DONE") or resp.startswith("OK")
                 return ok, resp, elapsed_ms
 
             except asyncio.TimeoutError:
