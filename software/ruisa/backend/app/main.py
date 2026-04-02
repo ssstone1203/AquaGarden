@@ -2,11 +2,19 @@
 AquaGarden 后端应用入口
 机械臂智能控制系统后端，基于 FastAPI + RA6M5 串口协议
 """
+import sys
+from pathlib import Path
+
+# 直接执行 `python app/main.py` 时，解释器会把 app/ 当作 sys.path 根目录，
+# `from app.xxx` 会找不到包。将 backend 根目录插入 path 后与普通 `python -m app.main` 一致。
+_backend_root = Path(__file__).resolve().parent.parent
+if str(_backend_root) not in sys.path:
+    sys.path.insert(0, str(_backend_root))
+
 import asyncio
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from pathlib import Path
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware

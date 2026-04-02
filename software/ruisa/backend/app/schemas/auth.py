@@ -2,6 +2,7 @@
 认证相关 Pydantic 模型
 """
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -16,7 +17,7 @@ class RegisterRequest(BaseModel):
         max_length=50,
         description="用户名（3-50个字符）",
     )
-    email: EmailStr | None = Field(
+    email: Optional[EmailStr] = Field(
         None,
         description="邮箱（可选）",
     )
@@ -38,7 +39,7 @@ class RegisterResponse(BaseModel):
     """注册响应"""
     id: str
     username: str
-    email: str | None
+    email: Optional[str]
     created_at: datetime
 
 
@@ -66,11 +67,11 @@ class UserResponse(TimestampMixin):
     """用户响应模型"""
     id: str
     username: str
-    email: str | None
+    email: Optional[str]
     role: str
     is_active: bool
-    avatar_url: str | None = None
-    bio: str | None = None
+    avatar_url: Optional[str] = None
+    bio: Optional[str] = None
 
 
 # ── 密码修改 ──────────────────────────────────────────────────────────────

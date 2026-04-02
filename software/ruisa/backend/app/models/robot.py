@@ -4,6 +4,7 @@
 import json
 import uuid
 from datetime import datetime, timezone
+from typing import List, Optional
 
 from sqlalchemy import DateTime, Float, Integer, String, Text, JSON
 from sqlalchemy.orm import Mapped, mapped_column
@@ -27,28 +28,28 @@ class RobotCalibration(Base):
         index=True,
     )
     # 仿射变换矩阵（4×3，行优先存储，共12个float）
-    affine_matrix: Mapped[list[float] | None] = mapped_column(
+    affine_matrix: Mapped[Optional[List[float]]] = mapped_column(
         JSON,
         nullable=True,
     )
     # 观测位姿（示教采集时的机械臂固定坐标）
-    obs_x: Mapped[float | None] = mapped_column(Float, nullable=True)
-    obs_y: Mapped[float | None] = mapped_column(Float, nullable=True)
-    obs_z: Mapped[float | None] = mapped_column(Float, nullable=True)
-    obs_pitch: Mapped[float | None] = mapped_column(Float, nullable=True)
+    obs_x: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    obs_y: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    obs_z: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    obs_pitch: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     # 高度标定
-    table_z: Mapped[float | None] = mapped_column(
+    table_z: Mapped[Optional[float]] = mapped_column(
         Float,
         nullable=True,
         comment="桌面高度（cm，相对机械臂坐标系）",
     )
-    block_height: Mapped[float | None] = mapped_column(
+    block_height: Mapped[Optional[float]] = mapped_column(
         Float,
         nullable=True,
         comment="物块高度（cm）",
     )
     # 示教采集的原始数据（每组：像素坐标 + 机械臂坐标）
-    teach_samples: Mapped[dict | None] = mapped_column(
+    teach_samples: Mapped[Optional[dict]] = mapped_column(
         JSON,
         nullable=True,
     )
@@ -85,13 +86,13 @@ class RobotOperationLog(Base):
     # 操作类型：move | gripper_open | gripper_close | read_pos | ping | dist | calibrate | ...
     action: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     # 操作参数
-    params: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    params: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     # 机械臂响应
-    response: Mapped[str | None] = mapped_column(Text, nullable=True)
+    response: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     # 执行结果：ok | timeout | error
     result: Mapped[str] = mapped_column(String(20), nullable=False, default="ok")
     # 耗时（秒）
-    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    duration_ms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

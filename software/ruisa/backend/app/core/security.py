@@ -4,23 +4,34 @@ JWT 令牌与密码哈希安全工具
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
+import bcrypt
 from jose import jwt
-from passlib.context import CryptContext
 
 from app.config import settings
 
-# ── 密码哈希 ────────────────────────────────────────────────────────────────
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
+_BCRYPT_ROUNDS = 12
+
+# ── 密码哈希（直接使用 bcrypt，避免 passlib 与 bcrypt>=4.1 的兼容性故障）────────
 
 
 def hash_password(plain_password: str) -> str:
     """对密码进行 bcrypt 哈希"""
-    return pwd_context.hash(plain_password)
+    pw = plain_password.encode("utf-8")
+    if len(pw) > 72:
+        pw = pw[:72]
+    digest = bcrypt.hashpw(pw, bcrypt.gensalt(rounds=_BCRYPT_ROUNDS))
+    return digest.decode("ascii")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """校验密码是否匹配"""
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        pw = plain_password.encode("utf-8")
+        if len(pw) > 72:
+            pw = pw[:72]
+        return bcrypt.checkpw(pw, hashed_password.encode("ascii"))
+    except ValueError:
+        return False
 
 
 # ── JWT Token ────────────────────────────────────────────────────────────────

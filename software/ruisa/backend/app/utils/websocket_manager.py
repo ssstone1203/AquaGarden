@@ -5,7 +5,7 @@ WebSocket 连接管理器
 import asyncio
 import json
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import WebSocket, WebSocketDisconnect
 
@@ -18,7 +18,7 @@ class ConnectionManager:
     支持按任务频道隔离广播
     """
 
-    _instance: "ConnectionManager | None" = None
+    _instance: Optional["ConnectionManager"] = None
     _lock: asyncio.Lock = asyncio.Lock()
 
     def __new__(cls) -> "ConnectionManager":
@@ -47,7 +47,7 @@ class ConnectionManager:
         # 机械臂状态连接池
         self._robot_connections: list[WebSocket] = []
 
-    async def connect(self, websocket: WebSocket) -> str | None:
+    async def connect(self, websocket: WebSocket) -> Optional[str]:
         """接受 WebSocket 连接，返回 user_id 或 None"""
         await websocket.accept()
 

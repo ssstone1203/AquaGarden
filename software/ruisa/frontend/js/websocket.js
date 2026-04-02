@@ -7,6 +7,11 @@
  *   WS /api/v1/ws/arm/calibration - 标定数据实时推送
  */
 
+function agWsBaseUrl() {
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${proto}//${window.location.host}`;
+}
+
 // ── 状态 WebSocket ───────────────────────────────────────────────────────────
 class ArmStatusWS {
     constructor() {
@@ -32,7 +37,7 @@ class ArmStatusWS {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
 
         const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
-        this.url = `ws://localhost:8000/api/v1/ws/arm/status${tokenParam}`;
+        this.url = `${agWsBaseUrl()}/api/v1/ws/arm/status${tokenParam}`;
         this.isManualClose = false;
 
         try {
@@ -179,7 +184,7 @@ class CalibrationWS {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
 
         const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
-        this.url = `ws://localhost:8000/api/v1/ws/arm/calibration${tokenParam}`;
+        this.url = `${agWsBaseUrl()}/api/v1/ws/arm/calibration${tokenParam}`;
         this.isManualClose = false;
 
         try {

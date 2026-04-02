@@ -629,6 +629,16 @@
 </head>
 <body>
 
+<!-- 登录提示遮罩 -->
+<div class="login-overlay" id="loginOverlay" style="display:none;">
+    <div class="login-overlay-card">
+        <div style="font-size:40px;margin-bottom:16px;">🔐</div>
+        <h2>请先登录</h2>
+        <p>机械臂控制系统需要登录后才能操作。<br>请登录以继续使用。</p>
+        <button class="btn" onclick="window.location.href='login.html'">前往登录</button>
+    </div>
+</div>
+
 <!-- Toast 提示 -->
 <div class="toast-container" id="toastContainer"></div>
 
@@ -642,9 +652,9 @@
         </div>
     </div>
     <div class="header-right">
-        <div class="user-info" id="userInfo" style="display: none;">
+        <div class="user-info" id="userInfo" style="display:none;">
             <div class="user-avatar" id="userAvatar">U</div>
-            <span id="username">--</span>
+            <span id="username">用户</span>
         </div>
         <button class="btn-logout" onclick="handleLogout()">退出</button>
         <button class="arm-connect-btn" id="armConnectBtn" onclick="toggleArmConnect()">
@@ -774,6 +784,7 @@
 <script>
 /* ─────────────────────────  CONFIG  ───────────────────────── */
 /* API_BASE 仅在 js/api.js 中声明；此处重复 const 会使整段脚本解析失败。需要时用 window.API.base。 */
+/* API_BASE 由上方引入的 js/api.js 定义（与当前页面同源） */
 const TASKS = {
     1: {
         name: '颜色识别与分拣', icon: '🎨',
@@ -992,21 +1003,23 @@ function init() {
     }
 
     buildModuleNav();
+    checkAuth();
+    buildTabs();
     selectTask(1);
     initWebSocket();
 }
 
 /* ─────────────────────────  LOGOUT  ───────────────────────── */
-function handleLogout() {
-    localStorage.removeItem('ag_access_token');
-    localStorage.removeItem('ag_refresh_token');
-    localStorage.removeItem('ag_user_info');
-    window.location.href = '/login.html';
+async function handleLogout() {
+    if (window.API) {
+        await window.API.auth.logout();
+    }
+    window.location.href = 'login.html';
 }
 
 /* ─────────────────────────  ARM CONNECTION  ───────────────────────── */
 async function toggleArmConnect() {
-    if (!window.API) {
+    if (!window.API || !window.API.token.isLoggedIn()) {
         showToast('请先登录后再操作', 'error');
         return;
     }
@@ -1066,12 +1079,24 @@ function updateArmConnectUI(connected) {
     }
 }
 
-function refreshArmStatus() {
-    if (!window.API) return;
+function checkAuth() {
+    const isLoggedIn = window.API && window.API.token.isLoggedIn();
+    document.getElementById('loginOverlay').style.display = isLoggedIn ? 'none' : 'flex';
+
+    if (isLoggedIn) {
+        const user = window.API.token.getUserInfo();
+        if (user) {
+            document.getElementById('userInfo').style.display = 'flex';
+            document.getElementById('userAvatar').textContent = user.username.charAt(0).toUpperCase();
+            document.getElementById('username').textContent = user.username;
+        }
+    }
 }
 
 function initWebSocket() {
-    if (!window.API) return;
+    if (!window.API || !window.API.token.isLoggedIn()) return;
+
+    const token = window.API.token.getAccessToken();
 
     // 订阅机械臂状态变化
     window.WS.armStatus.onStatus((data) => {
@@ -1092,11 +1117,11 @@ function initWebSocket() {
     });
 
     // 尝试连接 WS
-    window.WS.armStatus.connect();
+    window.WS.armStatus.connect(token);
 }
 
-async function _refreshArmStatus() {
-    if (!window.API) return;
+async function refreshArmStatus() {
+    if (!window.API || !window.API.token.isLoggedIn()) return;
     try {
         const status = await window.API.arm.getStatus();
         updateArmPositionDisplay({
@@ -1317,7 +1342,7 @@ function appendLog(log) {
 
 /* ─────────────────────────  PLAY / PAUSE  ───────────────────── */
 function togglePlay() {
-    if (!window.API) {
+    if (!window.API || !window.API.token.isLoggedIn()) {
         showToast('请先登录后再操作', 'error');
         return;
     }
@@ -1354,7 +1379,7 @@ async function runClampTask() {
     const logTime = getLogTime();
 
     // 检查登录
-    if (!window.API) {
+    if (!window.API || !window.API.token.isLoggedIn()) {
         showToast('请先登录后再操作', 'error');
         finishTaskWithError(1);
         return;
