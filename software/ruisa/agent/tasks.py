@@ -18,6 +18,29 @@ import config
 import dialogue
 from arm import Arm
 
+# Windows 上优先使用 DirectShow，避免部分机器走 FFMPEG 枚举时报错
+_CAM_BACKEND = cv2.CAP_DSHOW if os.name == "nt" else cv2.CAP_ANY
+
+
+def _open_camera():
+    """
+    打开可用摄像头，优先 config.CAMERA_INDEX，失败时回退尝试常见索引。
+    返回 (cap, index)，失败则返回 (None, None)。
+    """
+    candidates = [config.CAMERA_INDEX] + [i for i in (0, 1, 2) if i != config.CAMERA_INDEX]
+    for idx in candidates:
+        cap = cv2.VideoCapture(idx, _CAM_BACKEND)
+        if not cap.isOpened():
+            cap.release()
+            continue
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        ret, _ = cap.read()
+        if ret:
+            return cap, idx
+        cap.release()
+    return None, None
+
 # ================================================================
 #  任务1：颜色识别与分拣
 # ================================================================
@@ -85,9 +108,11 @@ def task_clamp(arm: Arm):
     data    = np.load(config.MAP_FILE)
     A       = data["A"]
 
-    cap = cv2.VideoCapture(config.CAMERA_INDEX)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH,  1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    cap, cam_idx = _open_camera()
+    if cap is None:
+        print(f"[分拣] 错误：未找到可用摄像头。请检查 CAMERA_INDEX={config.CAMERA_INDEX} 和设备连接。")
+        return
+    print(f"[分拣] 使用摄像头索引: {cam_idx}")
 
     try:
         # 移到观测位姿
@@ -227,9 +252,11 @@ def _scan_waypoints():
 
 def task_face(arm: Arm):
     """任务3：人脸识别追踪（运行至超时或按 Q 退出）"""
-    cap = cv2.VideoCapture(config.CAMERA_INDEX)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH,  1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    cap, cam_idx = _open_camera()
+    if cap is None:
+        print(f"[人脸] 错误：未找到可用摄像头。请检查 CAMERA_INDEX={config.CAMERA_INDEX} 和设备连接。")
+        return
+    print(f"[人脸] 使用摄像头索引: {cam_idx}")
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
     print("[人脸] 移到追踪起始位置...")
@@ -349,9 +376,11 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
     time.sleep(0.5)
 
     # 拍照
-    cap = cv2.VideoCapture(config.CAMERA_INDEX)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH,  1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    cap, cam_idx = _open_camera()
+    if cap is None:
+        print(f"[解答] 错误：未找到可用摄像头。请检查 CAMERA_INDEX={config.CAMERA_INDEX} 和设备连接。")
+        return
+    print(f"[解答] 使用摄像头索引: {cam_idx}")
     ret, frame = cap.read()
     cap.release()
 
