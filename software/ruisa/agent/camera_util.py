@@ -31,7 +31,8 @@ def normalize_bgr_frame(frame: Any) -> Optional[np.ndarray]:
         return None
     if frame.dtype != np.uint8:
         frame = np.asarray(frame, dtype=np.uint8)
-    if not frame.flags.get("C_CONTIGUOUS", False):
+    # ndarray.flags 是 flagsobj，不是 dict，不能用 .get()
+    if not frame.flags.c_contiguous:
         frame = np.ascontiguousarray(frame)
     return frame
 
