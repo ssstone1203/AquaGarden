@@ -6,7 +6,6 @@ tasks.py  ——  四个任务函数
 
 import cv2
 import json
-import os
 import time
 import base64
 import mimetypes
@@ -14,33 +13,19 @@ import numpy as np
 from pathlib import Path
 from openai import OpenAI
 
+from camera_util import normalize_bgr_frame, try_open_camera
 import config
 import dialogue
 from arm import Arm
 import camera_preview
 
-# Windows 上优先使用 DirectShow，避免部分机器走 FFMPEG 枚举时报错
-_CAM_BACKEND = cv2.CAP_DSHOW if os.name == "nt" else cv2.CAP_ANY
 
-
-def _open_camera():
+def _open_camera(buffer_size=None):
     """
-    打开可用摄像头，优先 config.CAMERA_INDEX，失败时回退尝试常见索引。
-    返回 (cap, index)，失败则返回 (None, None)。
+    打开可用摄像头：与 camera_util 共用逻辑（设备路径、CAMERA_BACKEND、索引回退）。
+    返回 (cap, 标识)，标识为路径 str 或索引 int；失败 (None, None)。
     """
-    candidates = [config.CAMERA_INDEX] + [i for i in (0, 1, 2) if i != config.CAMERA_INDEX]
-    for idx in candidates:
-        cap = cv2.VideoCapture(idx, _CAM_BACKEND)
-        if not cap.isOpened():
-            cap.release()
-            continue
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        ret, _ = cap.read()
-        if ret:
-            return cap, idx
-        cap.release()
-    return None, None
+    return try_open_camera(buffer_size=buffer_size)
 
 # ================================================================
 #  任务1：颜色识别与分拣
@@ -113,7 +98,7 @@ def task_clamp(arm: Arm):
     if cap is None:
         print(f"[分拣] 错误：未找到可用摄像头。请检查 CAMERA_INDEX={config.CAMERA_INDEX} 和设备连接。")
         return
-    print(f"[分拣] 使用摄像头索引: {cam_idx}")
+    print(f"[分拣] 使用摄像头: {cam_idx}")
 
     try:
         # 移到观测位姿
@@ -125,11 +110,17 @@ def task_clamp(arm: Arm):
         bx = by = bz = bp = block_color = None
 
         while True:
-            ret, frame = cap.read()
+            ret, raw = cap.read()
             if not ret:
+                continue
+            frame = normalize_bgr_frame(raw)
+            if frame is None:
                 continue
             if config.CAMERA_ROT:
                 frame = cv2.rotate(frame, cv2.ROTATE_180)
+                frame = normalize_bgr_frame(frame)
+            if frame is None:
+                continue
 
             cx, cy, color_key, disp = _detect_block(frame)
             if cx is not None:
@@ -254,12 +245,11 @@ def _scan_waypoints():
 
 def task_face(arm: Arm):
     """任务3：人脸识别追踪（运行至超时或按 Q 退出）"""
-    cap, cam_idx = _open_camera()
+    cap, cam_idx = _open_camera(buffer_size=1)
     if cap is None:
         print(f"[人脸] 错误：未找到可用摄像头。请检查 CAMERA_INDEX={config.CAMERA_INDEX} 和设备连接。")
         return
-    print(f"[人脸] 使用摄像头索引: {cam_idx}")
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    print(f"[人脸] 使用摄像头: {cam_idx}")
 
     print("[人脸] 移到追踪起始位置...")
     arm.move_angle(config.FACE_ANGLE_CENTER, config.FACE_Z, config.FACE_PITCH, dur=2000)
@@ -276,11 +266,17 @@ def task_face(arm: Arm):
 
     try:
         while time.time() < deadline:
-            ret, frame = cap.read()
+            ret, raw = cap.read()
             if not ret:
+                continue
+            frame = normalize_bgr_frame(raw)
+            if frame is None:
                 continue
             if config.CAMERA_ROT:
                 frame = cv2.rotate(frame, cv2.ROTATE_180)
+                frame = normalize_bgr_frame(frame)
+            if frame is None:
+                continue
 
             h_img, w_img = frame.shape[:2]
             cx_img       = w_img // 2
@@ -384,15 +380,23 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
     if cap is None:
         print(f"[解答] 错误：未找到可用摄像头。请检查 CAMERA_INDEX={config.CAMERA_INDEX} 和设备连接。")
         return
-    print(f"[解答] 使用摄像头索引: {cam_idx}")
-    ret, frame = cap.read()
+    print(f"[解答] 使用摄像头: {cam_idx}")
+    ret, raw = cap.read()
     cap.release()
 
     if not ret:
         print("[解答] 错误：摄像头读取失败")
         return
+    frame = normalize_bgr_frame(raw)
+    if frame is None:
+        print("[解答] 错误：摄像头帧无效（尺寸或内存布局异常）")
+        return
     if config.CAMERA_ROT:
         frame = cv2.rotate(frame, cv2.ROTATE_180)
+        frame = normalize_bgr_frame(frame)
+    if frame is None:
+        print("[解答] 错误：摄像头帧处理后无效")
+        return
 
     camera_preview.publish_bgr(frame)
 
@@ -467,7 +471,7 @@ def list_actions() -> list:
     d = Path(config.ACTIONS_DIR)
     if not d.exists():
         return []
-    return sorted(os.path.splitext(f)[0] for f in os.listdir(d) if f.endswith(".json"))
+    return sorted(p.stem for p in d.glob("*.json"))
 
 
 def task_action(arm: Arm, action_name: str):

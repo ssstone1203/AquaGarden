@@ -11,13 +11,16 @@ from typing import Optional
 import cv2
 import numpy as np
 
+from camera_util import normalize_bgr_frame
+
 _lock = threading.Lock()
 _latest_jpg: Optional[bytes] = None
 
 
 def publish_bgr(frame: np.ndarray, quality: int = 78) -> None:
     """由 tasks 在获取到 BGR 帧后调用（可与 imshow 使用同一幅图）。"""
-    if frame is None or frame.size == 0:
+    frame = normalize_bgr_frame(frame)
+    if frame is None:
         return
     ok, buf = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), int(quality)])
     if not ok:
