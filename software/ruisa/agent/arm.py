@@ -11,7 +11,13 @@ import threading
 import time
 from typing import Optional
 
-import serial
+try:
+    from serial import Serial, SerialException
+except ImportError:
+    raise ImportError(
+        "未安装 pyserial 或误装了 PyPI 上的同名包 'serial'。"
+        "请执行: pip uninstall serial -y; pip install pyserial"
+    ) from None
 
 import config
 
@@ -23,9 +29,9 @@ class Arm:
         port = port if port is not None else config.SERIAL_PORT
         baud = baud if baud is not None else getattr(config, "SERIAL_BAUD", 115200)
         try:
-            self._s = serial.Serial(port, baud, timeout=0)
-        except serial.SerialException as e:
-            raise serial.SerialException(
+            self._s = Serial(port, baud, timeout=0)
+        except SerialException as e:
+            raise SerialException(
                 f"无法打开串口 {port!r}（波特率 {baud}）。请检查：USB 是否插好、驱动是否正常、"
                 f"设备管理器中 COM 号是否变化；可在环境变量或 .env 中设置 SERIAL_PORT=COMx "
                 f"（Linux 一般为 /dev/ttyUSB0），必要时设置 SERIAL_BAUD。"
