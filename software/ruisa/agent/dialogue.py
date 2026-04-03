@@ -13,7 +13,6 @@ dialogue.py  ——  语音对话模块（阿里云 DashScope qwen3 系列）
   - LLM: qwen-plus / qwen-turbo → 意图识别
 """
 
-import os
 import time
 import wave
 import tempfile
@@ -118,9 +117,11 @@ def _record_wav(duration: int = None) -> Optional[str]:
 
 def _asr(wav_path: str) -> str:
     """调用 qwen3-asr-flash，返回识别文字"""
+    import os as _os
+
     try:
         dashscope.api_key = config.DASHSCOPE_API_KEY
-        audio_url = f"file://{os.path.abspath(wav_path)}"
+        audio_url = f"file://{_os.path.abspath(wav_path)}"
 
         response = dashscope.MultiModalConversation.call(
             api_key=config.DASHSCOPE_API_KEY,
@@ -159,6 +160,8 @@ def _asr(wav_path: str) -> str:
 
 def _tts_play(text: str):
     """调用 qwen3-tts-flash 合成语音，下载后用 pygame 播放"""
+    import os as _os
+
     try:
         dashscope.api_key = config.DASHSCOPE_API_KEY
 
@@ -190,7 +193,7 @@ def _tts_play(text: str):
                 pygame.time.wait(50)
             pygame.mixer.music.unload()
         finally:
-            os.unlink(tmp)
+            _os.unlink(tmp)
 
     except Exception as e:
         print(f"[TTS] 失败: {e}")
@@ -263,6 +266,8 @@ def listen() -> str:
     录音并返回识别文字。
     无 pyaudio 时降级为键盘输入。
     """
+    import os as _os
+
     if not (config.DASHSCOPE_API_KEY and _PYAUDIO_OK):
         return input("[键盘输入] > ").strip()
 
@@ -274,7 +279,7 @@ def listen() -> str:
         text = _asr(wav)
     finally:
         try:
-            os.unlink(wav)
+            _os.unlink(wav)
         except Exception:
             pass
 
@@ -318,14 +323,17 @@ def generate_natural_response(task_name: str, params: dict = None) -> str:
 
     elif task_name == "action":
         action = params.get("action", "打招呼")
-        actions = {
+        # 勿在 dict 字面量里调用 get_weather_speak_text()：会无条件执行天气逻辑，
+        # 且易与 Web/线程环境下的模块状态纠缠；仅「看天气」时再拉天气文案。
+        if action == "看天气":
+            return get_weather_speak_text()
+        preset = {
             "打招呼": "好的，我来打个招呼！很高兴见到你~",
             "跳舞":   "好的，我来跳个舞！",
             "点头":   "好的，我点头表示同意！",
             "摇头":   "好的，我摇摇头~",
-            "看天气": get_weather_speak_text(),
         }
-        return actions.get(action, f"好的，我来做个{action}的动作~")
+        return preset.get(action, f"好的，我来做个{action}的动作~")
 
     else:
         return "嗯嗯，好的~"
@@ -346,9 +354,11 @@ def _get_weather_info() -> dict:
     获取天气信息。
     优先使用心知天气API，失败则使用模拟数据。
     """
+    import os as _os
+
     try:
         # 尝试使用心知天气API获取真实天气
-        xinzhi_key = os.getenv("XINZHI_KEY") or os.getenv("WEATHER_KEY")
+        xinzhi_key = _os.getenv("XINZHI_KEY") or _os.getenv("WEATHER_KEY")
         if xinzhi_key:
             try:
                 import urllib.request
@@ -520,8 +530,9 @@ def parse(text: str) -> Tuple[str, dict]:
         return _keyword_parse(text)
 
     try:
-        from openai import OpenAI
-        client = OpenAI(api_key=config.DASHSCOPE_API_KEY, base_url=config.DASHSCOPE_BASE_URL)
+        import dashscope_client
+
+        client = dashscope_client.openai_client()
         resp   = client.chat.completions.create(
             model=config.LLM_MODEL,
             messages=[

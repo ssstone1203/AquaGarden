@@ -79,16 +79,6 @@ async def ws_agent_chat(websocket: WebSocket):
                     }
                 )
 
-            elif msg_type == "interrupt":
-                ack = await agent_bridge.handle_interrupt(session_id)
-                await send_json(
-                    {
-                        "type": "interrupt_ack",
-                        **ack,
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                    }
-                )
-
             elif msg_type == "end_session":
                 agent_bridge.end_session(session_id)
                 await send_json({"type": "session_ended", "timestamp": datetime.now(timezone.utc).isoformat()})

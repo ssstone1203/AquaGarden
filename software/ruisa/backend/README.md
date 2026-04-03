@@ -16,11 +16,11 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ## 配置
 
 - 机械臂串口与本地 `python agent.py` 相同：在 `../agent/config.py` 中改默认 `SERIAL_PORT`，或在 `.env` 中设置 `SERIAL_PORT=COM3`（Windows）或 `SERIAL_BAUD=115200`。详见 `../agent/arm.py`（`pyserial.Serial`）。
-- 机械臂 USB 摄像头（避免用笔记本内置）：环境变量 `ARM_CAMERA_INDEX`（默认 1，内置常为 0）、或 `ARM_CAMERA_DEVICE` / `CAMERA_DEVICE_PATH`（设备路径）；Windows 可选 `CAMERA_BACKEND=dshow`。逻辑见 `../agent/camera_util.py`。
-- 前端「中断动作」→ WebSocket `interrupt` → `task_control.request_cancel()`，任务在检测点协作退出。
+- 摄像头：见 `../agent/config.py` 中 `CAMERA_INDEX` 等（`tasks.py` 内 `_open_camera` 按序号枚举）。
 - `AGENT_DEBUG_KEYBOARD`：为 `1` 时须先在页面「模拟唤醒」再发指令（等同 `DEBUG=1 python agent.py`）。
 
 ## API
 
 - `GET /health`
 - `WS /api/v1/ws/agent/chat` — Agent 对话与任务推送（无需登录）
+- `GET /api/v1/camera/mjpeg` — 机械臂摄像头 MJPEG 流（任务 `clamp` / `face` / `answer` 运行时有画面，由 `agent/camera_preview.py` 推送帧）

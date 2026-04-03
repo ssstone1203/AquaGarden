@@ -4,42 +4,33 @@ tasks.py  ——  四个任务函数
 任务内部管理摄像头等资源，执行完毕后释放。
 """
 
-import cv2
-import json
-import os
-import time
 import base64
+import json
 import mimetypes
-import numpy as np
+import time
 from pathlib import Path
-from openai import OpenAI
 
+import cv2
+import numpy as np
+from openai import APIConnectionError, APIStatusError, APITimeoutError
+
+from camera_util import normalize_bgr_frame, try_open_camera
 import config
+import dashscope_client
 import dialogue
 from arm import Arm
+import camera_preview
 
-# Windows 上优先使用 DirectShow，避免部分机器走 FFMPEG 枚举时报错
-_CAM_BACKEND = cv2.CAP_DSHOW if os.name == "nt" else cv2.CAP_ANY
+# Web 端任务完成后由 agent_bridge 读取并下发到聊天区（避免解答只出现在终端日志）
+last_answer_for_web: str | None = None
 
 
-def _open_camera():
+def _open_camera(buffer_size=None):
     """
-    打开可用摄像头，优先 config.CAMERA_INDEX，失败时回退尝试常见索引。
-    返回 (cap, index)，失败则返回 (None, None)。
+    打开可用摄像头：与 camera_util 共用逻辑（设备路径、CAMERA_BACKEND、索引回退）。
+    返回 (cap, 标识)，标识为路径 str 或索引 int；失败 (None, None)。
     """
-    candidates = [config.CAMERA_INDEX] + [i for i in (0, 1, 2) if i != config.CAMERA_INDEX]
-    for idx in candidates:
-        cap = cv2.VideoCapture(idx, _CAM_BACKEND)
-        if not cap.isOpened():
-            cap.release()
-            continue
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        ret, _ = cap.read()
-        if ret:
-            return cap, idx
-        cap.release()
-    return None, None
+    return try_open_camera(buffer_size=buffer_size)
 
 # ================================================================
 #  任务1：颜色识别与分拣
@@ -112,12 +103,11 @@ def task_clamp(arm: Arm):
     if cap is None:
         print(f"[分拣] 错误：未找到可用摄像头。请检查 CAMERA_INDEX={config.CAMERA_INDEX} 和设备连接。")
         return
-    print(f"[分拣] 使用摄像头索引: {cam_idx}")
+    print(f"[分拣] 使用摄像头: {cam_idx}")
 
     try:
         # 移到观测位姿
         print("[分拣] 移到观测位姿...")
-        check_cancelled("[分拣] 已中断")
         arm.move(config.OBS_X, config.OBS_Y, config.OBS_Z, config.OBS_PITCH, dur=1500)
 
         # 检测物块（按空格确认，Q 放弃）
@@ -125,12 +115,17 @@ def task_clamp(arm: Arm):
         bx = by = bz = bp = block_color = None
 
         while True:
-            check_cancelled("[分拣] 已中断")
-            ret, frame = cap.read()
+            ret, raw = cap.read()
             if not ret:
+                continue
+            frame = normalize_bgr_frame(raw)
+            if frame is None:
                 continue
             if config.CAMERA_ROT:
                 frame = cv2.rotate(frame, cv2.ROTATE_180)
+                frame = normalize_bgr_frame(frame)
+            if frame is None:
+                continue
 
             cx, cy, color_key, disp = _detect_block(frame)
             if cx is not None:
@@ -139,6 +134,7 @@ def task_clamp(arm: Arm):
                             (10, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 220, 0), 2)
             cv2.putText(disp, "SPACE=confirm  Q=cancel",
                         (10, disp.shape[0]-12), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (180,180,180), 1)
+            camera_preview.publish_bgr(disp)
             cv2.imshow("clamp", disp)
             key = cv2.waitKey(30) & 0xFF
 
@@ -169,32 +165,22 @@ def task_clamp(arm: Arm):
               f"→ {zone['name'] if zone else '未知区'}")
 
         # 夹取流程
-        check_cancelled("[分拣] 已中断")
         arm.gripper_open()
-        check_cancelled("[分拣] 已中断")
         arm.move(bx, by, above_z, bp, dur=1000)
-        check_cancelled("[分拣] 已中断")
         arm.move(bx, by, grasp_z,  bp, dur=600)
-        check_cancelled("[分拣] 已中断")
         arm.gripper_close()
         time.sleep(0.4)
-        check_cancelled("[分拣] 已中断")
         arm.move(bx, by, config.SAFE_Z, bp, dur=800)
-        check_cancelled("[分拣] 已中断")
         arm.move(config.HORIZ_X, config.HORIZ_Y, config.SAFE_Z, config.HORIZ_PITCH, dur=1000)
 
         # 放置
         if zone:
-            check_cancelled("[分拣] 已中断")
             above_zone_z = max(config.SAFE_Z, zone['z'] + 3.0)
             arm.move(zone['x'], zone['y'], above_zone_z, zone['pitch'], dur=1400)
-            check_cancelled("[分拣] 已中断")
             arm.move(zone['x'], zone['y'], zone['z'],    zone['pitch'], dur=800)
             time.sleep(0.3)
-            check_cancelled("[分拣] 已中断")
             arm.gripper_open()
             time.sleep(0.4)
-            check_cancelled("[分拣] 已中断")
             arm.move(zone['x'], zone['y'], above_zone_z, zone['pitch'], dur=700)
         print("[分拣] 完成")
 
@@ -217,16 +203,13 @@ def task_led(arm: Arm, preset_key: str = config.LED_DEFAULT):
 
     if preset_key == "off":
         print("[台灯] 关闭台灯（亮度归零）")
-        check_cancelled("[台灯] 已中断")
         arm.led(0, 0, 0, 0)
         print("[台灯] 已关闭")
         return
 
     print(f"[台灯] 移到台灯位置，亮度档位: {preset_key}")
-    check_cancelled("[台灯] 已中断")
     arm.move(config.LED_X, config.LED_Y, config.LED_Z, config.LED_PITCH, dur=2000)
     time.sleep(0.3)
-    check_cancelled("[台灯] 已中断")
     arm.led(preset['r'], preset['g'], preset['b'], preset['bright'])
     print(f"[台灯] 已设置: R={preset['r']} G={preset['g']} B={preset['b']} "
           f"bright={preset['bright']}")
@@ -267,15 +250,13 @@ def _scan_waypoints():
 
 def task_face(arm: Arm):
     """任务3：人脸识别追踪（运行至超时或按 Q 退出）"""
-    cap, cam_idx = _open_camera()
+    cap, cam_idx = _open_camera(buffer_size=1)
     if cap is None:
         print(f"[人脸] 错误：未找到可用摄像头。请检查 CAMERA_INDEX={config.CAMERA_INDEX} 和设备连接。")
         return
-    print(f"[人脸] 使用摄像头索引: {cam_idx}")
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    print(f"[人脸] 使用摄像头: {cam_idx}")
 
     print("[人脸] 移到追踪起始位置...")
-    check_cancelled("[人脸] 已中断")
     arm.move_angle(config.FACE_ANGLE_CENTER, config.FACE_Z, config.FACE_PITCH, dur=2000)
     time.sleep(2.2)
 
@@ -290,12 +271,17 @@ def task_face(arm: Arm):
 
     try:
         while time.time() < deadline:
-            check_cancelled("[人脸] 已中断")
-            ret, frame = cap.read()
+            ret, raw = cap.read()
             if not ret:
+                continue
+            frame = normalize_bgr_frame(raw)
+            if frame is None:
                 continue
             if config.CAMERA_ROT:
                 frame = cv2.rotate(frame, cv2.ROTATE_180)
+                frame = normalize_bgr_frame(frame)
+            if frame is None:
+                continue
 
             h_img, w_img = frame.shape[:2]
             cx_img       = w_img // 2
@@ -319,7 +305,6 @@ def task_face(arm: Arm):
                     new_angle = max(config.FACE_ANGLE_MIN,
                                    min(config.FACE_ANGLE_MAX, current_angle + d_angle))
                     if abs(new_angle - current_angle) > 0.1:
-                        check_cancelled("[人脸] 已中断")
                         arm.move_angle(new_angle, config.FACE_Z, config.FACE_PITCH,
                                        dur=config.FACE_MOVE_DUR)
                         current_angle  = new_angle
@@ -337,7 +322,6 @@ def task_face(arm: Arm):
 
                 if state == "SCANNING":
                     if scan_idx < len(scan_pts):
-                        check_cancelled("[人脸] 已中断")
                         arm.move_angle(scan_pts[scan_idx], config.FACE_Z, config.FACE_PITCH,
                                        dur=config.FACE_SCAN_DUR)
                         current_angle = scan_pts[scan_idx]
@@ -354,7 +338,6 @@ def task_face(arm: Arm):
                     if not scan_pts:
                         scan_pts = _scan_waypoints()
                     if scan_idx < len(scan_pts):
-                        check_cancelled("[人脸] 已中断")
                         arm.move_angle(scan_pts[scan_idx], config.FACE_Z, config.FACE_PITCH,
                                        dur=config.FACE_SCAN_DUR * 2)
                         current_angle = scan_pts[scan_idx]
@@ -365,6 +348,7 @@ def task_face(arm: Arm):
             remaining = int(deadline - time.time())
             cv2.putText(frame, f"Q=quit  {remaining}s", (10, h_img-14),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (180,180,180), 1)
+            camera_preview.publish_bgr(frame)
             cv2.imshow("face_track", frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -386,32 +370,54 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
     移到观测位置 → 拍照 → 调用多模态大模型 → 打印并语音播报分析与解答
     question 由 dialogue 模块根据用户语音传入
     """
+    global last_answer_for_web
+
+    last_answer_for_web = None
     if not config.DASHSCOPE_API_KEY:
         print("[解答] 错误：未配置 DASHSCOPE_API_KEY，请在 config.py 或环境变量中设置")
         return
 
     print("[解答] 移到拍照位置...")
-    check_cancelled("[解答] 已中断")
     arm.move(config.ANSWER_OBS_X, config.ANSWER_OBS_Y,
              config.ANSWER_OBS_Z, config.ANSWER_OBS_PITCH, dur=1500)
     for _ in range(10):
-        check_cancelled("[解答] 已中断")
         time.sleep(0.05)
 
-    # 拍照
+    # 拍照：预热多帧并持续 publish，避免 Web 预览只闪一帧就卡住像「没反应」
     cap, cam_idx = _open_camera()
     if cap is None:
         print(f"[解答] 错误：未找到可用摄像头。请检查 CAMERA_INDEX={config.CAMERA_INDEX} 和设备连接。")
         return
-    print(f"[解答] 使用摄像头索引: {cam_idx}")
-    ret, frame = cap.read()
-    cap.release()
+    print(f"[解答] 使用摄像头: {cam_idx}", flush=True)
+    print("[解答] 正在取景预览（约 1～2 秒）…", flush=True)
 
-    if not ret:
-        print("[解答] 错误：摄像头读取失败")
+    last_frame = None
+    try:
+        for _ in range(40):
+            ret, raw = cap.read()
+            if not ret:
+                time.sleep(0.04)
+                continue
+            frame = normalize_bgr_frame(raw)
+            if frame is None:
+                continue
+            if config.CAMERA_ROT:
+                frame = cv2.rotate(frame, cv2.ROTATE_180)
+                frame = normalize_bgr_frame(frame)
+            if frame is None:
+                continue
+            last_frame = frame
+            camera_preview.publish_bgr(frame)
+            time.sleep(0.05)
+    finally:
+        cap.release()
+
+    if last_frame is None:
+        print("[解答] 错误：无法从摄像头获得有效画面", flush=True)
         return
-    if config.CAMERA_ROT:
-        frame = cv2.rotate(frame, cv2.ROTATE_180)
+
+    frame = last_frame
+    camera_preview.publish_bgr(frame)
 
     photo_path = config.PHOTO_PATH
     # Windows 上 cv2.imwrite 对含中文等非 ASCII 的路径常会失败且不写入文件，
@@ -423,11 +429,10 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
     photo_path.write_bytes(enc.tobytes())
     print(f"[解答] 已拍照: {photo_path}")
     print(f"[解答] 问题: {question}")
-    print("[解答] 正在请求大模型，请稍候...")
-    check_cancelled("[解答] 已中断")
+    print("[解答] 正在请求大模型，请稍候（网络较慢时可能需十余秒）…", flush=True)
 
     try:
-        client    = OpenAI(api_key=config.DASHSCOPE_API_KEY, base_url=config.DASHSCOPE_BASE_URL)
+        client    = dashscope_client.openai_client()
         mime, _   = mimetypes.guess_type(str(photo_path))
         mime      = mime or "image/jpeg"
         b64       = base64.b64encode(photo_path.read_bytes()).decode("ascii")
@@ -453,20 +458,36 @@ def task_answer(arm: Arm, question: str = "请解答图片中的题目"):
             max_tokens=400,
         )
         answer = (resp.choices[0].message.content or "").strip()
-        check_cancelled("[解答] 已中断")
+        last_answer_for_web = answer or None
         dialogue.speak("解答如下。")
-        print("\n" + "=" * 50)
-        print("【模型解答】")
-        print(answer)
-        print("=" * 50 + "\n")
+        print("\n" + "=" * 50, flush=True)
+        print("【模型解答】", flush=True)
+        print(answer, flush=True)
+        print("=" * 50 + "\n", flush=True)
         if answer:
-            check_cancelled("[解答] 已中断")
             dialogue.tts_only(answer)
 
-    except TaskCancelled:
-        raise
+    except APIConnectionError as e:
+        hint = (
+            "无法连接阿里云 DashScope（需访问 dashscope.aliyuncs.com）。"
+            "请检查网络、防火墙；若在公司网/校园网，可在 .env 或系统环境变量中设置 "
+            "HTTPS_PROXY=http://主机:端口 后重启后端。"
+        )
+        print(f"[解答] {hint}", flush=True)
+        print(f"[解答] 连接错误详情: {e!r}", flush=True)
+        raise RuntimeError(hint) from e
+    except APITimeoutError as e:
+        hint = "请求 DashScope 超时，请稍后重试或检查网络稳定性。"
+        print(f"[解答] {hint} ({e!r})", flush=True)
+        raise RuntimeError(hint) from e
+    except APIStatusError as e:
+        sc = getattr(e, "status_code", None)
+        body = getattr(e, "body", None) or str(e)
+        print(f"[解答] API 返回错误: HTTP {sc} — {body}", flush=True)
+        raise RuntimeError(f"DashScope 接口错误 ({sc}): {body}") from e
     except Exception as e:
-        print(f"[解答] 请求失败: {e}")
+        print(f"[解答] 请求失败: {e!r}", flush=True)
+        raise RuntimeError(f"题目解答失败: {e}") from e
 
 
 # ================================================================
@@ -489,7 +510,7 @@ def list_actions() -> list:
     d = Path(config.ACTIONS_DIR)
     if not d.exists():
         return []
-    return sorted(os.path.splitext(f)[0] for f in os.listdir(d) if f.endswith(".json"))
+    return sorted(p.stem for p in d.glob("*.json"))
 
 
 def task_action(arm: Arm, action_name: str):
@@ -518,13 +539,11 @@ def task_action(arm: Arm, action_name: str):
           f"  {len(keyframes)} 帧  预计 {est_ms / 1000:.1f}s")
 
     # 归位等待机械臂就绪
-    check_cancelled("[动作] 已中断")
     arm.go_home()
     time.sleep(2.0)
 
     total = len(keyframes)
     for i, frame in enumerate(keyframes, 1):
-        check_cancelled("[动作] 已中断")
         x, y, z, pitch = frame["x"], frame["y"], frame["z"], frame["pitch"]
         stored_dur = frame.get("duration", 200)
         is_pause   = stored_dur > pause_thr

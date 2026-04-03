@@ -165,6 +165,7 @@ ACTION_KEYWORD_MAP = {
 ANSWER_OBS_X, ANSWER_OBS_Y = 16.0, 0.0  # 拍照位姿（与分拣观测位相同）
 ANSWER_OBS_Z, ANSWER_OBS_PITCH = -3.2, -76.1
 PHOTO_PATH     = Path(__file__).parent / "_tmp_photo.jpg"
+# 需能访问公网 dashscope.aliyuncs.com；受限网络请设环境变量 HTTPS_PROXY
 DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 VL_MODEL       = "qwen-vl-plus"
 LLM_MODEL      = "qwen-turbo"

@@ -195,19 +195,6 @@
         }
         .agent-task-indicator.running { display: flex; color: #00c8ff; background: #001a2a; }
 
-        .btn-interrupt {
-            padding: 5px 12px;
-            margin-left: auto;
-            background: #3a2020;
-            border: 1px solid #aa4444;
-            border-radius: 8px;
-            color: #ffaaaa;
-            font-size: 11px;
-            cursor: pointer;
-            font-family: inherit;
-        }
-        .btn-interrupt:hover { background: #502828; color: #ffcccc; }
-        .btn-interrupt:disabled { opacity: 0.4; cursor: not-allowed; }
         .agent-task-spinner {
             width: 12px; height: 12px;
             border: 2px solid #1a3060;
@@ -377,11 +364,98 @@
         .toast.error { background: #2a0a0a; border: 1px solid #ff444444; color: #ff6b6b; }
         .toast.success { background: #0a1a0e; border: 1px solid #00e87a44; color: #00e87a; }
         @keyframes slideIn { from { transform: translateX(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+        /* 机械臂摄像头预览（MJPEG） */
+        .camera-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+        .camera-modal.open { display: flex; }
+        .camera-modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(4, 8, 18, 0.88);
+            backdrop-filter: blur(4px);
+        }
+        .camera-modal-card {
+            position: relative;
+            z-index: 1;
+            max-width: min(960px, 96vw);
+            width: 100%;
+            background: #0b1022;
+            border: 1px solid #1e4a9a;
+            border-radius: 16px;
+            box-shadow: 0 12px 48px rgba(0, 80, 160, 0.35);
+            overflow: hidden;
+        }
+        .camera-modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #0c1528;
+            border-bottom: 1px solid #1b3060;
+        }
+        .camera-modal-head span {
+            font-size: 14px;
+            font-weight: 600;
+            color: #b0ccf0;
+        }
+        .camera-modal-close {
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: 1px solid #2a5080;
+            background: #142040;
+            color: #7ab4f5;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .camera-modal-close:hover { border-color: #00c8ff; color: #00c8ff; }
+        .camera-modal-body {
+            padding: 12px;
+            background: #060910;
+            text-align: center;
+        }
+        .camera-modal-body img {
+            max-width: 100%;
+            max-height: min(70vh, 640px);
+            border-radius: 8px;
+            border: 1px solid #1a3060;
+            background: #000;
+            object-fit: contain;
+        }
+        .camera-modal-hint {
+            font-size: 11px;
+            color: #3a6090;
+            margin-top: 10px;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
 
 <div class="toast-container" id="toastContainer"></div>
+
+<div class="camera-modal" id="cameraModal" aria-hidden="true">
+    <div class="camera-modal-backdrop" id="cameraModalBackdrop"></div>
+    <div class="camera-modal-card">
+        <div class="camera-modal-head">
+            <span>📷 机械臂摄像头实时画面</span>
+            <button type="button" class="camera-modal-close" id="cameraModalClose">关闭</button>
+        </div>
+        <div class="camera-modal-body">
+            <img id="cameraPreviewImg" alt="摄像头画面加载中…" width="1280" height="720" decoding="async">
+            <p class="camera-modal-hint">画面由运行后端的机器从 USB 摄像头读取，与分拣 / 人脸 / 拍题任务同源；任务结束后自动关闭。</p>
+        </div>
+    </div>
+</div>
 
 <header class="header">
     <div class="header-left">
@@ -405,7 +479,6 @@
         <div class="panel-title" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;">
             <span>对话（dialogue.parse → tasks.task_*）</span>
             <button type="button" class="agent-debug-toggle" id="dbgToggle" title="等同 DEBUG=1 python agent.py">键盘DEBUG·关</button>
-            <button type="button" class="btn-interrupt" id="interruptBtn" title="协作式中断：在当前子步骤结束后停止（单段 MOVE 进行中需等其结束）">⏹ 中断动作</button>
         </div>
         <div class="agent-messages" id="agentMessages"></div>
         <div class="quick-actions">
@@ -444,11 +517,7 @@
             <div class="flow-scroll">
                 <div class="flow-step">
                     <strong>1 主循环（agent.py）</strong>
-                    初始姿态 go_home → 等待唤醒（麦克风或 DEBUG 下 Enter）→ <code>_continuous_session</code> 内 <code>dialogue.listen()</code>；Web 端可用输入框或麦克风按钮（浏览器语音识别 zh-CN）。摄像头走 <code>camera_util.open_arm_camera</code>。
-                </div>
-                <div class="flow-step">
-                    <strong>中断</strong>
-                    点击「中断动作」发送 WebSocket <code>interrupt</code>，任务在检测点协作退出（非急停）。
+                    初始姿态 go_home → 等待唤醒（麦克风或 DEBUG 下 Enter）→ <code>_continuous_session</code> 内 <code>dialogue.listen()</code>；Web 端可用输入框或麦克风按钮（浏览器语音识别 zh-CN）。摄像头由 <code>tasks._open_camera</code> 按 <code>config.CAMERA_INDEX</code> 打开。
                 </div>
                 <div class="flow-step">
                     <strong>2 解析与分发</strong>
@@ -480,6 +549,23 @@ let voiceRecognition = null;
 function setMicListening(on) {
     const b = document.getElementById('agentMicBtn');
     if (b) b.classList.toggle('listening', on);
+}
+
+function openCameraPreview(mjpegPath) {
+    const modal = document.getElementById('cameraModal');
+    const img = document.getElementById('cameraPreviewImg');
+    const path = mjpegPath || '/api/v1/camera/mjpeg';
+    img.src = `${path}?t=${Date.now()}`;
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeCameraPreview() {
+    const modal = document.getElementById('cameraModal');
+    const img = document.getElementById('cameraPreviewImg');
+    img.src = '';
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
 }
 
 function toggleVoiceInput() {
@@ -696,12 +782,8 @@ document.getElementById('agentMicBtn').addEventListener('click', toggleVoiceInpu
 document.getElementById('agentInput').addEventListener('keydown', onAgentInput);
 document.getElementById('agentDebugWakeBtn').addEventListener('click', sendDebugWake);
 document.getElementById('dbgToggle').addEventListener('click', toggleDebugMode);
-document.getElementById('interruptBtn').addEventListener('click', () => {
-    if (!AgentWS.isConnected()) return showToast('未连接');
-    if (AgentWS.sendInterrupt()) {
-        appendTerm('INFO', '已发送中断请求…');
-    }
-});
+document.getElementById('cameraModalClose').addEventListener('click', closeCameraPreview);
+document.getElementById('cameraModalBackdrop').addEventListener('click', closeCameraPreview);
 document.querySelectorAll('.quick-btn').forEach((b) => {
     b.addEventListener('click', () => sendQuick(b.getAttribute('data-q')));
 });
@@ -720,6 +802,7 @@ AgentWS.on('onConnected', () => {
 AgentWS.on('onDisconnected', () => {
     setConnected(false);
     hideTyping();
+    closeCameraPreview();
     if (voiceRecognition) {
         try { voiceRecognition.abort(); } catch (e) { /* ignore */ }
         voiceRecognition = null;
@@ -757,6 +840,9 @@ AgentWS.on('onTaskLog', (d) => {
 AgentWS.on('onTaskComplete', (d) => {
     document.getElementById('agentTaskIndicator').classList.remove('running');
     appendTerm('SUCCESS', `task_complete → ${d.task}: ${JSON.stringify(d.result || {})}`);
+    if (d.task === 'answer' && d.result && d.result.answer) {
+        addMsg('assistant', '【题目解答】\n' + d.result.answer);
+    }
 });
 
 AgentWS.on('onTaskError', (d) => {
@@ -764,18 +850,13 @@ AgentWS.on('onTaskError', (d) => {
     appendTerm('ERROR', `${d.task}: ${d.error}`);
 });
 
-AgentWS.on('onInterruptAck', (d) => {
-    if (d.message) showToast(d.message, d.ok ? 'success' : 'error');
-});
-
-AgentWS.on('onTaskInterrupted', (d) => {
-    document.getElementById('agentTaskIndicator').classList.remove('running');
-    appendTerm('INFO', `task_interrupted → ${d.task}: ${d.message || ''}`);
-    addMsg('assistant', d.message || '当前任务已中断。');
+AgentWS.on('onCameraPreview', (d) => {
+    if (d.show) openCameraPreview(d.mjpegPath);
+    else closeCameraPreview();
 });
 
 (async function init() {
-    addMsg('assistant', '你好呀！我是小臂，你的学习小助手~ 有什么需要帮忙的吗？\n可打字或点输入框左侧 🎤 用中文语音说话（Chrome/Edge）；视觉任务用机械臂 USB 摄像头；执行中可按「中断动作」协作停止。');
+    addMsg('assistant', '你好呀！我是小臂，你的学习小助手~ 有什么需要帮忙的吗？\n可打字或点输入框左侧 🎤 用中文语音说话（Chrome/Edge）；视觉任务请配置机械臂 USB 摄像头（CAMERA_INDEX 等）。');
     try {
         await AgentWS.connect();
     } catch (e) {
