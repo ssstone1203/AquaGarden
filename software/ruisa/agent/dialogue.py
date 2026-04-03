@@ -236,11 +236,20 @@ def _chunk_for_tts(text: str, max_chars: int = 400) -> list:
     return chunks
 
 
+def _web_client_tts_suppressed() -> bool:
+    """Web 端由浏览器 speechSynthesis 朗读，避免与本机 pygame 重复出声。"""
+    import os as _os
+
+    return _os.getenv("RUISA_WEB") == "1"
+
+
 def tts_only(text: str):
     """
     仅语音播报（不额外 print），用于已在别处完整打印过的长文本（如题目解答）。
     """
     if not text or not text.strip():
+        return
+    if _web_client_tts_suppressed():
         return
     if not (config.DASHSCOPE_API_KEY and _PYGAME_OK):
         print("[TTS] 跳过语音：无 API Key 或 pygame 不可用")
@@ -256,6 +265,8 @@ def tts_only(text: str):
 def speak(text: str):
     """播报文字（打印 + TTS；播放仅需 pygame，不依赖麦克风）"""
     print(f"[小臂] {text}")
+    if _web_client_tts_suppressed():
+        return
     if not (config.DASHSCOPE_API_KEY and _PYGAME_OK):
         return
     _tts_play(text)

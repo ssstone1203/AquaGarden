@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
+import os
 import threading
 import uuid
 from contextlib import redirect_stdout
@@ -126,6 +127,8 @@ def _run_task_blocking(task_name: str, params: dict, user_text: str) -> tuple[bo
     """在后台线程中执行任务，捕获 stdout 作为日志。"""
     buf = io.StringIO()
     err: Optional[str] = None
+    prev_web = os.environ.get("RUISA_WEB")
+    os.environ["RUISA_WEB"] = "1"
     try:
         arm = _get_arm()
         with redirect_stdout(buf):
@@ -133,6 +136,11 @@ def _run_task_blocking(task_name: str, params: dict, user_text: str) -> tuple[bo
     except Exception as e:
         logger.exception("task failed")
         err = str(e)
+    finally:
+        if prev_web is None:
+            os.environ.pop("RUISA_WEB", None)
+        else:
+            os.environ["RUISA_WEB"] = prev_web
     return err is None, buf.getvalue(), err
 
 
