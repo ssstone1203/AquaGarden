@@ -568,21 +568,6 @@ function closeCameraPreview() {
     modal.setAttribute('aria-hidden', 'true');
 }
 
-/** 用浏览器朗读助手回复（与聊天文本同步；Web 端替代服务端 pygame TTS） */
-function speakAssistant(text) {
-    if (!text || typeof text !== 'string') return;
-    if (!window.speechSynthesis) return;
-    const raw = text.replace(/\r/g, '\n').replace(/\n+/g, '，').replace(/\s+/g, ' ').trim();
-    if (!raw) return;
-    try {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(raw);
-        u.lang = 'zh-CN';
-        u.rate = 1;
-        window.speechSynthesis.speak(u);
-    } catch (e) { /* ignore */ }
-}
-
 function toggleVoiceInput() {
     if (!AgentWS.isConnected()) {
         showToast('未连接服务器');
@@ -829,10 +814,7 @@ AgentWS.on('onDisconnected', () => {
 
 AgentWS.on('onResponse', (data) => {
     hideTyping();
-    if (data.response) {
-        addMsg('assistant', data.response);
-        speakAssistant(data.response);
-    }
+    if (data.response) addMsg('assistant', data.response);
     updateDebugUI();
     if (data.shouldEnd) appendTerm('SUCCESS', '会话结束（拜拜）→ 机械臂归位');
 });
@@ -859,17 +841,13 @@ AgentWS.on('onTaskComplete', (d) => {
     document.getElementById('agentTaskIndicator').classList.remove('running');
     appendTerm('SUCCESS', `task_complete → ${d.task}: ${JSON.stringify(d.result || {})}`);
     if (d.task === 'answer' && d.result && d.result.answer) {
-        const block = '【题目解答】\n' + d.result.answer;
-        addMsg('assistant', block);
-        speakAssistant('解答如下。' + d.result.answer);
+        addMsg('assistant', '【题目解答】\n' + d.result.answer);
     }
 });
 
 AgentWS.on('onTaskError', (d) => {
     document.getElementById('agentTaskIndicator').classList.remove('running');
     appendTerm('ERROR', `${d.task}: ${d.error}`);
-    const brief = (d.error && String(d.error).length < 120) ? `任务失败：${d.error}` : '任务执行失败，请查看终端日志。';
-    speakAssistant(brief);
 });
 
 AgentWS.on('onCameraPreview', (d) => {
@@ -882,7 +860,6 @@ AgentWS.on('onCameraPreview', (d) => {
     addMsg('assistant', greet);
     try {
         await AgentWS.connect();
-        speakAssistant('你好呀！我是小臂，你的学习小助手，有什么需要帮忙的吗？');
     } catch (e) {
         setConnected(false);
         showToast('无法连接 WebSocket，请从后端启动 uvicorn 并打开本页');

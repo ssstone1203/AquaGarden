@@ -24,6 +24,9 @@ from typing import Tuple, Optional, List, Generator
 
 import config
 
+# 多线程（Web 任务线程 + asyncio 线程池）共用 pygame 播放，必须串行
+_tts_play_lock = threading.Lock()
+
 # ── 依赖可用性检查 ──────────────────────────────────────────────────────
 try:
     import pyaudio
@@ -159,44 +162,45 @@ def _asr(wav_path: str) -> str:
 # ================================================================
 
 def _tts_play(text: str):
-    """调用 qwen3-tts-flash 合成语音，下载后用 pygame 播放"""
+    """使用 config.TTS_MODEL / config.TTS_VOICE 调用 DashScope 合成语音，下载后用 pygame 播放。"""
     import os as _os
 
-    try:
-        dashscope.api_key = config.DASHSCOPE_API_KEY
-
-        response = dashscope.MultiModalConversation.call(
-            model=config.TTS_MODEL,
-            api_key=config.DASHSCOPE_API_KEY,
-            text=text,
-            voice=config.TTS_VOICE,
-            language_type="Chinese",
-            stream=False,
-        )
-
-        if response.status_code != 200:
-            print(f"[TTS] 错误 {response.status_code}: {response.message}")
-            return
-
-        audio_url  = response.output.audio.url
-        audio_data = requests.get(audio_url, timeout=15).content
-
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
-            f.write(audio_data)
-            tmp = f.name
-
+    with _tts_play_lock:
         try:
-            pygame.mixer.init()
-            pygame.mixer.music.load(tmp)
-            pygame.mixer.music.play()
-            while pygame.mixer.music.get_busy():
-                pygame.time.wait(50)
-            pygame.mixer.music.unload()
-        finally:
-            _os.unlink(tmp)
+            dashscope.api_key = config.DASHSCOPE_API_KEY
 
-    except Exception as e:
-        print(f"[TTS] 失败: {e}")
+            response = dashscope.MultiModalConversation.call(
+                model=config.TTS_MODEL,
+                api_key=config.DASHSCOPE_API_KEY,
+                text=text,
+                voice=config.TTS_VOICE,
+                language_type="Chinese",
+                stream=False,
+            )
+
+            if response.status_code != 200:
+                print(f"[TTS] 错误 {response.status_code}: {response.message}")
+                return
+
+            audio_url = response.output.audio.url
+            audio_data = requests.get(audio_url, timeout=15).content
+
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+                f.write(audio_data)
+                tmp = f.name
+
+            try:
+                pygame.mixer.init()
+                pygame.mixer.music.load(tmp)
+                pygame.mixer.music.play()
+                while pygame.mixer.music.get_busy():
+                    pygame.time.wait(50)
+                pygame.mixer.music.unload()
+            finally:
+                _os.unlink(tmp)
+
+        except Exception as e:
+            print(f"[TTS] 失败: {e}")
 
 
 def _chunk_for_tts(text: str, max_chars: int = 400) -> list:
@@ -236,20 +240,12 @@ def _chunk_for_tts(text: str, max_chars: int = 400) -> list:
     return chunks
 
 
-def _web_client_tts_suppressed() -> bool:
-    """Web 端由浏览器 speechSynthesis 朗读，避免与本机 pygame 重复出声。"""
-    import os as _os
-
-    return _os.getenv("RUISA_WEB") == "1"
-
-
 def tts_only(text: str):
     """
     仅语音播报（不额外 print），用于已在别处完整打印过的长文本（如题目解答）。
+    音色与模型见 config.TTS_MODEL / config.TTS_VOICE。
     """
     if not text or not text.strip():
-        return
-    if _web_client_tts_suppressed():
         return
     if not (config.DASHSCOPE_API_KEY and _PYGAME_OK):
         print("[TTS] 跳过语音：无 API Key 或 pygame 不可用")
@@ -263,10 +259,8 @@ def tts_only(text: str):
 # ================================================================
 
 def speak(text: str):
-    """播报文字（打印 + TTS；播放仅需 pygame，不依赖麦克风）"""
+    """播报文字（打印 + TTS；使用 config.TTS_MODEL / TTS_VOICE，需 pygame 播放）"""
     print(f"[小臂] {text}")
-    if _web_client_tts_suppressed():
-        return
     if not (config.DASHSCOPE_API_KEY and _PYGAME_OK):
         return
     _tts_play(text)

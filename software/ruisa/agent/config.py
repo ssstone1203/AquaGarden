@@ -185,12 +185,11 @@ DASHSCOPE_API_KEY = (
 STT_PHRASE_LIMIT = 3    # 每次最长录音时长（秒）
 
 # ================================================================
-#  TTS：语音合成（DashScope CosyVoice）
+#  TTS：语音合成（全项目统一：dialogue.speak / tts_only / _tts_play 均用此模型与音色）
 # ================================================================
-# TTS（qwen3-tts-flash，与 xiaoshutong 保持一致）
 TTS_MODEL = "qwen3-tts-flash"
 TTS_VOICE = "Cherry"         # 可选: Cherry(女) / Ryan(男) / Ethan(男)
 
-# ASR（qwen3-asr-flash）
+# ASR（qwen3-asr-flash，语音识别）
 ASR_MODEL = "qwen3-asr-flash"
 

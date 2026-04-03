@@ -10,7 +10,6 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
-import os
 import threading
 import uuid
 from contextlib import redirect_stdout
@@ -127,8 +126,6 @@ def _run_task_blocking(task_name: str, params: dict, user_text: str) -> tuple[bo
     """在后台线程中执行任务，捕获 stdout 作为日志。"""
     buf = io.StringIO()
     err: Optional[str] = None
-    prev_web = os.environ.get("RUISA_WEB")
-    os.environ["RUISA_WEB"] = "1"
     try:
         arm = _get_arm()
         with redirect_stdout(buf):
@@ -136,11 +133,6 @@ def _run_task_blocking(task_name: str, params: dict, user_text: str) -> tuple[bo
     except Exception as e:
         logger.exception("task failed")
         err = str(e)
-    finally:
-        if prev_web is None:
-            os.environ.pop("RUISA_WEB", None)
-        else:
-            os.environ["RUISA_WEB"] = prev_web
     return err is None, buf.getvalue(), err
 
 
@@ -152,6 +144,22 @@ class AgentBridge:
     def __init__(self):
         self._sessions: dict[str, AgentSession] = {}
         self._ws_callbacks: dict[str, Callable[[dict], Coroutine[Any, Any, None]]] = {}
+
+    async def _speak_assistant_async(self, text: Optional[str]) -> None:
+        """与 agent.py 一致：DashScope TTS（config.TTS_MODEL / TTS_VOICE）+ pygame，跑在线程池避免阻塞事件循环。"""
+        if not text or not str(text).strip():
+            return
+        try:
+
+            def _run():
+                _insert_agent_path()
+                import dialogue  # noqa: WPS433
+
+                dialogue.speak(str(text).strip())
+
+            await asyncio.to_thread(_run)
+        except Exception as e:
+            logger.warning("assistant TTS failed: %s", e)
 
     def register_ws_callback(self, session_id: str, callback: Callable[[dict], Coroutine[Any, Any, None]]):
         self._ws_callbacks[session_id] = callback
@@ -203,8 +211,10 @@ class AgentBridge:
     async def handle_debug_wake(self, session_id: str) -> dict:
         s = self.ensure_session(session_id)
         if not s.debug_keyboard:
+            msg = "当前为普通模式，无需模拟唤醒，可直接发送指令。"
+            asyncio.create_task(self._speak_assistant_async(msg))
             return self._ok_response(
-                "当前为普通模式，无需模拟唤醒，可直接发送指令。",
+                msg,
                 s,
                 task_triggered=False,
                 needs_wake=False,
@@ -213,6 +223,7 @@ class AgentBridge:
         if s.state == SessionState.IDLE:
             s.state = SessionState.WAITING_TASK
         s.messages.append(DialogueMessage(role="assistant", content=self.AGENT_GREETING))
+        asyncio.create_task(self._speak_assistant_async(self.AGENT_GREETING))
         return self._ok_response(self.AGENT_GREETING, s, task_triggered=False, needs_wake=False)
 
     def _ok_response(
@@ -246,8 +257,10 @@ class AgentBridge:
         s = self.ensure_session(session_id)
 
         if s.debug_keyboard and not s.awake:
+            msg = "【DEBUG】尚未唤醒。请点击「模拟唤醒」或发送 debug_wake（等同 DEBUG=1 运行 agent.py 后按 Enter）。"
+            asyncio.create_task(self._speak_assistant_async(msg))
             return self._ok_response(
-                "【DEBUG】尚未唤醒。请点击「模拟唤醒」或发送 debug_wake（等同 DEBUG=1 运行 agent.py 后按 Enter）。",
+                msg,
                 s,
                 task_triggered=False,
                 needs_wake=True,
@@ -278,6 +291,7 @@ class AgentBridge:
 
             asyncio.create_task(go_home_after_farewell())
 
+            asyncio.create_task(self._speak_assistant_async(response))
             return self._ok_response(
                 response,
                 s,
@@ -295,6 +309,7 @@ class AgentBridge:
             s.state = SessionState.EXECUTING
             response = dialogue.generate_natural_response(task_name, task_params or {})
             s.messages.append(DialogueMessage(role="assistant", content=response))
+            asyncio.create_task(self._speak_assistant_async(response))
             asyncio.create_task(
                 self._execute_task_async(session_id, task_name, task_params or {}, text)
             )
@@ -309,6 +324,7 @@ class AgentBridge:
         s.state = SessionState.DIALOGUE
         response = "嗯嗯，我听到了~ 你还有什么想让我帮忙的吗？"
         s.messages.append(DialogueMessage(role="assistant", content=response))
+        asyncio.create_task(self._speak_assistant_async(response))
         return self._ok_response(response, s, task_triggered=False)
 
     def _parse_intent(self, text: str) -> tuple[str, dict]:
