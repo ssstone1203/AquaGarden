@@ -23,7 +23,7 @@ def _serial_port_from_env() -> str:
         v = os.getenv(key)
         if v and str(v).strip():
             return str(v).strip()
-    return "COM8"
+    return "COM17"
 
 
 def _serial_baud_from_env() -> int:
