@@ -1,4 +1,4 @@
-/*
+b68969a4b9dda7c5a154ff7a6e2bf85a.png/*
 * Copyright (c) 2020 - 2025 Renesas Electronics Corporation and/or its affiliates
 *
 * SPDX-License-Identifier: BSD-3-Clause
