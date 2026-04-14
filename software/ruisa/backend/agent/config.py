@@ -6,8 +6,8 @@ config.py  ——  Agent 统一配置
 import os
 from pathlib import Path
 
-# 加载 ruisa/.env、ruisa/backend/.env，使 SERIAL_PORT 等与 uvicorn 共用同一套环境变量
-_RUISA_ROOT = Path(__file__).resolve().parent.parent
+# 加载 ruisa/.env、ruisa/backend/.env（agent 位于 ruisa/backend/agent 时仍指向 ruisa 根目录）
+_RUISA_ROOT = Path(__file__).resolve().parent.parent.parent
 try:
     from dotenv import load_dotenv
 
@@ -95,7 +95,7 @@ WAKE_COOLDOWN  = 2.0   # 触发后冷却时间（秒）
 # ================================================================
 #  任务1：颜色分拣
 # ================================================================
-MAP_FILE = Path(__file__).parent.parent.parent.parent / "model/calibration/teach_map.npz"
+MAP_FILE = Path(__file__).parent.parent.parent.parent.parent / "model/calibration/teach_map.npz"
 
 OBS_X, OBS_Y, OBS_Z, OBS_PITCH = 16.0, 0.0, -3.2, -76.1   # 观测位姿
 SAFE_Z          = 4.0    # 安全运输高度（cm）
@@ -143,7 +143,7 @@ FACE_TASK_TIMEOUT = 60   # s，任务最长运行时间
 # ================================================================
 #  任务3.5（任务5）：动作回放
 # ================================================================
-ACTIONS_DIR = Path(__file__).parent.parent.parent / "target" / "action" / "actions"
+ACTIONS_DIR = Path(__file__).parent.parent.parent.parent / "target" / "action" / "actions"
 
 # 回放时序（与 action_teach.py 保持一致）
 ACTION_PLAYBACK_DUR_MS      = 250   # 每帧舵机运动时长 ms

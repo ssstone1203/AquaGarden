@@ -72,6 +72,15 @@ def create_app() -> FastAPI:
                 return FileResponse(str(p), media_type="application/javascript")
             raise HTTPException(status_code=404)
 
+        @app.get("/css/{filename}")
+        async def serve_css(filename: str):
+            from fastapi import HTTPException
+
+            p = frontend_dir / "css" / filename
+            if p.is_file():
+                return FileResponse(str(p), media_type="text/css; charset=utf-8")
+            raise HTTPException(status_code=404)
+
     @app.get("/health")
     async def health():
         return {

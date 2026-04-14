@@ -23,8 +23,8 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-_RUISA_ROOT = Path(__file__).resolve().parent.parent.parent
-_AGENT_DIR = str(_RUISA_ROOT / "agent")
+_BACKEND_ROOT = Path(__file__).resolve().parent.parent
+_AGENT_DIR = str(_BACKEND_ROOT / "agent")
 
 _CAMERA_TASKS = frozenset({"clamp", "face", "answer"})
 

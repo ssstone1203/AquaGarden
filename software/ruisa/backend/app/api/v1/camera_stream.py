@@ -9,9 +9,9 @@ from fastapi.responses import StreamingResponse
 
 router = APIRouter(prefix="/camera", tags=["Camera"])
 
-# .../ruisa/backend/app/api/v1/camera_stream.py → parents[4] = ruisa
-_RUISA = Path(__file__).resolve().parents[4]
-_AGENT_DIR = str(_RUISA / "agent")
+# .../backend/app/api/v1/camera_stream.py → backend 根目录
+_BACKEND_ROOT = Path(__file__).resolve().parents[3]
+_AGENT_DIR = str(_BACKEND_ROOT / "agent")
 
 
 def _ensure_agent_path() -> None:

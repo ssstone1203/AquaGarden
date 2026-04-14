@@ -1,6 +1,6 @@
 /**
  * Agent WebSocket — 对接 backend agent_bridge（与 agent/agent.py 行为一致）
- * WS /api/v1/ws/agent/chat（无需登录）
+ * WS /api/v1/ws/agent/chat（无需登录；任务由 backend/agent/tasks.py 执行）
  */
 const AgentWS = {
     _ws: null,

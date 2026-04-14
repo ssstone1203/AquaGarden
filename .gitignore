@@ -68,7 +68,7 @@ JLinkSettings.ini
 # ================================================================
 software/backend/aquagarden.db
 software/backend/*.db
-software/ruisa/agent/_tmp_photo.jpg
+software/ruisa/backend/agent/_tmp_photo.jpg
 
 # ================================================================
 #  PCB 自动备份
