@@ -1,0 +1,320 @@
+.robot-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.control-panel {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
+}
+
+.joystick-section {
+    background: var(--bg-card);
+    border-radius: var(--border-radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+}
+
+.joystick-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.joystick-container {
+    width: 280px;
+    height: 280px;
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.joystick-base {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(139, 92, 246, 0.3);
+    position: relative;
+}
+
+.joystick-base::before,
+.joystick-base::after {
+    content: '';
+    position: absolute;
+    background: rgba(139, 92, 246, 0.2);
+}
+
+.joystick-base::before {
+    width: 2px;
+    height: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.joystick-base::after {
+    width: 100%;
+    height: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.joystick-handle {
+    width: 80px;
+    height: 80px;
+    background: var(--bg-gradient);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    cursor: grab;
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
+    transition: box-shadow 0.3s ease;
+}
+
+.joystick-handle:hover {
+    box-shadow: 0 12px 35px rgba(139, 92, 246, 0.7);
+}
+
+.joystick-handle:active {
+    cursor: grabbing;
+}
+
+.direction-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(3, 60px);
+    gap: 8px;
+}
+
+.dir-btn {
+    border: none;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.dir-btn:hover {
+    background: var(--bg-gradient);
+    color: white;
+    transform: scale(1.05);
+}
+
+.dir-btn:active {
+    transform: scale(0.95);
+}
+
+.dir-btn.empty {
+    background: transparent;
+    box-shadow: none;
+    cursor: default;
+}
+
+.dir-btn.empty:hover {
+    transform: none;
+    background: transparent;
+}
+
+.current-position {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px;
+    background: var(--bg-main);
+    border-radius: 12px;
+    width: 100%;
+}
+
+.current-position i {
+    color: var(--primary-color);
+    font-size: 20px;
+}
+
+.position-values {
+    display: flex;
+    gap: 20px;
+    flex: 1;
+    justify-content: space-around;
+}
+
+.pos-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.pos-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.pos-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.status-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.preset-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.preset-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--bg-main);
+    border: 1px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+.preset-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.preset-btn i {
+    font-size: 16px;
+}
+
+.status-card {
+    background: var(--bg-card);
+    border-radius: var(--border-radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-md);
+}
+
+.status-card h3 {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-card h3 i {
+    color: var(--primary-color);
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--bg-main);
+}
+
+.status-item:last-child {
+    border-bottom: none;
+}
+
+.status-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.status-val {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.status-val.online {
+    color: var(--status-success);
+}
+
+.emergency-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    margin-top: 8px;
+}
+
+.emergency-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+}
+
+.operation-logs {
+    background: var(--bg-card);
+    border-radius: var(--border-radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-md);
+}
+
+.log-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.log-entry {
+    display: flex;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg-main);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.log-entry:last-child {
+    margin-bottom: 0;
+}
+
+.log-time {
+    color: var(--primary-color);
+    font-weight: 600;
+    min-width: 70px;
+}
+
+.log-content {
+    color: var(--text-primary);
+    flex: 1;
+}
+
+@media (max-width: 1024px) {
+    .control-panel {
+        grid-template-columns: 1fr;
+    }
+}

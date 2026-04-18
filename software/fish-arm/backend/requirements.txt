@@ -1,10 +1,10 @@
 fastapi==0.135.1
+jose==1.0.0
+numpy==2.4.3
+opencv_python==4.13.0.92
+passlib==1.7.4
 pydantic==2.12.5
-pydantic-settings==2.8.1
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-bcrypt==4.0.1
+python_jose==3.5.0
 SQLAlchemy==2.0.48
 uvicorn==0.42.0
-numpy==2.4.3
-opencv-python==4.13.0.92
+bcrypt==4.0.1

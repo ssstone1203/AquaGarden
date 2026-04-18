@@ -1,12 +1,6 @@
-// API配置 - 使用分层模块 (modules/config.js, modules/api.js)
-const API_BASE_URL = window.AquaGarden?.CONFIG?.API_BASE_URL || 'http://localhost:8090';
+// API配置
+const API_BASE_URL = 'http://localhost:8090';
 let authToken = localStorage.getItem('token');
-
-// Initialize layered frontend modules for consistent theme and API abstraction
-if (window.AquaGarden && window.AquaGarden.applyConsistentTheme) {
-    window.AquaGarden.applyConsistentTheme();
-    console.log('🎨 AquaGarden layered frontend initialized - theme, API service, UI consistency applied');
-}
 
 // 时间显示更新
 function updateTime() {

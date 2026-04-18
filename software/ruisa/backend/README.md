@@ -13,6 +13,8 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 浏览器打开 `http://127.0.0.1:8000/`（由 FastAPI 挂载 `../frontend/index.html`）。
 
+若使用 **Spring Boot + Vue3** 栈：先保持本 Python 服务在 `8000`，再启动 `../backend-spring`（默认 `8080`）与 `../front-vue`（`npm run dev`，见各目录说明）；网关将 WS/MJPEG 转发到本进程，任务逻辑不变。
+
 单机调试 Agent（不启 Web）：
 
 ```bash
