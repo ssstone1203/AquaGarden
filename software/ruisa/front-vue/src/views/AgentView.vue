@@ -57,7 +57,7 @@
     <div class="main">
       <div class="col-chat">
         <div class="panel-title panel-title--row">
-          <span>对话（dialogue.parse → tasks.task_*）</span>
+          <span>对话</span>
           <button
             type="button"
             class="agent-debug-toggle"

@@ -29,8 +29,9 @@ public class SystemStateService {
         double temperature = round(25.0 + random.nextDouble() - 0.5, 2);
         double ph = round(7.0 + (random.nextDouble() * 0.4 - 0.2), 2);
         double oxygen = round(8.0 + (random.nextDouble() * 0.6 - 0.3), 2);
-        double turbidity = round(10.0 + (random.nextDouble() * 2 - 1), 2);
-        return new SensorSnapshot(temperature, ph, oxygen, turbidity);
+        double turbidity = round(1.5 + (random.nextDouble() * 0.6 - 0.3), 2);
+        double soilMoisture = round(65.0 + (random.nextDouble() * 10 - 5), 1);
+        return new SensorSnapshot(temperature, ph, oxygen, turbidity, soilMoisture);
     }
 
     private static double round(double v, int decimals) {

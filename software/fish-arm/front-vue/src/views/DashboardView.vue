@@ -1,200 +1,175 @@
 <template>
-  <section class="stats-section">
-    <div class="stats-grid">
-      <div class="stat-card card-temperature">
-        <div class="stat-icon"><i class="fas fa-thermometer-half"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">水温</div>
-          <div class="stat-value">
-            <span>{{ temp }}</span><span class="unit">°C</span>
+  <div class="dashboard">
+    <!-- Two live video feeds -->
+    <div class="video-row">
+      <div class="video-card">
+        <div class="video-card-header">
+          <span class="video-title">Tank 1 Live Feed <span class="video-title-cn">(鱼缸1直播)</span></span>
+          <button type="button" class="menu-btn"><i class="fas fa-ellipsis-h"></i></button>
+        </div>
+        <div class="video-body">
+          <div class="video-area">
+            <img :src="tank1Src" alt="Tank 1 Live Feed" />
+            <div class="vbadge vbadge-live"><i class="fas fa-circle"></i> Live</div>
+            <div class="vbadge vbadge-cam"><i class="fas fa-video"></i></div>
+            <div class="vbadge vbadge-res">1080p</div>
           </div>
-          <div class="stat-status status-normal">
-            <i class="fas fa-check-circle"></i><span>正常范围</span>
+          <div class="video-controls">
+            <div class="vctrl-left">
+              <button type="button" class="vctrl-btn"><i class="fas fa-play"></i></button>
+              <button type="button" class="vctrl-btn"><i class="fas fa-pause"></i></button>
+              <button type="button" class="vctrl-btn"><i class="fas fa-stop"></i></button>
+            </div>
+            <div class="vctrl-right">
+              <button type="button" class="vctrl-btn"><i class="fas fa-history"></i></button>
+              <button type="button" class="vctrl-btn"><i class="fas fa-cog"></i></button>
+            </div>
           </div>
         </div>
       </div>
-      <div class="stat-card card-ph">
-        <div class="stat-icon"><i class="fas fa-flask"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">pH值</div>
-          <div class="stat-value"><span>{{ ph }}</span></div>
-          <div class="stat-status status-normal">
-            <i class="fas fa-check-circle"></i><span>正常范围</span>
-          </div>
-        </div>
-      </div>
-      <div class="stat-card card-oxygen">
-        <div class="stat-icon"><i class="fas fa-wind"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">溶解氧</div>
-          <div class="stat-value">
-            <span>{{ oxygen }}</span><span class="unit">mg/L</span>
-          </div>
-          <div class="stat-status status-good">
-            <i class="fas fa-arrow-up"></i><span>良好</span>
-          </div>
-        </div>
-      </div>
-      <div class="stat-card card-turbidity">
-        <div class="stat-icon"><i class="fas fa-eye"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">浊度</div>
-          <div class="stat-value">
-            <span>{{ turbidity }}</span><span class="unit">NTU</span>
-          </div>
-          <div class="stat-status status-excellent">
-            <i class="fas fa-star"></i><span>清澈</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <div class="content-grid">
-    <div class="content-column column-left">
-      <div class="content-card video-card">
-        <div class="card-header">
-          <div class="card-title"><i class="fas fa-robot"></i><span>机械臂摄像头</span></div>
-          <div class="card-badge badge-online"><span class="badge-dot"></span>在线</div>
+      <div class="video-card">
+        <div class="video-card-header">
+          <span class="video-title">Tank 2 Live Feed <span class="video-title-cn">(鱼缸2直播)</span></span>
+          <button type="button" class="menu-btn"><i class="fas fa-ellipsis-h"></i></button>
         </div>
-        <div class="card-body">
-          <div class="video-container">
-            <img :src="robotCamSrc" alt="机械臂摄像头" />
-            <div class="video-overlay">
-              <div class="rec-indicator"><i class="fas fa-circle"></i><span>REC</span></div>
-            </div>
+        <div class="video-body">
+          <div class="video-area">
+            <img :src="tank2Src" alt="Tank 2 Live Feed" />
+            <div class="vbadge vbadge-live"><i class="fas fa-circle"></i> Live</div>
+            <div class="vbadge vbadge-cam"><i class="fas fa-video"></i></div>
+            <div class="vbadge vbadge-res">1080p</div>
           </div>
-          <div class="robot-controls">
-            <div class="position-info">
-              <i class="fas fa-map-marker-alt"></i>
-              <span>X: <strong>{{ posX }}</strong> Y: <strong>{{ posY }}</strong> Z: <strong>{{ posZ }}</strong></span>
+          <div class="video-controls">
+            <div class="vctrl-left">
+              <button type="button" class="vctrl-btn"><i class="fas fa-play"></i></button>
+              <button type="button" class="vctrl-btn"><i class="fas fa-pause"></i></button>
+              <button type="button" class="vctrl-btn"><i class="fas fa-stop"></i></button>
             </div>
-            <div class="control-pad">
-              <button type="button" class="ctrl-btn ctrl-up" @click="move('up')"><i class="fas fa-arrow-up"></i></button>
-              <button type="button" class="ctrl-btn ctrl-forward" @click="move('forward')"><i class="fas fa-chevron-up"></i></button>
-              <button type="button" class="ctrl-btn ctrl-left" @click="move('left')"><i class="fas fa-arrow-left"></i></button>
-              <button type="button" class="ctrl-btn ctrl-center" @click="center"><i class="fas fa-crosshairs"></i></button>
-              <button type="button" class="ctrl-btn ctrl-right" @click="move('right')"><i class="fas fa-arrow-right"></i></button>
-              <button type="button" class="ctrl-btn ctrl-down" @click="move('down')"><i class="fas fa-arrow-down"></i></button>
-              <button type="button" class="ctrl-btn ctrl-backward" @click="move('backward')"><i class="fas fa-chevron-down"></i></button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="content-card video-card">
-        <div class="card-header">
-          <div class="card-title"><i class="fas fa-water"></i><span>鱼缸摄像头</span></div>
-          <div class="card-badge badge-online"><span class="badge-dot"></span>在线</div>
-        </div>
-        <div class="card-body">
-          <div class="video-container">
-            <img :src="tankCamSrc" alt="鱼缸摄像头" />
-            <div class="video-overlay">
-              <div class="rec-indicator"><i class="fas fa-circle"></i><span>REC</span></div>
+            <div class="vctrl-right">
+              <button type="button" class="vctrl-btn"><i class="fas fa-history"></i></button>
+              <button type="button" class="vctrl-btn"><i class="fas fa-cog"></i></button>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="content-column column-middle">
-      <div class="content-card chart-card">
-        <div class="card-header">
-          <div class="card-title"><i class="fas fa-chart-area"></i><span>传感器数据趋势</span></div>
-          <div class="chart-legend">
-            <span class="legend-item"><span class="legend-dot" style="background: var(--color-temperature)"></span>温度</span>
-            <span class="legend-item"><span class="legend-dot" style="background: var(--color-ph)"></span>pH值</span>
-          </div>
+    <!-- Five sensor metric cards -->
+    <div class="sensor-row">
+      <!-- Water Temperature -->
+      <div class="sensor-card">
+        <div class="sensor-card-header">
+          <span class="sensor-label">Water Temp.</span>
+          <span class="sensor-icon-btn sensor-icon-temp"><i class="fas fa-thermometer-half"></i></span>
         </div>
-        <div class="card-body"><canvas id="sensorChart"></canvas></div>
-      </div>
-      <div class="content-card sensors-card">
-        <div class="card-header">
-          <div class="card-title"><i class="fas fa-microchip"></i><span>实时传感器数据</span></div>
-          <button type="button" class="refresh-btn" @click="updateSensorData"><i class="fas fa-sync-alt"></i></button>
+        <div class="sensor-value-row">
+          <span class="sensor-big">{{ temp }}</span>
+          <span class="sensor-unit">°C</span>
         </div>
-        <div class="card-body">
-          <div class="sensors-grid">
-            <div class="sensor-item">
-              <div class="sensor-icon sensor-temp"><i class="fas fa-temperature-high"></i></div>
-              <div class="sensor-data">
-                <div class="sensor-name">水温</div>
-                <div class="sensor-value"><span>{{ temp }}</span><span class="unit">°C</span></div>
-                <div class="sensor-range">正常: 22-28°C</div>
-              </div>
-              <div class="sensor-chart"><div class="mini-chart" style="height: 70%"></div></div>
-            </div>
-            <div class="sensor-item">
-              <div class="sensor-icon sensor-ph"><i class="fas fa-vial"></i></div>
-              <div class="sensor-data">
-                <div class="sensor-name">pH值</div>
-                <div class="sensor-value"><span>{{ ph }}</span></div>
-                <div class="sensor-range">正常: 6.5-8.0</div>
-              </div>
-              <div class="sensor-chart"><div class="mini-chart" style="height: 85%"></div></div>
-            </div>
-            <div class="sensor-item">
-              <div class="sensor-icon sensor-oxygen"><i class="fas fa-lungs"></i></div>
-              <div class="sensor-data">
-                <div class="sensor-name">溶解氧</div>
-                <div class="sensor-value"><span>{{ oxygen }}</span><span class="unit">mg/L</span></div>
-                <div class="sensor-range">正常: >6.0 mg/L</div>
-              </div>
-              <div class="sensor-chart"><div class="mini-chart" style="height: 90%"></div></div>
-            </div>
-            <div class="sensor-item">
-              <div class="sensor-icon sensor-turbidity"><i class="fas fa-smog"></i></div>
-              <div class="sensor-data">
-                <div class="sensor-name">浊度</div>
-                <div class="sensor-value"><span>{{ turbidity }}</span><span class="unit">NTU</span></div>
-                <div class="sensor-range">正常: &lt;20 NTU</div>
-              </div>
-              <div class="sensor-chart"><div class="mini-chart" style="height: 50%"></div></div>
-            </div>
-          </div>
+        <div class="sensor-value-sub">/{{ tempF }}°F</div>
+        <div class="sensor-subtitle">水温</div>
+        <div class="sparkline-wrap">
+          <svg class="sparkline" viewBox="0 0 100 32" preserveAspectRatio="none">
+            <polyline :points="sparkPoints(tempHistory, 22, 28)" class="sparkline-line" />
+          </svg>
+        </div>
+        <div class="sensor-footer">
+          <span class="sensor-status-dot dot-normal"></span>
+          <span class="sensor-status-text">Normal</span>
+          <span class="sensor-period">24h</span>
         </div>
       </div>
-    </div>
 
-    <div class="content-column column-right">
-      <div class="content-card log-card">
-        <div class="card-header">
-          <div class="card-title"><i class="fas fa-terminal"></i><span>系统日志</span></div>
-          <div class="log-actions">
-            <div class="log-status"><span class="status-dot status-active"></span>{{ wsConnected ? '已连接' : '未连接' }}</div>
-            <button type="button" class="icon-btn" title="清空日志" @click="clearLogs"><i class="fas fa-trash-alt"></i></button>
-          </div>
+      <!-- pH Level -->
+      <div class="sensor-card">
+        <div class="sensor-card-header">
+          <span class="sensor-label">pH Level</span>
+          <span class="sensor-icon-btn sensor-icon-ph"><i class="fas fa-wave-square"></i></span>
         </div>
-        <div class="card-body log-body">
-          <div ref="logContainer" class="log-container">
-            <div v-for="(e, i) in logs" :key="i" class="log-entry log-info">
-              <span class="log-time">[{{ e.time }}]</span>
-              <span class="log-message">{{ e.type }}: {{ e.message }}</span>
-            </div>
-          </div>
+        <div class="sensor-value-row">
+          <span class="sensor-big">{{ ph }}</span>
+          <span class="sensor-unit"> pH</span>
+        </div>
+        <div class="sensor-subtitle">酸碱度</div>
+        <div class="sparkline-wrap">
+          <svg class="sparkline" viewBox="0 0 100 32" preserveAspectRatio="none">
+            <polyline :points="sparkPoints(phHistory, 6, 9)" class="sparkline-line" />
+          </svg>
+        </div>
+        <div class="sensor-footer">
+          <span class="sensor-status-dot dot-optimal"></span>
+          <span class="sensor-status-text">Optimal</span>
+          <span class="sensor-period">24h</span>
         </div>
       </div>
-      <div class="content-card alerts-card">
-        <div class="card-header">
-          <div class="card-title"><i class="fas fa-bell"></i><span>系统通知</span></div>
+
+      <!-- Turbidity -->
+      <div class="sensor-card">
+        <div class="sensor-card-header">
+          <span class="sensor-label">Turbidity</span>
+          <span class="sensor-icon-btn sensor-icon-turbidity"><i class="fas fa-eye-slash"></i></span>
         </div>
-        <div class="card-body">
-          <div class="alerts-list">
-            <div class="alert-item alert-success">
-              <div class="alert-icon"><i class="fas fa-check-circle"></i></div>
-              <div class="alert-content">
-                <div class="alert-title">系统正常</div>
-                <div class="alert-time">所有参数在正常范围内</div>
-              </div>
-            </div>
-            <div class="alert-item alert-info">
-              <div class="alert-icon"><i class="fas fa-info-circle"></i></div>
-              <div class="alert-content">
-                <div class="alert-title">定时喂食</div>
-                <div class="alert-time">下次喂食: 18:00</div>
-              </div>
-            </div>
-          </div>
+        <div class="sensor-value-row">
+          <span class="sensor-big">{{ turbidity }}</span>
+          <span class="sensor-unit"> NTU</span>
+        </div>
+        <div class="sensor-subtitle">浊度</div>
+        <div class="sparkline-wrap">
+          <svg class="sparkline" viewBox="0 0 100 32" preserveAspectRatio="none">
+            <polyline :points="sparkPoints(turbidityHistory, 0, 30)" class="sparkline-line" />
+          </svg>
+        </div>
+        <div class="sensor-footer">
+          <span class="sensor-status-dot dot-low"></span>
+          <span class="sensor-status-text">Low</span>
+          <span class="sensor-period">24h</span>
+        </div>
+      </div>
+
+      <!-- Dissolved Oxygen -->
+      <div class="sensor-card">
+        <div class="sensor-card-header">
+          <span class="sensor-label">Dissolved Oxygen</span>
+          <span class="sensor-icon-btn sensor-icon-oxygen"><i class="fas fa-wind"></i></span>
+        </div>
+        <div class="sensor-value-row">
+          <span class="sensor-big">{{ oxygen }}</span>
+          <span class="sensor-unit"> mg/L</span>
+        </div>
+        <div class="sensor-subtitle">溶解氧</div>
+        <div class="sparkline-wrap">
+          <svg class="sparkline" viewBox="0 0 100 32" preserveAspectRatio="none">
+            <polyline :points="sparkPoints(oxygenHistory, 5, 12)" class="sparkline-line" />
+          </svg>
+        </div>
+        <div class="sensor-footer">
+          <span class="sensor-status-dot dot-normal"></span>
+          <span class="sensor-status-text">Normal</span>
+          <span class="sensor-period">24h</span>
+        </div>
+      </div>
+
+      <!-- Soil Moisture -->
+      <div class="sensor-card">
+        <div class="sensor-card-header">
+          <span class="sensor-label">Soil Moisture</span>
+          <span class="sensor-icon-btn sensor-icon-moisture"><i class="fas fa-tint"></i></span>
+        </div>
+        <div class="sensor-value-row">
+          <span class="sensor-big">{{ soilMoisture }}</span>
+          <span class="sensor-unit">%</span>
+        </div>
+        <div class="sensor-subtitle">土壤湿度</div>
+        <div class="sparkline-wrap">
+          <svg class="sparkline" viewBox="0 0 100 32" preserveAspectRatio="none">
+            <polyline :points="sparkPoints(moistureHistory, 30, 100)" class="sparkline-line" />
+          </svg>
+        </div>
+        <div class="sensor-footer">
+          <span class="sensor-status-dot dot-wet"></span>
+          <span class="sensor-status-text">Wet</span>
+          <span class="sensor-period">24h</span>
         </div>
       </div>
     </div>
@@ -207,32 +182,46 @@ import { useRouter } from 'vue-router'
 import { apiUrl, authHeaders, wsLogsUrl } from '@/api/http'
 
 const router = useRouter()
-const temp = ref('25.0')
-const ph = ref('7.0')
-const oxygen = ref('8.0')
-const turbidity = ref('10')
-const posX = ref(0)
-const posY = ref(0)
-const posZ = ref(0)
-const camTick = ref(0)
-const robotCamSrc = computed(() => `${apiUrl('/api/video/robot')}?t=${camTick.value}`)
-const tankCamSrc = computed(() => `${apiUrl('/api/video/tank')}?t=${camTick.value}`)
-const logs = ref([])
-const logContainer = ref(null)
-const wsConnected = ref(false)
-let sensorTimer = null
-let camTimer = null
-let statusTimer = null
-let ws = null
 
-function pushLog(type, message) {
-  const time = new Date().toLocaleTimeString('zh-CN')
-  logs.value.push({ time, type, message })
-  while (logs.value.length > 50) logs.value.shift()
+const temp = ref('26.5')
+const ph = ref('7.2')
+const oxygen = ref('8.1')
+const turbidity = ref('1.5')
+const soilMoisture = ref('68')
+
+const tempF = computed(() => (parseFloat(temp.value) * 9 / 5 + 32).toFixed(1))
+
+const camTick = ref(0)
+const tank1Src = computed(() => `${apiUrl('/api/video/tank')}?t=${camTick.value}`)
+const tank2Src = computed(() => `${apiUrl('/api/video/robot')}?t=${camTick.value}`)
+
+const HISTORY_LEN = 20
+
+const tempHistory = ref(Array.from({ length: HISTORY_LEN }, () => 25 + Math.random() - 0.5))
+const phHistory = ref(Array.from({ length: HISTORY_LEN }, () => 7.0 + (Math.random() * 0.4 - 0.2)))
+const oxygenHistory = ref(Array.from({ length: HISTORY_LEN }, () => 8.0 + (Math.random() * 0.6 - 0.3)))
+const turbidityHistory = ref(Array.from({ length: HISTORY_LEN }, () => 1.5 + (Math.random() * 0.4 - 0.2)))
+const moistureHistory = ref(Array.from({ length: HISTORY_LEN }, () => 65 + Math.random() * 6))
+
+function pushHistory(arr, val) {
+  arr.value.push(parseFloat(val))
+  if (arr.value.length > HISTORY_LEN) arr.value.shift()
 }
 
-function clearLogs() {
-  logs.value = [{ time: '系统', type: '系统', message: '日志已清空' }]
+function sparkPoints(history, min, max) {
+  const vals = history.value
+  if (!vals || vals.length < 2) return ''
+  const w = 100
+  const h = 32
+  const pad = 3
+  const range = max - min || 1
+  return vals
+    .map((v, i) => {
+      const x = (i / (vals.length - 1)) * (w - 2 * pad) + pad
+      const y = h - pad - ((v - min) / range) * (h - 2 * pad)
+      return `${x.toFixed(1)},${Math.max(pad, Math.min(h - pad, y)).toFixed(1)}`
+    })
+    .join(' ')
 }
 
 function rnd(min, max, d = 1) {
@@ -244,8 +233,13 @@ function localSensors() {
   temp.value = rnd(24, 27)
   ph.value = rnd(6.8, 7.5)
   oxygen.value = rnd(7, 9)
-  turbidity.value = rnd(8, 15, 0)
-  pushLog('数据更新', `温度: ${temp.value}°C, pH: ${ph.value}, 溶解氧: ${oxygen.value}mg/L, 浊度: ${turbidity.value}NTU`)
+  turbidity.value = rnd(1.0, 3.0)
+  soilMoisture.value = rnd(55, 80, 0)
+  pushHistory(tempHistory, temp.value)
+  pushHistory(phHistory, ph.value)
+  pushHistory(oxygenHistory, oxygen.value)
+  pushHistory(turbidityHistory, turbidity.value)
+  pushHistory(moistureHistory, soilMoisture.value)
 }
 
 async function updateSensorData() {
@@ -253,13 +247,17 @@ async function updateSensorData() {
     const r = await fetch(apiUrl('/api/sensors'), { headers: authHeaders() })
     if (r.ok) {
       const d = await r.json()
-      temp.value = String(d.temperature)
-      ph.value = String(d.ph)
-      oxygen.value = String(d.oxygen)
-      turbidity.value = String(d.turbidity)
-      pushLog('数据更新', `温度: ${temp.value}°C, pH: ${ph.value}, 溶解氧: ${oxygen.value}mg/L, 浊度: ${turbidity.value}NTU`)
+      temp.value = String(d.temperature ?? d.temp ?? temp.value)
+      ph.value = String(d.ph ?? ph.value)
+      oxygen.value = String(d.oxygen ?? oxygen.value)
+      turbidity.value = String(d.turbidity ?? turbidity.value)
+      soilMoisture.value = String(d.soil_moisture ?? d.soilMoisture ?? soilMoisture.value)
+      pushHistory(tempHistory, temp.value)
+      pushHistory(phHistory, ph.value)
+      pushHistory(oxygenHistory, oxygen.value)
+      pushHistory(turbidityHistory, turbidity.value)
+      pushHistory(moistureHistory, soilMoisture.value)
     } else if (r.status === 401) {
-      pushLog('错误', '登录已过期，请重新登录')
       setTimeout(() => router.push({ name: 'login' }), 2000)
     }
   } catch {
@@ -267,116 +265,30 @@ async function updateSensorData() {
   }
 }
 
-function move(dir) {
-  const step = 1
-  switch (dir) {
-    case 'up':
-      posZ.value += step
-      break
-    case 'down':
-      posZ.value -= step
-      break
-    case 'left':
-      posX.value -= step
-      break
-    case 'right':
-      posX.value += step
-      break
-    case 'forward':
-      posY.value += step
-      break
-    case 'backward':
-      posY.value -= step
-      break
-  }
-  posX.value = Math.max(-10, Math.min(10, posX.value))
-  posY.value = Math.max(-10, Math.min(10, posY.value))
-  posZ.value = Math.max(0, Math.min(20, posZ.value))
-  pushLog('机械臂', `移动到位置 X:${posX.value}, Y:${posY.value}, Z:${posZ.value}`)
-}
-
-function center() {
-  posX.value = 0
-  posY.value = 0
-  posZ.value = 0
-  pushLog('机械臂', '返回中心位置')
-}
-
-function onKey(e) {
-  switch (e.key) {
-    case 'ArrowUp':
-      e.preventDefault()
-      move('forward')
-      break
-    case 'ArrowDown':
-      e.preventDefault()
-      move('backward')
-      break
-    case 'ArrowLeft':
-      e.preventDefault()
-      move('left')
-      break
-    case 'ArrowRight':
-      e.preventDefault()
-      move('right')
-      break
-    case 'w':
-    case 'W':
-      move('up')
-      break
-    case 's':
-    case 'S':
-      move('down')
-      break
-  }
-}
+let ws = null
+let sensorTimer = null
+let camTimer = null
 
 function connectWs() {
   try {
     ws = new WebSocket(wsLogsUrl())
-    ws.onopen = () => {
-      wsConnected.value = true
-    }
-    ws.onclose = () => {
-      wsConnected.value = false
-    }
-    ws.onmessage = (ev) => {
-      try {
-        const o = JSON.parse(ev.data)
-        if (o.type === 'heartbeat') return
-        pushLog(o.type || '消息', o.message || '')
-      } catch {
-        /* ignore */
-      }
-    }
+    ws.onmessage = () => {}
+    ws.onerror = () => {}
   } catch {
-    wsConnected.value = false
+    /* ignore */
   }
 }
 
 onMounted(() => {
-  pushLog('系统', '系统已启动')
-  pushLog('传感器', '所有传感器已连接')
-  pushLog('摄像头', '摄像头在线')
   updateSensorData()
   sensorTimer = setInterval(updateSensorData, 5000)
-  camTimer = setInterval(() => {
-    camTick.value = Date.now()
-  }, 2000)
-  statusTimer = setInterval(() => {
-    const msgs = ['系统运行正常', '传感器数据稳定', '水质参数正常', '自动监控进行中']
-    pushLog('状态', msgs[Math.floor(Math.random() * msgs.length)])
-  }, 30000)
+  camTimer = setInterval(() => { camTick.value = Date.now() }, 2000)
   connectWs()
-  window.addEventListener('keydown', onKey)
-  setTimeout(() => pushLog('提示', '可使用方向键和W/S键控制机械臂'), 2000)
 })
 
 onUnmounted(() => {
   if (sensorTimer) clearInterval(sensorTimer)
   if (camTimer) clearInterval(camTimer)
-  if (statusTimer) clearInterval(statusTimer)
   if (ws) ws.close()
-  window.removeEventListener('keydown', onKey)
 })
 </script>

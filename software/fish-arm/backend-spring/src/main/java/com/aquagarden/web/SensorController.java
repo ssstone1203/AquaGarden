@@ -23,7 +23,8 @@ public class SensorController {
                 "temperature", s.temperature(),
                 "ph", s.ph(),
                 "oxygen", s.oxygen(),
-                "turbidity", s.turbidity()
+                "turbidity", s.turbidity(),
+                "soil_moisture", s.soilMoisture()
         );
     }
 }
