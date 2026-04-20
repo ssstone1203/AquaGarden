@@ -27,7 +27,7 @@
         <div class="nav-icon"><i class="fas fa-robot"></i></div>
         <div class="nav-labels">
           <div class="nav-en">Robot Arm</div>
-          <div class="nav-zh">机器人臂</div>
+          <div class="nav-zh">机器臂</div>
         </div>
       </router-link>
       <router-link to="/history" class="nav-item" active-class="active">
