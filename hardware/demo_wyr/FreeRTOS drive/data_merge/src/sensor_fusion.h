@@ -29,6 +29,16 @@ extern volatile uint8_t g_pump_target_power_percent;
 extern volatile uint8_t g_pump_actual_power_percent;
 extern volatile uint8_t g_pump_running;
 extern volatile uint8_t g_control_need_watering;
+extern volatile uint8_t  g_pump_cycle_enable;
+extern volatile uint8_t  g_pump_cycle_start;
+extern volatile uint8_t  g_pump_cycle_power_percent;
+extern volatile uint32_t g_pump_cycle_run_time_ms;
+extern volatile uint32_t g_pump_cycle_stop_time_ms;
+extern volatile uint32_t g_pump_cycle_interval_time_ms;
+extern volatile uint32_t g_pump_cycle_total_count;
+extern volatile uint32_t g_pump_cycle_done_count;
+extern volatile uint8_t  g_pump_cycle_active;
+extern volatile uint8_t  g_pump_cycle_state;
 
 extern volatile uint8_t g_ctrl_enable_soil;
 extern volatile uint8_t g_ctrl_enable_water_temp;

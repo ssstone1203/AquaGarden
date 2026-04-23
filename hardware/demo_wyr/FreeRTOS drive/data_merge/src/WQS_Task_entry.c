@@ -8,11 +8,29 @@ void WQS_Task_entry(void * pvParameters)
 {
     FSP_PARAMETER_NOT_USED(pvParameters);
     wqs_cmd_t cmd = {0};
-    WQS_Init(&cmd);
+    bool wqs_ready = false;
+    uint8_t continuous_fail_count = 0U;
 
     const TickType_t sample_period_ticks = pdMS_TO_TICKS(1500U);
     while (1)
     {
+        if (!wqs_ready)
+        {
+            WQS_Init(&cmd);
+            if ((NULL != cmd.wqs_cmd_detect) && (NULL != cmd.wqs_cmd_calibrate))
+            {
+                wqs_ready = true;
+                continuous_fail_count = 0U;
+            }
+            else
+            {
+                g_wqs_last_err = FSP_ERR_NOT_OPEN;
+                sensor_fusion_update_jscope_time();
+                vTaskDelay(pdMS_TO_TICKS(300U));
+                continue;
+            }
+        }
+
         bool ok = false;
         uint32_t retry_count = 0U;
         do
@@ -34,6 +52,22 @@ void WQS_Task_entry(void * pvParameters)
         if (ok)
         {
             g_jscope_wqs_wqi = (float) g_wqs_info.wqs_info_wqi;
+            continuous_fail_count = 0U;
+        }
+        else
+        {
+            if (continuous_fail_count < 0xFFU)
+            {
+                continuous_fail_count++;
+            }
+
+            /* Re-open UART task-side if communication has been failing continuously. */
+            if (continuous_fail_count >= 5U)
+            {
+                wqs_ready = false;
+                cmd.wqs_cmd_detect = NULL;
+                cmd.wqs_cmd_calibrate = NULL;
+            }
         }
 
         sensor_fusion_update_jscope_time();

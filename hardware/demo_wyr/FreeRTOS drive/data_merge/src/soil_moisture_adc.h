@@ -18,8 +18,12 @@
 #define SOIL_ADC_DRY_CAL_RAW       (3200U)
 #define SOIL_ADC_WET_CAL_RAW       (1500U)
 
+extern volatile uint16_t g_soil_adc_cal_dry_raw;
+extern volatile uint16_t g_soil_adc_cal_wet_raw;
+
 void     soil_adc_init(void);
 uint16_t soil_adc_read_raw(void);
 uint8_t  soil_adc_raw_to_percent(uint16_t raw_value);
+void     soil_adc_set_calibration(uint16_t dry_raw, uint16_t wet_raw);
 
 #endif /* SOIL_MOISTURE_ADC_H_ */

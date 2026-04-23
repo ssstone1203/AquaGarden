@@ -35,11 +35,16 @@
 /** RASC user label PUMP_IN1 on P302 -> DRV8870 IN1 */
 #define PUMP_IN1_PIN    BSP_IO_PORT_03_PIN_02
 
+/** RASC user label PUMP_IN2(PWM) on P301 -> DRV8870 IN2 */
+#define PUMP_IN2_PIN    BSP_IO_PORT_03_PIN_01
+
 /** GPT output pin select for IN2 (P301 / GTIOC4B) */
 #define PUMP_PWM_PIN    GPT_IO_PIN_GTIOCB
 
 /** §7.3.2 tON typ 50 µs after wake; margin for 5 µs minimum high before tON. */
 #define PUMP_DRV8870_WAKE_DELAY_US    200U
+/* Raise PWM above common audible band (50 MHz / 2500 = 20 kHz). */
+#define PUMP_PWM_PERIOD_COUNTS        (2500U)
 
 static void pump_drv8870_after_drive_asserted(void)
 {
@@ -48,7 +53,23 @@ static void pump_drv8870_after_drive_asserted(void)
 
 static uint32_t pump_period_counts(void)
 {
-    return g_pump_timer_cfg.period_counts;
+    return PUMP_PWM_PERIOD_COUNTS;
+}
+
+static void pump_drv8870_in2_force_low_gpio(void)
+{
+    (void) g_pump_timer.p_api->stop(g_pump_timer.p_ctrl);
+    (void) g_ioport.p_api->pinCfg(&g_ioport_ctrl,
+                                  PUMP_IN2_PIN,
+                                  (uint32_t) IOPORT_CFG_PORT_DIRECTION_OUTPUT | (uint32_t) IOPORT_CFG_PORT_OUTPUT_LOW);
+    (void) g_ioport.p_api->pinWrite(&g_ioport_ctrl, PUMP_IN2_PIN, BSP_IO_LEVEL_LOW);
+}
+
+static void pump_drv8870_in2_enable_pwm(void)
+{
+    (void) g_ioport.p_api->pinCfg(&g_ioport_ctrl,
+                                  PUMP_IN2_PIN,
+                                  (uint32_t) IOPORT_CFG_PERIPHERAL_PIN | (uint32_t) IOPORT_PERIPHERAL_GPT1);
 }
 
 /**
@@ -63,6 +84,7 @@ static void pump_drv8870_brake_holding(void)
      */
     uint32_t const brake_min_low_counts = 1U;
 
+    pump_drv8870_in2_enable_pwm();
     (void) g_ioport.p_api->pinWrite(&g_ioport_ctrl, PUMP_IN1_PIN, BSP_IO_LEVEL_HIGH);
     (void) g_pump_timer.p_api->dutyCycleSet(g_pump_timer.p_ctrl, brake_min_low_counts, PUMP_PWM_PIN);
     (void) g_pump_timer.p_api->start(g_pump_timer.p_ctrl);
@@ -72,22 +94,30 @@ static void pump_drv8870_brake_holding(void)
 void pump_drv8870_init(void)
 {
     /* Pins are already applied in R_BSP_WarmStart via R_IOPORT_Open. */
+    /* RASC pin table may leave P302 as input; force IN1 to GPIO output here. */
+    (void) g_ioport.p_api->pinCfg(&g_ioport_ctrl,
+                                  PUMP_IN1_PIN,
+                                  (uint32_t) IOPORT_CFG_PORT_DIRECTION_OUTPUT | (uint32_t) IOPORT_CFG_PORT_OUTPUT_LOW);
     (void) g_ioport.p_api->pinWrite(&g_ioport_ctrl, PUMP_VREF_PIN, BSP_IO_LEVEL_HIGH);
     (void) g_ioport.p_api->pinWrite(&g_ioport_ctrl, PUMP_IN1_PIN, BSP_IO_LEVEL_LOW);
 
     (void) g_pump_timer.p_api->open(g_pump_timer.p_ctrl, g_pump_timer.p_cfg);
-    (void) g_pump_timer.p_api->stop(g_pump_timer.p_ctrl);
+    (void) g_pump_timer.p_api->periodSet(g_pump_timer.p_ctrl, PUMP_PWM_PERIOD_COUNTS);
+    pump_drv8870_in2_force_low_gpio();
+    pump_drv8870_stop();
 }
 
 void pump_drv8870_stop(void)
 {
-    (void) g_pump_timer.p_api->stop(g_pump_timer.p_ctrl);
+    /* Force IN2=LOW in GPIO mode, then IN1=LOW => DRV8870 coast/sleep. */
+    pump_drv8870_in2_force_low_gpio();
     (void) g_ioport.p_api->pinWrite(&g_ioport_ctrl, PUMP_IN1_PIN, BSP_IO_LEVEL_LOW);
 }
 
 void pump_drv8870_run_forward_dc(void)
 {
-    (void) g_pump_timer.p_api->stop(g_pump_timer.p_ctrl);
+    /* Full forward uses static IN2=LOW to avoid PWM mapping ambiguity. */
+    pump_drv8870_in2_force_low_gpio();
     (void) g_ioport.p_api->pinWrite(&g_ioport_ctrl, PUMP_IN1_PIN, BSP_IO_LEVEL_HIGH);
     pump_drv8870_after_drive_asserted();
 }
@@ -113,6 +143,7 @@ void pump_drv8870_set_power(uint8_t power_percent)
      */
     uint32_t const in2_low_counts = (uint32_t) (((uint64_t) period * (uint32_t) power_percent) / 100U);
 
+    pump_drv8870_in2_enable_pwm();
     (void) g_ioport.p_api->pinWrite(&g_ioport_ctrl, PUMP_IN1_PIN, BSP_IO_LEVEL_HIGH);
     (void) g_pump_timer.p_api->dutyCycleSet(g_pump_timer.p_ctrl, in2_low_counts, PUMP_PWM_PIN);
     (void) g_pump_timer.p_api->start(g_pump_timer.p_ctrl);

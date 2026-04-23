@@ -7,10 +7,14 @@
 #define SHT30_CMD_SINGLE_SHOT_HIGH_CS_OFF_LS     (0x00U)
 #define SHT30_MEASURE_DELAY_HIGH_REPEATABILITY_MS (55U)
 #define SHT30_I2C_WAIT_TIMEOUT_MS                 (200U)
+#define SHT30_FILTER_ALPHA                        (0.20F)
 
 volatile float g_sht30_temperature_c   = 0.0F;
 volatile float g_sht30_temperature_f   = 0.0F;
 volatile float g_sht30_humidity_rh     = 0.0F;
+volatile float g_sht30_temp_offset_c   = 0.0F;
+volatile float g_sht30_humidity_offset_rh = 0.0F;
+volatile uint8_t g_sht30_filter_enable = 1U;
 volatile uint16_t g_sht30_temperature_raw;
 volatile uint16_t g_sht30_humidity_raw;
 volatile uint32_t g_sht30_last_i2c_stage = 0U;
@@ -18,6 +22,7 @@ volatile uint32_t g_sht30_last_status = (uint32_t) FSP_ERR_NOT_INITIALIZED;
 
 static i2c_master_instance_t const * gp_i2c;
 static uint8_t                       g_slave_7bit;
+static bool                          g_filter_seeded;
 
 static volatile uint8_t g_i2c_wait_state;
 
@@ -249,8 +254,32 @@ fsp_err_t sht30_measure_single_shot(float * temperature_c, float * humidity_rh_p
     /* 先用手册公式，再饱和到规格显示范围（公式可达范围见 sht30.h 中 FORMULA / SPEC 说明）。 */
     float const t_unc  = -45.0F + (175.0F * (float) t_ticks / 65535.0F);
     float const rh_unc = 100.0F * (float) rh_ticks / 65535.0F;
-    float const t_c    = sht30_clampf(t_unc, SHT30_TEMP_C_SPEC_MIN, SHT30_TEMP_C_SPEC_MAX);
-    float const rh_pct = sht30_clampf(rh_unc, SHT30_RH_PCT_SPEC_MIN, SHT30_RH_PCT_SPEC_MAX);
+    float t_c    = sht30_clampf(t_unc + g_sht30_temp_offset_c, SHT30_TEMP_C_SPEC_MIN, SHT30_TEMP_C_SPEC_MAX);
+    float rh_pct = sht30_clampf(rh_unc + g_sht30_humidity_offset_rh, SHT30_RH_PCT_SPEC_MIN, SHT30_RH_PCT_SPEC_MAX);
+
+    if (0U != g_sht30_filter_enable)
+    {
+        if (!g_filter_seeded)
+        {
+            g_sht30_temperature_c = t_c;
+            g_sht30_humidity_rh   = rh_pct;
+            g_filter_seeded       = true;
+        }
+        else
+        {
+            g_sht30_temperature_c = (SHT30_FILTER_ALPHA * t_c) + ((1.0F - SHT30_FILTER_ALPHA) * g_sht30_temperature_c);
+            g_sht30_humidity_rh   = (SHT30_FILTER_ALPHA * rh_pct) + ((1.0F - SHT30_FILTER_ALPHA) * g_sht30_humidity_rh);
+        }
+
+        t_c = g_sht30_temperature_c;
+        rh_pct = g_sht30_humidity_rh;
+    }
+    else
+    {
+        g_sht30_temperature_c = t_c;
+        g_sht30_humidity_rh   = rh_pct;
+    }
+
     float const t_f    = (t_c * 9.0F / 5.0F) + 32.0F;
 
     if (NULL != temperature_c)
@@ -263,9 +292,7 @@ fsp_err_t sht30_measure_single_shot(float * temperature_c, float * humidity_rh_p
         *humidity_rh_percent = rh_pct;
     }
 
-    g_sht30_temperature_c = t_c;
     g_sht30_temperature_f = t_f;
-    g_sht30_humidity_rh   = rh_pct;
 
     if (NULL != temperature_f)
     {
@@ -274,4 +301,10 @@ fsp_err_t sht30_measure_single_shot(float * temperature_c, float * humidity_rh_p
     g_sht30_last_status   = (uint32_t) FSP_SUCCESS;
 
     return FSP_SUCCESS;
+}
+
+void sht30_set_compensation(float temp_offset_c, float humidity_offset_rh)
+{
+    g_sht30_temp_offset_c = temp_offset_c;
+    g_sht30_humidity_offset_rh = humidity_offset_rh;
 }
