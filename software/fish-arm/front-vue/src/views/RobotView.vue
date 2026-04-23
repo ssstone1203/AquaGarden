@@ -131,7 +131,7 @@
 <script setup>
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { apiUrl, authHeaders } from '@/api/http'
+import { apiUrl, authHeaders, logout } from '@/api/http'
 
 const router = useRouter()
 
@@ -176,7 +176,7 @@ async function control(direction) {
       addLog(`移动 ${direction} → X:${posX.value} Y:${posY.value} Z:${posZ.value}`, 'robot')
     } else if (r.status === 401) {
       addLog('登录已过期', 'error')
-      setTimeout(() => router.push({ name: 'login' }), 2000)
+      setTimeout(() => logout(router), 2000)
     }
   } catch {
     simulateMovement(direction)

@@ -26,3 +26,13 @@ export function authHeaders() {
   }
   return h
 }
+
+/**
+ * 清除本地凭证并跳转到登录页。
+ * 必须在调用 router.push('/login') 之前先调用此函数，否则路由守卫会因
+ * localStorage 里的 token 尚未清除而立即把用户弹回 dashboard。
+ */
+export function logout(router) {
+  localStorage.removeItem('token')
+  router.push({ name: 'login' })
+}

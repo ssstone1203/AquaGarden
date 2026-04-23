@@ -29,30 +29,34 @@ public class SensorController {
         this.wsHandler = wsHandler;
     }
 
-    /** 前端轮询接口，返回最新传感器快照（真实或模拟）。 */
+    /**
+     * 前端轮询接口，返回最新传感器快照（真实或模拟）。
+     * 字段与 MCU 上行帧对应：
+     *   water_temp   DS18B20 水温 (°C)
+     *   air_temp     SHT30 空气温度 (°C)
+     *   air_humidity SHT30 空气湿度 (%RH)
+     *   wqi          WQM11S 水质综合指数 (0-100)
+     *   soil_moisture 土壤湿度 (0-100 %)
+     */
     @GetMapping("/api/sensors")
     public Map<String, Object> sensors() {
         SensorSnapshot s = systemStateService.readSensorsWithNoise();
         return Map.of(
-                "temperature", s.temperature(),
-                "ph", s.ph(),
-                "oxygen", s.oxygen(),
-                "turbidity", s.turbidity(),
+                "water_temp",    s.waterTemp(),
+                "air_temp",      s.airTemp(),
+                "air_humidity",  s.airHumidity(),
+                "wqi",           s.wqi(),
                 "soil_moisture", s.soilMoisture()
         );
     }
 
     /**
      * 串口桥接脚本调用此接口推送硬件传感器数据。
-     * 请求体示例：
-     * {
-     *   "temperature": 25.3,
-     *   "ph": 7.1,
-     *   "oxygen": 8.2,
-     *   "turbidity": 1.8,
-     *   "soil_moisture": 62.0
-     * }
      * 此接口不需要 JWT，桥接脚本在局域网内调用即可（SecurityConfig 已放行 /api/sensors/ingest）。
+     */
+    /**
+     * 历史传感器数据接口（当前生成模拟数据，接入真实 DB 后替换实现即可）。
+     * range: 24h | 7d | 30d
      */
     /**
      * 历史传感器数据接口（当前生成模拟数据，接入真实 DB 后替换实现即可）。
@@ -69,12 +73,12 @@ public class SensorController {
         for (int i = 0; i < count; i++) {
             long ts = now - (long) i * intervalMs;
             result.add(Map.of(
-                "time",         fmt.format(Instant.ofEpochMilli(ts)),
-                "temperature",  round(25.0 + rnd.nextDouble() * 4 - 2, 1),
-                "ph",           round(7.0 + rnd.nextDouble() * 0.8 - 0.4, 2),
-                "oxygen",       round(8.0 + rnd.nextDouble() * 2 - 1, 1),
-                "turbidity",    round(12.0 + rnd.nextDouble() * 8, 1),
-                "soil_moisture",round(65.0 + rnd.nextDouble() * 14 - 7, 0)
+                "time",          fmt.format(Instant.ofEpochMilli(ts)),
+                "water_temp",    round(24.0 + rnd.nextDouble() * 4 - 2, 1),
+                "air_temp",      round(26.0 + rnd.nextDouble() * 6 - 3, 1),
+                "air_humidity",  round(55.0 + rnd.nextDouble() * 20 - 10, 1),
+                "wqi",           round(72.0 + rnd.nextDouble() * 20 - 10, 0),
+                "soil_moisture", round(62.0 + rnd.nextDouble() * 20 - 10, 0)
             ));
         }
         return result;
@@ -85,14 +89,25 @@ public class SensorController {
         return Math.round(v * p) / p;
     }
 
+    /**
+     * 串口桥接脚本调用此接口推送硬件传感器数据（局域网内，无需 JWT）。
+     * 请求体示例：
+     * {
+     *   "water_temp": 24.5,
+     *   "air_temp": 26.3,
+     *   "air_humidity": 58.0,
+     *   "wqi": 76.0,
+     *   "soil_moisture": 63.0
+     * }
+     */
     @PostMapping("/api/sensors/ingest")
     public ResponseEntity<Void> ingest(@RequestBody Map<String, Double> body) {
-        double temperature  = body.getOrDefault("temperature",  25.0);
-        double ph           = body.getOrDefault("ph",           7.0);
-        double oxygen       = body.getOrDefault("oxygen",       8.0);
-        double turbidity    = body.getOrDefault("turbidity",    1.5);
-        double soilMoisture = body.getOrDefault("soil_moisture", 65.0);
-        SensorSnapshot snap = new SensorSnapshot(temperature, ph, oxygen, turbidity, soilMoisture);
+        double waterTemp    = body.getOrDefault("water_temp",    24.0);
+        double airTemp      = body.getOrDefault("air_temp",      26.0);
+        double airHumidity  = body.getOrDefault("air_humidity",  55.0);
+        double wqi          = body.getOrDefault("wqi",           70.0);
+        double soilMoisture = body.getOrDefault("soil_moisture", 62.0);
+        SensorSnapshot snap = new SensorSnapshot(waterTemp, airTemp, airHumidity, wqi, soilMoisture);
         systemStateService.updateFromHardware(snap);
         wsHandler.broadcastSensorData(snap);
         return ResponseEntity.ok().build();

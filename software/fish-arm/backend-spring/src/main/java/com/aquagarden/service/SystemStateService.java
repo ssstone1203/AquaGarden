@@ -30,12 +30,12 @@ public class SystemStateService {
 
     /**
      * 接收来自串口桥接脚本的真实传感器数据。
-     * 字段映射（与 MCU Communicate_Task_entry.c 帧字段对应）：
-     *   temperature  ← air_temp_x10 / 10.0  (SHT30 空气温度，也可换成 water_temp_x10)
-     *   ph           ← 暂用 wqs_info_wqi / 14.0 * 14 归一后映射，或由桥接脚本直接换算
-     *   oxygen       ← 保留字段（WQM11S 完整帧里有 DO，但主帧只上报 WQI）
-     *   turbidity    ← 保留字段
-     *   soilMoisture ← soil_moisture_pct
+     * 字段与 MCU Communicate_Task_entry.c 上行帧一一对应：
+     *   waterTemp    ← g_uwt_temperature_c / 10.0  DS18B20 水温
+     *   airTemp      ← g_sht30_temperature_c / 10.0  SHT30 空气温度
+     *   airHumidity  ← g_sht30_humidity_rh / 10.0   SHT30 空气湿度
+     *   wqi          ← wqs_info_wqi                  WQM11S 水质综合指数 0-100
+     *   soilMoisture ← g_soil_moisture_percent        土壤湿度 0-100%
      */
     public void updateFromHardware(SensorSnapshot snapshot) {
         latestReal.set(snapshot);
@@ -47,12 +47,15 @@ public class SystemStateService {
         if (real != null) {
             return real;
         }
-        double temperature = round(25.0 + random.nextDouble() - 0.5, 2);
-        double ph = round(7.0 + (random.nextDouble() * 0.4 - 0.2), 2);
-        double oxygen = round(8.0 + (random.nextDouble() * 0.6 - 0.3), 2);
-        double turbidity = round(1.5 + (random.nextDouble() * 0.6 - 0.3), 2);
-        double soilMoisture = round(65.0 + (random.nextDouble() * 10 - 5), 1);
-        return new SensorSnapshot(temperature, ph, oxygen, turbidity, soilMoisture);
+        // 模拟数据范围与硬件传感器实际量程匹配：
+        // DS18B20 水温：推荐范围 18-32°C；SHT30 空气温度：15-35°C；空气湿度：30-80%RH
+        // WQM11S WQI：良好水质通常 60-90；土壤湿度 ADC：40-80%
+        double waterTemp   = round(24.0 + random.nextDouble() * 2 - 1, 1);
+        double airTemp     = round(26.0 + random.nextDouble() * 4 - 2, 1);
+        double airHumidity = round(55.0 + random.nextDouble() * 10 - 5, 1);
+        double wqi         = round(72.0 + random.nextDouble() * 12 - 6, 0);
+        double soilMoisture = round(62.0 + random.nextDouble() * 10 - 5, 1);
+        return new SensorSnapshot(waterTemp, airTemp, airHumidity, wqi, soilMoisture);
     }
 
     private static double round(double v, int decimals) {

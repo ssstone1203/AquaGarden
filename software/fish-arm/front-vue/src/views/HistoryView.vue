@@ -14,10 +14,10 @@
         <label>数据类型</label>
         <select v-model="dataType">
           <option value="">全部</option>
-          <option value="temperature">水温</option>
-          <option value="ph">pH值</option>
-          <option value="oxygen">溶解氧</option>
-          <option value="turbidity">浊度</option>
+          <option value="water_temp">水温</option>
+          <option value="air_temp">空气温度</option>
+          <option value="air_humidity">空气湿度</option>
+          <option value="wqi">水质综合指数</option>
           <option value="soil_moisture">土壤湿度</option>
         </select>
       </div>
@@ -115,9 +115,9 @@
             <tr>
               <th>时间</th>
               <th>水温 (°C)</th>
-              <th>pH</th>
-              <th>溶解氧 (mg/L)</th>
-              <th>浊度 (NTU)</th>
+              <th>空气温度 (°C)</th>
+              <th>空气湿度 (%RH)</th>
+              <th>水质指数</th>
               <th>土壤湿度 (%)</th>
               <th>状态</th>
             </tr>
@@ -125,10 +125,10 @@
           <tbody>
             <tr v-for="(row, i) in pageData" :key="i">
               <td class="td-time">{{ row.time }}</td>
-              <td>{{ row.temperature }}</td>
-              <td>{{ row.ph }}</td>
-              <td>{{ row.oxygen }}</td>
-              <td>{{ row.turbidity }}</td>
+              <td>{{ row.water_temp }}</td>
+              <td>{{ row.air_temp }}</td>
+              <td>{{ row.air_humidity }}</td>
+              <td>{{ row.wqi }}</td>
               <td>{{ row.soil_moisture }}</td>
               <td><span :class="['status-badge', rowStatus(row)]">{{ rowStatusText(row) }}</span></td>
             </tr>
@@ -160,15 +160,21 @@ const PAD_L = 30, PAD_R = 20, PAD_T = 16, PAD_B = 28
 const CHART_W = SVG_W - PAD_L - PAD_R
 const CHART_H = SVG_H - PAD_T - PAD_B
 
+// 指标定义与 MCU 传感器规格对应：
+//   water_temp    DS18B20 水温 (-55~125°C，实用 15~35°C)
+//   air_temp      SHT30 空气温度 (-40~125°C，推荐 5~60°C)
+//   air_humidity  SHT30 空气湿度 (0~100%RH)
+//   wqi           WQM11S 水质综合指数 (0~100)
+//   soil_moisture ADC 土壤湿度 (0~100%)
 const metrics = [
-  { key: 'temperature', label: '水温',   unit: '°C',   icon: 'fas fa-thermometer-half', iconClass: 'icon-temp',  color: '#f59e0b', rangeMin: 18, rangeMax: 32 },
-  { key: 'ph',          label: 'pH',      unit: ' pH',  icon: 'fas fa-wave-square',      iconClass: 'icon-ph',    color: '#8b5cf6', rangeMin: 6, rangeMax: 9 },
-  { key: 'oxygen',      label: '溶解氧',  unit: ' mg/L',icon: 'fas fa-wind',             iconClass: 'icon-oxy',   color: '#10b981', rangeMin: 5, rangeMax: 12 },
-  { key: 'turbidity',   label: '浊度',    unit: ' NTU', icon: 'fas fa-eye-slash',        iconClass: 'icon-turb',  color: '#06b6d4', rangeMin: 0, rangeMax: 30 },
-  { key: 'soil_moisture', label: '土壤湿度', unit: '%', icon: 'fas fa-tint',             iconClass: 'icon-soil',  color: '#3b82f6', rangeMin: 30, rangeMax: 100 },
+  { key: 'water_temp',    label: '水温',        unit: '°C',  icon: 'fas fa-thermometer-half', iconClass: 'icon-temp', color: '#f59e0b', rangeMin: 15,  rangeMax: 35 },
+  { key: 'air_temp',      label: '空气温度',     unit: '°C',  icon: 'fas fa-sun',              iconClass: 'icon-ph',   color: '#8b5cf6', rangeMin: 5,   rangeMax: 60 },
+  { key: 'air_humidity',  label: '空气湿度',     unit: '%RH', icon: 'fas fa-cloud',            iconClass: 'icon-turb', color: '#06b6d4', rangeMin: 0,   rangeMax: 100 },
+  { key: 'wqi',           label: '水质综合指数', unit: ' 分', icon: 'fas fa-tachometer-alt',   iconClass: 'icon-oxy',  color: '#10b981', rangeMin: 0,   rangeMax: 100 },
+  { key: 'soil_moisture', label: '土壤湿度',     unit: '%',   icon: 'fas fa-tint',             iconClass: 'icon-soil', color: '#3b82f6', rangeMin: 0,   rangeMax: 100 },
 ]
 
-const activeMetrics = ref(['temperature', 'ph', 'oxygen'])
+const activeMetrics = ref(['water_temp', 'air_temp', 'wqi'])
 const activeMetricsMeta = computed(() => metrics.filter(m => activeMetrics.value.includes(m.key)))
 
 function toggleMetric(key) {
@@ -257,12 +263,12 @@ const xLabels = computed(() => {
   })
 })
 
-// Row status
+// Row status — 基于 DS18B20 水温范围 (18-32°C) 和 WQM11S WQI 阈值
 function rowStatus(row) {
-  const t = parseFloat(row.temperature)
-  const ph = parseFloat(row.ph)
-  if (t > 30 || t < 18 || ph < 6.5 || ph > 8.5) return 'danger'
-  if (t > 28 || t < 20 || ph < 6.8 || ph > 8.2) return 'warning'
+  const t   = parseFloat(row.water_temp)
+  const w   = parseFloat(row.wqi)
+  if (t > 32 || t < 16 || w < 40) return 'danger'
+  if (t > 29 || t < 19 || w < 60) return 'warning'
   return 'normal'
 }
 function rowStatusText(row) {
@@ -276,12 +282,12 @@ function generateHistoricalData(count = 120) {
   for (let i = 0; i < count; i++) {
     const ts = new Date(now - i * 1800000)
     data.push({
-      time: ts.toLocaleString('zh-CN'),
-      temperature: (25 + Math.random() * 3 - 1).toFixed(1),
-      ph: (7.0 + Math.random() * 0.6 - 0.3).toFixed(2),
-      oxygen: (8.0 + Math.random() * 1.5 - 0.75).toFixed(1),
-      turbidity: (12 + Math.random() * 8).toFixed(1),
-      soil_moisture: (65 + Math.random() * 10 - 5).toFixed(0),
+      time:         ts.toLocaleString('zh-CN'),
+      water_temp:   (24 + Math.random() * 4 - 2).toFixed(1),
+      air_temp:     (26 + Math.random() * 6 - 3).toFixed(1),
+      air_humidity: (55 + Math.random() * 20 - 10).toFixed(1),
+      wqi:          (72 + Math.random() * 20 - 10).toFixed(0),
+      soil_moisture:(62 + Math.random() * 20 - 10).toFixed(0),
     })
   }
   return data
@@ -301,9 +307,9 @@ async function queryData() {
 }
 
 function exportData() {
-  const header = 'time,temperature,ph,oxygen,turbidity,soil_moisture\n'
+  const header = 'time,water_temp,air_temp,air_humidity,wqi,soil_moisture\n'
   const rows = filteredData.value.map(r =>
-    `${r.time},${r.temperature},${r.ph},${r.oxygen},${r.turbidity},${r.soil_moisture}`
+    `${r.time},${r.water_temp},${r.air_temp},${r.air_humidity},${r.wqi},${r.soil_moisture}`
   ).join('\n')
   const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
