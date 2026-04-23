@@ -27,6 +27,16 @@ volatile uint8_t g_pump_target_power_percent = 0U;
 volatile uint8_t g_pump_actual_power_percent = 0U;
 volatile uint8_t g_pump_running              = 0U;
 volatile uint8_t g_control_need_watering     = 0U;
+volatile uint8_t  g_pump_cycle_enable           = 1U;
+volatile uint8_t  g_pump_cycle_start            = 1U;
+volatile uint8_t  g_pump_cycle_power_percent    = 40U;
+volatile uint32_t g_pump_cycle_run_time_ms      = 3000U;
+volatile uint32_t g_pump_cycle_stop_time_ms     = 2000U;
+volatile uint32_t g_pump_cycle_interval_time_ms = 1000U;
+volatile uint32_t g_pump_cycle_total_count      = 3U;  /* 0 means infinite loop */
+volatile uint32_t g_pump_cycle_done_count       = 0U;
+volatile uint8_t  g_pump_cycle_active           = 0U;
+volatile uint8_t  g_pump_cycle_state            = 0U;  /* 0:idle, 1:run, 2:stop, 3:interval, 4:done */
 
 volatile uint8_t g_ctrl_enable_soil       = 1U;
 volatile uint8_t g_ctrl_enable_water_temp = 1U;

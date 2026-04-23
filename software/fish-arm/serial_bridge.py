@@ -21,31 +21,29 @@ MCU 上行帧格式（每 250 ms 一帧，Modbus CRC-16）：
   [36:37] crc16        Modbus CRC-16（覆盖 [0:35]）
 
 PAYLOAD 字段（30 字节，均为小端）：
-  偏移  长度  类型      固件变量                说明
-   0    4   uint32   g_jscope_time_ms       系统运行毫秒数
-   4    2   int16    g_sht30_temperature_c  空气温度 × 10
-   6    2   int16    g_sht30_humidity_rh    空气湿度 × 10
-   8    2   int16    g_uwt_temperature_c    水温 × 10（DS18B20）
-  10    1   uint8    g_soil_moisture_percent 土壤湿度 0-100 %
-  11    1   uint8    wqs_info_wqi           水质综合指数 0-100
+  偏移  长度  类型      固件变量                    说明
+   0    4   uint32   g_jscope_time_ms           系统运行毫秒数
+   4    2   int16    g_sht30_temperature_c × 10  SHT30 空气温度 (°C×10, 范围 -40~125°C)
+   6    2   int16    g_sht30_humidity_rh × 10    SHT30 空气湿度 (%RH×10, 0~100%)
+   8    2   int16    g_uwt_temperature_c × 10   DS18B20 水温 (°C×10, 范围 -55~125°C)
+  10    1   uint8    g_soil_moisture_percent    土壤湿度 ADC 0-100 %
+  11    1   uint8    wqs_info_wqi               WQM11S 水质综合指数 0-100
   12    1   uint8    g_pump_actual_power_percent 泵占空比 %
-  13    1   uint8    g_control_need_watering 是否触发浇水
-  14    2   uint16   pressure_kg[0] × 100
-  16    2   uint16   pressure_kg[1] × 100
-  18    2   uint16   pressure_kg[2] × 100
-  20    4   uint32   g_alarm_flags          报警标志位
+  13    1   uint8    g_control_need_watering    是否触发浇水
+  14    2   uint16   pressure_kg[0] × 100       压力传感器0 (max 5.0 kg)
+  16    2   uint16   pressure_kg[1] × 100       压力传感器1
+  18    2   uint16   pressure_kg[2] × 100       压力传感器2
+  20    4   uint32   g_alarm_flags              报警标志位
   24    2   uint16   air_retry_count
   26    2   uint16   wqs_retry_count
   28    2   uint16   uwt_retry_count
 
-字段映射到前端（5 个指标）：
-  temperature  ← 水温 (g_uwt_temperature_c / 10)
-  ph           ← WQI 线性映射到 6.5-8.5（WQI 100→pH 8.5，WQI 0→pH 6.5）
-                 注：MCU 主帧只上报 WQI 摘要，完整 pH/DO/NTU 在 WQM11S 扩展帧里
-                 如需真实 pH，需在固件中把 g_wqs_info.wqs_info_ph 加入上行帧
-  oxygen       ← WQI 线性映射到 5-12 mg/L（临时近似，同上说明）
-  turbidity    ← WQI 反向映射到 0-30 NTU（WQI 越高水越清）
-  soil_moisture ← g_soil_moisture_percent（直接使用）
+字段直接映射到前端（5 个真实传感器指标）：
+  water_temp    ← g_uwt_temperature_c / 10.0  DS18B20 水温 (°C)
+  air_temp      ← g_sht30_temperature_c / 10.0  SHT30 空气温度 (°C)
+  air_humidity  ← g_sht30_humidity_rh / 10.0   SHT30 空气湿度 (%RH)
+  wqi           ← wqs_info_wqi                  WQM11S 水质综合指数 (0-100)
+  soil_moisture ← g_soil_moisture_percent        土壤湿度 (0-100 %)
 """
 
 import argparse
@@ -100,35 +98,30 @@ def parse_payload(payload: bytes) -> dict:
     (p2_x100,) = struct.unpack_from("<H", payload, 18)
     (alarm_flags,) = struct.unpack_from("<I", payload, 20)
 
-    air_temp = air_temp_x10 / 10.0
-    air_humi = air_humi_x10 / 10.0
-    water_temp = water_temp_x10 / 10.0
-
-    # WQI (0-100) 映射到 pH 6.5-8.5
-    ph = round(6.5 + wqi / 100.0 * 2.0, 2)
-    # WQI 映射到溶解氧 5-12 mg/L
-    oxygen = round(5.0 + wqi / 100.0 * 7.0, 2)
-    # WQI 反向映射到浊度 0-30 NTU（水质好 → 浊度低）
-    turbidity = round((1.0 - wqi / 100.0) * 30.0, 2)
+    air_temp   = round(air_temp_x10  / 10.0, 1)
+    air_humi   = round(air_humi_x10  / 10.0, 1)
+    water_temp = round(water_temp_x10 / 10.0, 1)
+    pressure   = [round(p0_x100 / 100.0, 2), round(p1_x100 / 100.0, 2), round(p2_x100 / 100.0, 2)]
 
     return {
         "raw": {
-            "time_ms": time_ms,
-            "air_temp": air_temp,
+            "time_ms":    time_ms,
+            "air_temp":   air_temp,
             "air_humidity": air_humi,
             "water_temp": water_temp,
-            "soil_pct": soil_pct,
-            "wqi": wqi,
-            "pump_pct": pump_pct,
+            "soil_pct":   soil_pct,
+            "wqi":        wqi,
+            "pump_pct":   pump_pct,
             "need_water": need_water,
-            "pressure": [p0_x100 / 100.0, p1_x100 / 100.0, p2_x100 / 100.0],
+            "pressure":   pressure,
             "alarm_flags": alarm_flags,
         },
+        # 与后端 /api/sensors/ingest 及 SensorSnapshot 字段一一对应
         "ingest": {
-            "temperature": round(water_temp, 2),
-            "ph": ph,
-            "oxygen": oxygen,
-            "turbidity": turbidity,
+            "water_temp":    water_temp,
+            "air_temp":      air_temp,
+            "air_humidity":  air_humi,
+            "wqi":           float(wqi),
             "soil_moisture": float(soil_pct),
         },
     }
@@ -203,9 +196,9 @@ def run(port: str, baud: int, backend: str, verbose: bool) -> None:
             if verbose:
                 raw = parsed["raw"]
                 log.info(
-                    "水温=%.1f°C  WQI=%d  土壤=%d%%  泵=%d%%  告警=0x%08X",
-                    raw["water_temp"], raw["wqi"], raw["soil_pct"],
-                    raw["pump_pct"], raw["alarm_flags"],
+                    "水温=%.1f°C  空气=%.1f°C/%.1f%%RH  WQI=%d  土壤=%d%%  泵=%d%%  告警=0x%08X",
+                    raw["water_temp"], raw["air_temp"], raw["air_humidity"],
+                    raw["wqi"], raw["soil_pct"], raw["pump_pct"], raw["alarm_flags"],
                 )
 
             ok = post_ingest(backend, parsed["ingest"])

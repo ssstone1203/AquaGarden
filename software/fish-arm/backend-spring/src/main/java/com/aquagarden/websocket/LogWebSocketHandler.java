@@ -58,10 +58,10 @@ public class LogWebSocketHandler extends TextWebSocketHandler {
         Map<String, Object> m = new HashMap<>();
         m.put("type", "sensor_data");
         m.put("timestamp", Instant.now().toString());
-        m.put("temperature", s.temperature());
-        m.put("ph", s.ph());
-        m.put("oxygen", s.oxygen());
-        m.put("turbidity", s.turbidity());
+        m.put("water_temp",    s.waterTemp());
+        m.put("air_temp",      s.airTemp());
+        m.put("air_humidity",  s.airHumidity());
+        m.put("wqi",           s.wqi());
         m.put("soil_moisture", s.soilMoisture());
         broadcastObject(m);
     }

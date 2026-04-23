@@ -40,6 +40,9 @@
 extern volatile float g_sht30_temperature_c;
 extern volatile float g_sht30_temperature_f; /* °F，由摄氏度换算 */
 extern volatile float g_sht30_humidity_rh;
+extern volatile float g_sht30_temp_offset_c;     /* 温度补偿（°C），显示值 = 原始换算值 + offset */
+extern volatile float g_sht30_humidity_offset_rh;/* 湿度补偿（%RH），显示值 = 原始换算值 + offset */
+extern volatile uint8_t g_sht30_filter_enable;   /* 0=关闭滤波，1=开启IIR滤波 */
 /* 手册中的原始 16 位输出（0～65535，换算前；大端 MSB 在前） */
 extern volatile uint16_t g_sht30_temperature_raw;
 extern volatile uint16_t g_sht30_humidity_raw;
@@ -64,5 +67,10 @@ void sht30_set_address_7bit(uint8_t i2c_address_7bit);
  */
 fsp_err_t sht30_measure_single_shot(float * temperature_c, float * humidity_rh_percent, float * temperature_f,
     bool verify_crc);
+
+/**
+ * 设置显示补偿量（不会改动原始 tick 值）。
+ */
+void sht30_set_compensation(float temp_offset_c, float humidity_offset_rh);
 
 #endif

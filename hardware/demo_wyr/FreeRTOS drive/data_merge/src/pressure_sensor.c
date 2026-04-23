@@ -32,6 +32,22 @@ static const float g_pressure_voltage_full_scale_v[PRESSURE_SENSOR_COUNT] =
 };
 
 static bool g_pressure_sensor_inited = false;
+static adc_cfg_t g_pressure_adc_cfg_runtime;
+static bool g_pressure_adc_cfg_ready = false;
+
+static fsp_err_t pressure_apply_scan_mask(void)
+{
+    adc_channel_cfg_t const * p_default_cfg = (adc_channel_cfg_t const *) g_adc.p_channel_cfg;
+    adc_channel_cfg_t channel_cfg = *p_default_cfg;
+    uint32_t pressure_mask = ((1UL << ADC_CHANNEL_0) | (1UL << ADC_CHANNEL_1) | (1UL << ADC_CHANNEL_2));
+
+    channel_cfg.scan_mask = pressure_mask;
+    channel_cfg.scan_mask_group_b = 0U;
+    channel_cfg.add_mask = 0U;
+    channel_cfg.sample_hold_mask = 0U;
+
+    return g_adc.p_api->scanCfg(g_adc.p_ctrl, &channel_cfg);
+}
 
 static fsp_err_t pressure_do_single_scan(void)
 {
@@ -42,6 +58,7 @@ static fsp_err_t pressure_do_single_scan(void)
     }
 
     adc_status_t adc_status;
+    uint32_t timeout = 100000U;
     do
     {
         err = g_adc.p_api->scanStatusGet(g_adc.p_ctrl, &adc_status);
@@ -49,7 +66,14 @@ static fsp_err_t pressure_do_single_scan(void)
         {
             return err;
         }
-    } while (ADC_STATE_SCAN_IN_PROGRESS == adc_status.state);
+        timeout--;
+    } while ((ADC_STATE_SCAN_IN_PROGRESS == adc_status.state) && (timeout > 0U));
+
+    if (0U == timeout)
+    {
+        (void) g_adc.p_api->scanStop(g_adc.p_ctrl);
+        return FSP_ERR_TIMEOUT;
+    }
 
     return FSP_SUCCESS;
 }
@@ -95,13 +119,20 @@ fsp_err_t pressure_sensor_init(void)
         return FSP_SUCCESS;
     }
 
-    fsp_err_t err = g_adc.p_api->open(g_adc.p_ctrl, g_adc.p_cfg);
+    if (!g_pressure_adc_cfg_ready)
+    {
+        g_pressure_adc_cfg_runtime = *g_adc.p_cfg;
+        g_pressure_adc_cfg_runtime.mode = ADC_MODE_SINGLE_SCAN;
+        g_pressure_adc_cfg_ready = true;
+    }
+
+    fsp_err_t err = g_adc.p_api->open(g_adc.p_ctrl, &g_pressure_adc_cfg_runtime);
     if (FSP_SUCCESS != err)
     {
         return err;
     }
 
-    err = g_adc.p_api->scanCfg(g_adc.p_ctrl, g_adc.p_channel_cfg);
+    err = pressure_apply_scan_mask();
     if (FSP_SUCCESS != err)
     {
         return err;
@@ -133,13 +164,20 @@ fsp_err_t pressure_sensor_read(pressure_sample_t * p_sample)
         ADC_CHANNEL_2
     };
 
+    /* Soil ADC shares ADC0 and switches channel list at runtime; restore pressure channels before each read. */
+    fsp_err_t err = pressure_apply_scan_mask();
+    if (FSP_SUCCESS != err)
+    {
+        return err;
+    }
+
     uint32_t raw_accum[PRESSURE_SENSOR_COUNT] = {0U};
 
     /*
      * Dummy scan for mux/sample capacitor settling.
      * This helps reduce inter-channel coupling on higher-impedance analog sources.
      */
-    fsp_err_t err = pressure_do_single_scan();
+    err = pressure_do_single_scan();
     if (FSP_SUCCESS != err)
     {
         return err;

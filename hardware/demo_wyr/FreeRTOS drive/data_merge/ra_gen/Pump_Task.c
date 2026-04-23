@@ -45,7 +45,7 @@ const gpt_extended_cfg_t g_pump_timer_extend =
                 .stop_level     = GPT_PIN_LEVEL_LOW
               },
     .gtiocb = { .output_enabled = true,
-                .stop_level     = GPT_PIN_LEVEL_HIGH
+                .stop_level     = GPT_PIN_LEVEL_LOW
               },
     .start_source        = (gpt_source_t) ( GPT_SOURCE_NONE),
     .stop_source         = (gpt_source_t) ( GPT_SOURCE_NONE),

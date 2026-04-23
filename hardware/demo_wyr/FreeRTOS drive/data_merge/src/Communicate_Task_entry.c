@@ -19,7 +19,18 @@ enum
     HOST_CMD_SET_MANUAL_PUMP = 0x01U,
     HOST_CMD_SET_SOIL_CFG    = 0x02U,
     HOST_CMD_SET_LINKAGE_CFG = 0x03U,
+    HOST_CMD_PUMP_START      = 0x04U,
+    HOST_CMD_PUMP_STOP       = 0x05U,
+    HOST_CMD_SET_PUMP_PWM    = 0x06U,
+    HOST_CMD_SET_PUMP_AUTO   = 0x07U,
+    HOST_CMD_SET_PUMP_CYCLE_CFG = 0x08U,
+    HOST_CMD_SET_PUMP_CYCLE_CTRL = 0x09U,
 };
+
+static uint8_t host_clamp_percent_u8(uint8_t value)
+{
+    return (value > 100U) ? 100U : value;
+}
 
 static uint16_t host_crc16_modbus(const uint8_t * p_data, uint16_t len)
 {
@@ -182,6 +193,14 @@ static uint16_t host_u16_get(const uint8_t * p_buf)
     return (uint16_t) ((uint16_t) p_buf[0] | ((uint16_t) p_buf[1] << 8U));
 }
 
+static uint32_t host_u32_get(const uint8_t * p_buf)
+{
+    return ((uint32_t) p_buf[0]) |
+           ((uint32_t) p_buf[1] << 8U) |
+           ((uint32_t) p_buf[2] << 16U) |
+           ((uint32_t) p_buf[3] << 24U);
+}
+
 static int16_t host_i16_get(const uint8_t * p_buf)
 {
     return (int16_t) host_u16_get(p_buf);
@@ -238,7 +257,7 @@ static void host_update_alarm_flags(void)
 static uint16_t host_build_uplink_frame(uint8_t * p_out)
 {
     uint8_t * p = p_out;
-    uint8_t payload[40];
+    uint8_t payload[48];
     uint8_t * q = payload;
 
     host_u32_put(q, g_jscope_time_ms); q += 4;
@@ -256,6 +275,12 @@ static uint16_t host_build_uplink_frame(uint8_t * p_out)
     host_u16_put(q, (uint16_t) g_air_retry_count); q += 2;
     host_u16_put(q, (uint16_t) g_wqs_retry_count); q += 2;
     host_u16_put(q, (uint16_t) g_uwt_retry_count); q += 2;
+    *q++ = g_pump_cycle_enable;
+    *q++ = g_pump_cycle_start;
+    *q++ = g_pump_cycle_active;
+    *q++ = g_pump_cycle_state;
+    *q++ = g_pump_cycle_power_percent;
+    host_u16_put(q, (uint16_t) g_pump_cycle_done_count); q += 2;
 
     uint16_t payload_len = (uint16_t) (q - payload);
     *p++ = HOST_UPLINK_SYNC0;
@@ -282,19 +307,15 @@ static void host_apply_command(uint8_t cmd, const uint8_t * p_payload, uint8_t l
             if (len >= 2U)
             {
                 g_pump_manual_mode = (0U != p_payload[0]) ? 1U : 0U;
-                g_pump_manual_power_percent = p_payload[1];
-                if (g_pump_manual_power_percent > 100U)
-                {
-                    g_pump_manual_power_percent = 100U;
-                }
+                g_pump_manual_power_percent = host_clamp_percent_u8(p_payload[1]);
             }
             break;
 
         case HOST_CMD_SET_SOIL_CFG:
             if (len >= 2U)
             {
-                g_soil_watering_threshold = p_payload[0];
-                g_soil_watering_hysteresis = p_payload[1];
+                g_soil_watering_threshold = host_clamp_percent_u8(p_payload[0]);
+                g_soil_watering_hysteresis = host_clamp_percent_u8(p_payload[1]);
             }
             break;
 
@@ -318,6 +339,76 @@ static void host_apply_command(uint8_t cmd, const uint8_t * p_payload, uint8_t l
                 {
                     g_ctrl_water_temp_high_c = 100.0F;
                 }
+            }
+            break;
+
+        case HOST_CMD_PUMP_START:
+            /* Optional payload[0] as start speed percentage; if omitted, keep previous manual power. */
+            g_pump_manual_mode = 1U;
+            if (len >= 1U)
+            {
+                g_pump_manual_power_percent = host_clamp_percent_u8(p_payload[0]);
+                g_pump_cycle_power_percent = g_pump_manual_power_percent;
+            }
+            if (0U == g_pump_manual_power_percent)
+            {
+                g_pump_manual_power_percent = 60U;
+                g_pump_cycle_power_percent = 60U;
+            }
+            break;
+
+        case HOST_CMD_PUMP_STOP:
+            g_pump_manual_mode = 1U;
+            g_pump_manual_power_percent = 0U;
+            break;
+
+        case HOST_CMD_SET_PUMP_PWM:
+            if (len >= 1U)
+            {
+                g_pump_manual_mode = 1U;
+                g_pump_manual_power_percent = host_clamp_percent_u8(p_payload[0]);
+                g_pump_cycle_power_percent = g_pump_manual_power_percent;
+            }
+            break;
+
+        case HOST_CMD_SET_PUMP_AUTO:
+            g_pump_manual_mode = 0U;
+            break;
+
+        case HOST_CMD_SET_PUMP_CYCLE_CFG:
+            /*
+             * Payload format (11 bytes):
+             * [0]=enable, [1]=start, [2]=power%
+             * [3..4]=run_ms, [5..6]=stop_ms, [7..8]=interval_ms, [9..10]=total_count
+             */
+            if (len >= 11U)
+            {
+                g_pump_cycle_enable = (0U != p_payload[0]) ? 1U : 0U;
+                g_pump_cycle_start = (0U != p_payload[1]) ? 1U : 0U;
+                g_pump_cycle_power_percent = host_clamp_percent_u8(p_payload[2]);
+                g_pump_cycle_run_time_ms = host_u16_get(&p_payload[3]);
+                g_pump_cycle_stop_time_ms = host_u16_get(&p_payload[5]);
+                g_pump_cycle_interval_time_ms = host_u16_get(&p_payload[7]);
+                g_pump_cycle_total_count = host_u16_get(&p_payload[9]);
+            }
+            break;
+
+        case HOST_CMD_SET_PUMP_CYCLE_CTRL:
+            /*
+             * Payload format:
+             * [0]=enable (optional), [1]=start (optional), [2..5]=total_count (optional)
+             */
+            if (len >= 1U)
+            {
+                g_pump_cycle_enable = (0U != p_payload[0]) ? 1U : 0U;
+            }
+            if (len >= 2U)
+            {
+                g_pump_cycle_start = (0U != p_payload[1]) ? 1U : 0U;
+            }
+            if (len >= 6U)
+            {
+                g_pump_cycle_total_count = host_u32_get(&p_payload[2]);
             }
             break;
 
