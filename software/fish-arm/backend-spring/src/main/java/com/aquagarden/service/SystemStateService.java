@@ -93,6 +93,16 @@ public class SystemStateService {
         return new HashMap<>(pos);
     }
 
+    /** 模拟舵机角度（6路，0-180°），每次调用产生微小随机抖动以体现"运行中"状态。 */
+    public int[] getServoAngles() {
+        int[] base = {90, 45, 120, 60, 90, 30};
+        int[] result = new int[base.length];
+        for (int i = 0; i < base.length; i++) {
+            result[i] = Math.max(0, Math.min(180, base[i] + (int)(random.nextDouble() * 4 - 2)));
+        }
+        return result;
+    }
+
     public Instant now() {
         return Instant.now();
     }

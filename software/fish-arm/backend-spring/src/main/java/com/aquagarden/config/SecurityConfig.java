@@ -39,6 +39,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/users").permitAll()
                         .requestMatchers("/api/video/**").permitAll()
                         .requestMatchers("/api/sensors/ingest").permitAll()
+                        .requestMatchers("/api/sensors/history").permitAll()
+                        .requestMatchers("/api/robot/status").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
