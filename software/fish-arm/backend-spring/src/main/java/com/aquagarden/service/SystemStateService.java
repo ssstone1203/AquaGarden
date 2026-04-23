@@ -17,6 +17,9 @@ public class SystemStateService {
     private final AtomicReference<Map<String, Integer>> robotPosition = new AtomicReference<>(basePosition());
     private final Random random = new Random();
 
+    /** 最近一次由硬件桥接脚本推送的真实传感器快照，null 表示尚未收到真实数据 */
+    private final AtomicReference<SensorSnapshot> latestReal = new AtomicReference<>(null);
+
     private static Map<String, Integer> basePosition() {
         Map<String, Integer> m = new HashMap<>();
         m.put("x", 0);
@@ -25,7 +28,25 @@ public class SystemStateService {
         return m;
     }
 
-    public synchronized SensorSnapshot readSensorsWithNoise() {
+    /**
+     * 接收来自串口桥接脚本的真实传感器数据。
+     * 字段映射（与 MCU Communicate_Task_entry.c 帧字段对应）：
+     *   temperature  ← air_temp_x10 / 10.0  (SHT30 空气温度，也可换成 water_temp_x10)
+     *   ph           ← 暂用 wqs_info_wqi / 14.0 * 14 归一后映射，或由桥接脚本直接换算
+     *   oxygen       ← 保留字段（WQM11S 完整帧里有 DO，但主帧只上报 WQI）
+     *   turbidity    ← 保留字段
+     *   soilMoisture ← soil_moisture_pct
+     */
+    public void updateFromHardware(SensorSnapshot snapshot) {
+        latestReal.set(snapshot);
+    }
+
+    /** 有真实数据时返回真实值，否则返回带随机扰动的模拟值（演示 / 未接硬件时使用）。 */
+    public SensorSnapshot readSensorsWithNoise() {
+        SensorSnapshot real = latestReal.get();
+        if (real != null) {
+            return real;
+        }
         double temperature = round(25.0 + random.nextDouble() - 0.5, 2);
         double ph = round(7.0 + (random.nextDouble() * 0.4 - 0.2), 2);
         double oxygen = round(8.0 + (random.nextDouble() * 0.6 - 0.3), 2);

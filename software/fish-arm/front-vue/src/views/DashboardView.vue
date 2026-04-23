@@ -269,11 +269,28 @@ let ws = null
 let sensorTimer = null
 let camTimer = null
 
+function applySnapshot(d) {
+  if (d.temperature != null) { temp.value = String(d.temperature); pushHistory(tempHistory, d.temperature) }
+  if (d.ph != null)          { ph.value = String(d.ph);           pushHistory(phHistory, d.ph) }
+  if (d.oxygen != null)      { oxygen.value = String(d.oxygen);   pushHistory(oxygenHistory, d.oxygen) }
+  if (d.turbidity != null)   { turbidity.value = String(d.turbidity); pushHistory(turbidityHistory, d.turbidity) }
+  if (d.soil_moisture != null) { soilMoisture.value = String(d.soil_moisture); pushHistory(moistureHistory, d.soil_moisture) }
+}
+
 function connectWs() {
   try {
     ws = new WebSocket(wsLogsUrl())
-    ws.onmessage = () => {}
+    ws.onmessage = (event) => {
+      try {
+        const d = JSON.parse(event.data)
+        if (d.type === 'sensor_data') applySnapshot(d)
+      } catch { /* ignore malformed messages */ }
+    }
     ws.onerror = () => {}
+    ws.onclose = () => {
+      // 断线后 5 秒重连
+      setTimeout(connectWs, 5000)
+    }
   } catch {
     /* ignore */
   }

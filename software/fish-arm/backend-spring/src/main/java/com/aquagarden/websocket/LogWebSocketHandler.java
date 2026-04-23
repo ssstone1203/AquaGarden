@@ -1,5 +1,6 @@
 package com.aquagarden.websocket;
 
+import com.aquagarden.dto.SensorSnapshot;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +28,11 @@ public class LogWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionEstablished(WebSocketSession session) {
         sessions.add(session);
         log.info("WebSocket连接建立，当前连接数: {}", sessions.size());
-        sendJson(session, logEntry("system", "WebSocket连接已建立"));
+        Map<String, Object> welcome = new HashMap<>();
+        welcome.put("timestamp", Instant.now().toString());
+        welcome.put("type", "system");
+        welcome.put("message", "WebSocket连接已建立");
+        sendJson(session, welcome);
     }
 
     @Override
@@ -37,22 +42,31 @@ public class LogWebSocketHandler extends TextWebSocketHandler {
     }
 
     public void broadcastLog(String type, String message) {
-        broadcastJson(logEntry(type, message));
-    }
-
-    public void broadcastHeartbeat() {
-        broadcastJson(logEntry("heartbeat", "ping"));
-    }
-
-    private Map<String, String> logEntry(String type, String message) {
-        Map<String, String> m = new HashMap<>();
+        Map<String, Object> m = new HashMap<>();
         m.put("timestamp", Instant.now().toString());
         m.put("type", type);
         m.put("message", message);
-        return m;
+        broadcastObject(m);
     }
 
-    private void broadcastJson(Map<String, String> payload) {
+    public void broadcastHeartbeat() {
+        broadcastLog("heartbeat", "ping");
+    }
+
+    /** 向所有已连接前端推送最新传感器快照，消息 type = "sensor_data"。 */
+    public void broadcastSensorData(SensorSnapshot s) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("type", "sensor_data");
+        m.put("timestamp", Instant.now().toString());
+        m.put("temperature", s.temperature());
+        m.put("ph", s.ph());
+        m.put("oxygen", s.oxygen());
+        m.put("turbidity", s.turbidity());
+        m.put("soil_moisture", s.soilMoisture());
+        broadcastObject(m);
+    }
+
+    private void broadcastObject(Object payload) {
         String json;
         try {
             json = objectMapper.writeValueAsString(payload);
@@ -70,7 +84,7 @@ public class LogWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    private void sendJson(WebSocketSession session, Map<String, String> payload) {
+    private void sendJson(WebSocketSession session, Object payload) {
         try {
             session.sendMessage(new TextMessage(objectMapper.writeValueAsString(payload)));
         } catch (Exception e) {
