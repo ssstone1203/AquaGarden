@@ -47,9 +47,9 @@ PAYLOAD 字段（30 字节，均为小端）：
 """
 
 import argparse
+import logging
 import struct
 import time
-import logging
 
 import requests
 import serial
@@ -66,6 +66,7 @@ SYNC1 = 0xAA
 HEADER_LEN = 6   # sync0 + sync1 + version + seq + payload_len(2)
 CRC_LEN = 2
 EXPECTED_PAYLOAD_LEN = 30
+PUSH_INTERVAL_SEC = 1.0
 
 
 def crc16_modbus(data: bytes) -> int:
@@ -161,14 +162,19 @@ def read_frame(ser: serial.Serial) -> bytes | None:
     return frame
 
 
-def post_ingest(backend: str, data: dict, timeout: float = 2.0) -> bool:
+def post_ingest(backend: str, data: dict, timeout: float = 5.0) -> tuple[bool, str]:
     url = backend.rstrip("/") + "/api/sensors/ingest"
     try:
         r = requests.post(url, json=data, timeout=timeout)
-        return r.status_code == 200
+        if r.ok:
+            return True, f"HTTP {r.status_code}"
+
+        detail = r.text.strip()
+        if len(detail) > 200:
+            detail = detail[:200] + "..."
+        return False, f"HTTP {r.status_code} {detail or '(empty body)'}"
     except requests.RequestException as e:
-        log.warning("POST 失败：%s", e)
-        return False
+        return False, str(e)
 
 
 def run(port: str, baud: int, backend: str, verbose: bool) -> None:
@@ -176,6 +182,7 @@ def run(port: str, baud: int, backend: str, verbose: bool) -> None:
     with serial.Serial(port, baud, timeout=1.0) as ser:
         log.info("串口已打开，开始监听…")
         fail_streak = 0
+        last_push_at = 0.0
         while True:
             frame = read_frame(ser)
             if frame is None:
@@ -201,14 +208,22 @@ def run(port: str, baud: int, backend: str, verbose: bool) -> None:
                     raw["wqi"], raw["soil_pct"], raw["pump_pct"], raw["alarm_flags"],
                 )
 
-            ok = post_ingest(backend, parsed["ingest"])
+            ingest_data = parsed["ingest"]
+            now = time.monotonic()
+            if now - last_push_at < PUSH_INTERVAL_SEC:
+                continue
+
+            ok, reason = post_ingest(backend, ingest_data)
+            last_push_at = now
             if not ok:
-                log.warning("推送失败，数据：%s", parsed["ingest"])
+                log.warning("推送失败：%s，数据：%s", reason, ingest_data)
+            else:
+                log.info("推送成功（1s 节流）：%s", ingest_data)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="MCU UART → Spring Boot 传感器桥接")
-    parser.add_argument("--port", default="COM3", help="串口号（Windows: COM3，Linux: /dev/ttyUSB0）")
+    parser.add_argument("--port", default="COM20", help="串口号（Windows: COM3，Linux: /dev/ttyUSB0）")
     parser.add_argument("--baud", type=int, default=115200, help="波特率，默认 115200")
     parser.add_argument("--backend", default="http://localhost:8090", help="Spring Boot 后端地址")
     parser.add_argument("--verbose", action="store_true", help="打印每帧解析结果")
