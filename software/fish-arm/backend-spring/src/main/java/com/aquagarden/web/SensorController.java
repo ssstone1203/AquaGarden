@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.aquagarden.dto.SensorSnapshot;
 import com.aquagarden.entity.SensorReading;
 import com.aquagarden.repo.SensorReadingRepository;
+import com.aquagarden.service.SensorReadingRetentionService;
 import com.aquagarden.service.SystemStateService;
 import com.aquagarden.websocket.LogWebSocketHandler;
 
@@ -27,13 +28,16 @@ public class SensorController {
     private final SystemStateService systemStateService;
     private final LogWebSocketHandler wsHandler;
     private final SensorReadingRepository readingRepo;
+    private final SensorReadingRetentionService retentionService;
 
     public SensorController(SystemStateService systemStateService,
                             LogWebSocketHandler wsHandler,
-                            SensorReadingRepository readingRepo) {
+                            SensorReadingRepository readingRepo,
+                            SensorReadingRetentionService retentionService) {
         this.systemStateService = systemStateService;
         this.wsHandler          = wsHandler;
         this.readingRepo        = readingRepo;
+        this.retentionService   = retentionService;
     }
 
     /**
@@ -143,6 +147,7 @@ public class SensorController {
         readingRepo.save(new SensorReading(
             Instant.now(), waterTemp, airTemp, airHumidity, wqi, soilMoisture
         ));
+        retentionService.enforceMaxRecordWindow();
 
         return ResponseEntity.ok().build();
     }

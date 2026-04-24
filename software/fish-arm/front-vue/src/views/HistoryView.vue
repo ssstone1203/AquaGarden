@@ -58,10 +58,13 @@
     <div class="chart-card">
       <div class="chart-card-header">
         <h3><i class="fas fa-chart-line"></i> 传感器趋势图</h3>
-        <div class="chart-legend">
+        <div class="chart-legend-wrap">
+          <div class="chart-legend">
           <span v-for="m in activeMetricsMeta" :key="m.key" class="legend-item">
             <span class="legend-dot" :style="{ background: m.color }"></span>{{ m.label }}
           </span>
+          </div>
+          <span class="chart-note">最近 60 条数据，按各指标波动自适应缩放</span>
         </div>
       </div>
       <div class="multi-chart-wrap">
@@ -88,9 +91,18 @@
               :points="linePoints(m.key)"
               fill="none"
               :stroke="m.color"
-              stroke-width="2"
+              stroke-width="2.6"
               stroke-linejoin="round"
               stroke-linecap="round"
+            />
+            <circle
+              v-if="latestPoint(m.key)"
+              :cx="latestPoint(m.key).x"
+              :cy="latestPoint(m.key).y"
+              r="3.8"
+              :fill="m.color"
+              stroke="rgba(15,23,42,0.85)"
+              stroke-width="1.5"
             />
           </g>
           <!-- X 轴时间标签（每隔几个显示一个） -->
@@ -152,7 +164,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { apiUrl, authHeaders } from '@/api/http'
 
 const SVG_W = 800, SVG_H = 220
@@ -193,10 +205,15 @@ const timeRange = ref('24h')
 const allData = ref([])
 const currentPage = ref(1)
 const pageSize = 20
+let refreshTimer = null
+
+const chronologicalData = computed(() => allData.value)
+const latestFirstData = computed(() => [...chronologicalData.value].reverse())
+const visibleChartData = computed(() => chronologicalData.value.slice(-60))
 
 const filteredData = computed(() => {
-  if (!dataType.value) return allData.value
-  return allData.value.filter(r => r[dataType.value] != null)
+  if (!dataType.value) return latestFirstData.value
+  return latestFirstData.value.filter(r => r[dataType.value] != null)
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredData.value.length / pageSize)))
@@ -221,10 +238,10 @@ function goToPage(p) {
 
 // Stats
 function statFor(key) {
-  const vals = allData.value.map(r => parseFloat(r[key])).filter(v => !isNaN(v))
+  const vals = chronologicalData.value.map(r => parseFloat(r[key])).filter(v => !isNaN(v))
   if (!vals.length) return { cur: '--', min: '--', max: '--', avg: '--' }
   return {
-    cur: vals[0].toFixed(2),
+    cur: vals[vals.length - 1].toFixed(2),
     min: Math.min(...vals).toFixed(2),
     max: Math.max(...vals).toFixed(2),
     avg: (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2),
@@ -232,29 +249,68 @@ function statFor(key) {
 }
 
 // Chart helpers
-function linePoints(key) {
+function metricBounds(key) {
   const meta = metrics.find(m => m.key === key)
-  const vals = allData.value.slice(0, 60).map(r => parseFloat(r[key]))
-  if (vals.length < 2) return ''
-  const range = meta.rangeMax - meta.rangeMin || 1
+  const vals = visibleChartData.value.map(r => parseFloat(r[key])).filter(v => !isNaN(v))
+  if (!vals.length) return { min: meta.rangeMin, max: meta.rangeMax }
+
+  const fullSpan = meta.rangeMax - meta.rangeMin || 1
+  const minVisualSpan = Math.max(fullSpan * 0.03, 0.5)
+
+  let min = Math.min(...vals)
+  let max = Math.max(...vals)
+  let span = max - min
+
+  if (span < minVisualSpan) {
+    const mid = (min + max) / 2
+    min = mid - minVisualSpan / 2
+    max = mid + minVisualSpan / 2
+    span = minVisualSpan
+  }
+
+  const padding = Math.max(span * 0.18, fullSpan * 0.01)
+  return { min: min - padding, max: max + padding }
+}
+
+function lineCoordinates(key) {
+  const vals = visibleChartData.value.map(r => parseFloat(r[key]))
+  if (vals.length < 2) return []
+
+  const bounds = metricBounds(key)
+  const range = bounds.max - bounds.min || 1
+
   return vals.map((v, i) => {
     const x = PAD_L + (i / (vals.length - 1)) * CHART_W
-    const y = PAD_T + CHART_H - ((v - meta.rangeMin) / range) * CHART_H
-    return `${x.toFixed(1)},${Math.max(PAD_T, Math.min(PAD_T + CHART_H, y)).toFixed(1)}`
-  }).join(' ')
+    const y = PAD_T + CHART_H - ((v - bounds.min) / range) * CHART_H
+    return {
+      x: x.toFixed(1),
+      y: Math.max(PAD_T, Math.min(PAD_T + CHART_H, y)).toFixed(1),
+    }
+  })
+}
+
+function linePoints(key) {
+  return lineCoordinates(key)
+    .map(p => `${p.x},${p.y}`)
+    .join(' ')
 }
 
 function areaPoints(key) {
-  const line = linePoints(key)
-  if (!line) return ''
+  const coords = lineCoordinates(key)
+  if (!coords.length) return ''
   const firstX = PAD_L
   const lastX = PAD_L + CHART_W
   const baseY = PAD_T + CHART_H
-  return `${firstX},${baseY} ${line} ${lastX},${baseY}`
+  return `${firstX},${baseY} ${coords.map(p => `${p.x},${p.y}`).join(' ')} ${lastX},${baseY}`
+}
+
+function latestPoint(key) {
+  const coords = lineCoordinates(key)
+  return coords.length ? coords[coords.length - 1] : null
 }
 
 const xLabels = computed(() => {
-  const data = allData.value.slice(0, 60)
+  const data = visibleChartData.value
   if (data.length < 2) return []
   const step = Math.max(1, Math.floor(data.length / 6))
   return data.filter((_, i) => i % step === 0).map(r => {
@@ -298,12 +354,12 @@ async function queryData() {
     const r = await fetch(apiUrl('/api/sensors/history') + `?range=${timeRange.value}`, { headers: authHeaders() })
     if (r.ok) {
       allData.value = await r.json()
-      currentPage.value = 1
+      if (currentPage.value > totalPages.value) currentPage.value = totalPages.value
       return
     }
   } catch { /* fallback */ }
   allData.value = generateHistoricalData(120)
-  currentPage.value = 1
+  if (currentPage.value > totalPages.value) currentPage.value = totalPages.value
 }
 
 function exportData() {
@@ -318,7 +374,14 @@ function exportData() {
   URL.revokeObjectURL(url)
 }
 
-onMounted(() => { queryData() })
+onMounted(() => {
+  queryData()
+  refreshTimer = setInterval(queryData, 5000)
+})
+
+onBeforeUnmount(() => {
+  if (refreshTimer) clearInterval(refreshTimer)
+})
 </script>
 
 <style scoped>
@@ -380,9 +443,11 @@ onMounted(() => { queryData() })
 }
 .chart-card-header h3 { font-size: 15px; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
 .chart-card-header h3 i { color: var(--primary-color); }
+.chart-legend-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .chart-legend { display: flex; gap: 14px; flex-wrap: wrap; }
 .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-secondary); }
 .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+.chart-note { font-size: 11px; color: var(--text-secondary); opacity: 0.85; }
 .multi-chart-wrap { padding: 12px 16px 4px; }
 .multi-chart-svg { width: 100%; display: block; }
 
