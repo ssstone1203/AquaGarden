@@ -11,10 +11,23 @@
                 #else
                 extern void Communicate_Task_entry(void * pvParameters);
                 #endif
+#include "r_sci_uart.h"
+            #include "r_uart_api.h"
 #include "r_dmac.h"
 #include "r_transfer_api.h"
 #include "r_spi.h"
 FSP_HEADER
+/** UART on SCI Instance. */
+            extern const uart_instance_t      g_com_uart0;
+
+            /** Access the UART instance using these structures when calling API functions directly (::p_api is not used). */
+            extern sci_uart_instance_ctrl_t     g_com_uart0_ctrl;
+            extern const uart_cfg_t g_com_uart0_cfg;
+            extern const sci_uart_extended_cfg_t g_com_uart0_cfg_extend;
+
+            #ifndef NULL
+            void NULL(uart_callback_args_t * p_args);
+            #endif
 /* Transfer on DMAC Instance. */
 extern const transfer_instance_t g_com_spi_rx;
 

@@ -10,7 +10,7 @@
       <TargetName>Target_1</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>6240000::V6.24::ARMCLANG</pCCUsed>
+      <pCCUsed>6220000::V6.22::ARMCLANG</pCCUsed>
       <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -382,16 +382,6 @@
       </TargetOption>
       <Groups>
         <Group>
-          <GroupName>Source Group 1</GroupName>
-          <Files>
-            <File>
-              <FileName>heap_4.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>D:\FreeRTOS-Kernel-main\FreeRTOS-Kernel-main\portable\MemMang\heap_4.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>:Renesas RA Smart Configurator:Common Sources</GroupName>
           <Files>
             <File>
@@ -463,6 +453,51 @@
               <FileName>pump_drv8870.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\pump_drv8870.c</FilePath>
+            </File>
+            <File>
+              <FileName>ds18b20.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\ds18b20.h</FilePath>
+            </File>
+            <File>
+              <FileName>frontend_control_protocol.md</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\frontend_control_protocol.md</FilePath>
+            </File>
+            <File>
+              <FileName>new_thread0.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\new_thread0.h</FilePath>
+            </File>
+            <File>
+              <FileName>pressure_sensor.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\pressure_sensor.h</FilePath>
+            </File>
+            <File>
+              <FileName>pump_drv8870.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\pump_drv8870.h</FilePath>
+            </File>
+            <File>
+              <FileName>sensor_fusion.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\sensor_fusion.h</FilePath>
+            </File>
+            <File>
+              <FileName>sht30.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\sht30.h</FilePath>
+            </File>
+            <File>
+              <FileName>soil_moisture_adc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\soil_moisture_adc.h</FilePath>
+            </File>
+            <File>
+              <FileName>wqs_sensor.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\wqs_sensor.h</FilePath>
             </File>
           </Files>
         </Group>

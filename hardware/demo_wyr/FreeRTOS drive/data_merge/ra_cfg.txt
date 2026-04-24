@@ -80,7 +80,7 @@ FSP Configuration
   Clocks
     XTAL 20000000Hz
     HOCO 20MHz
-    PLL Src: XTAL
+    PLL Src: HOCO
     PLL Div /1
     PLL Mul x10.0
     Clock Src: PLL
@@ -224,7 +224,7 @@ FSP Configuration
     General: Message Buffer Length Type: size_t
     Memory Allocation: Clear Memory on Free: Disabled
     Memory Allocation: Support Static Allocation: Enabled
-    Memory Allocation: Support Dynamic Allocation: Enabled
+    Memory Allocation: Support Dynamic Allocation: Disabled
     Memory Allocation: Total Heap Size: 1024
     Memory Allocation: Application Allocated Heap: Disabled
     Stats: Generate Run Time Stats: Disabled
@@ -507,3 +507,32 @@ FSP Configuration
         Offset value (Valid only when address mode is \'Offset\'): 1
         Source Buffer Size: 1
         
+    Instance "g_com_uart0 UART (r_sci_uart)"
+      General: Name: g_com_uart0
+      General: Channel: 0
+      General: Data Bits: 8bits
+      General: Parity: None
+      General: Stop Bits: 1bit
+      Baud: Baud Rate: 115200
+      Baud: Baud Rate Modulation: Disabled
+      Baud: Max Error (%): 5
+      Flow Control: CTS/RTS Selection: Hardware RTS
+      Flow Control: Software RTS Port: Disabled
+      Flow Control: Software RTS Pin: Disabled
+      Extra: Clock Source: Internal Clock
+      Extra: Start bit detection: Falling Edge
+      Extra: Noise Filter: Disable
+      Extra: Receive FIFO Trigger Level: Max
+      Extra: IrDA: Enable: Disabled
+      Extra: IrDA: RXD Polarity Switching: Normal
+      Extra: IrDA: TXD Polarity Switching: Normal
+      Extra: RS-485: DE Pin: Disable
+      Extra: RS-485: DE Pin Polarity: Active High
+      Extra: RS-485: DE Port Number: Disabled
+      Extra: RS-485: DE Pin Number: Disabled
+      Interrupts: Callback: NULL
+      Interrupts: Receive Interrupt Priority: Priority 12
+      Interrupts: Transmit Data Empty Interrupt Priority: Priority 12
+      Interrupts: Transmit End Interrupt Priority: Priority 12
+      Interrupts: Error Interrupt Priority: Priority 12
+      

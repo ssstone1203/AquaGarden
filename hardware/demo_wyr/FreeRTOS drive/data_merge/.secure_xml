@@ -19,7 +19,7 @@
     <node id="board.clock.loco.freq" option="board.clock.loco.freq.32768"/>
     <node id="board.clock.moco.freq" option="board.clock.moco.freq.8m"/>
     <node id="board.clock.subclk.freq" option="board.clock.subclk.freq.32768"/>
-    <node id="board.clock.pll.source" option="board.clock.pll.source.xtal"/>
+    <node id="board.clock.pll.source" option="board.clock.pll.source.hoco"/>
     <node id="board.clock.pll.div" option="board.clock.pll.div.1"/>
     <node id="board.clock.pll.mul" option="board.clock.pll.mul.100"/>
     <node id="board.clock.pll.display" option="board.clock.pll.display.value"/>
@@ -67,8 +67,8 @@
       <configSetting altId="p206.output.high" configurationId="p206"/>
       <configSetting altId="p302.input" configurationId="p302"/>
       <configSetting altId="p409.output.high" configurationId="p409"/>
-      <configSetting altId="sci0.rxd0.p212" configurationId="sci0.rxd0" peripheral="SCI0"/>
-      <configSetting altId="sci0.txd0.p213" configurationId="sci0.txd0" peripheral="SCI0"/>
+      <configSetting altId="sci0.rxd0.p212" configurationId="sci0.rxd0" isUsedByDriver="true" peripheral="SCI0"/>
+      <configSetting altId="sci0.txd0.p213" configurationId="sci0.txd0" isUsedByDriver="true" peripheral="SCI0"/>
       <configSetting altId="sci9.rxd9.p110" configurationId="sci9.rxd9" isUsedByDriver="true" peripheral="SCI9"/>
       <configSetting altId="sci9.txd9.p109" configurationId="sci9.txd9" isUsedByDriver="true" peripheral="SCI9"/>
       <configSetting altId="spi1.miso1.p100" configurationId="spi1.miso1" isUsedByDriver="true" peripheral="SPI1"/>
