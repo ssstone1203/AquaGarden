@@ -22,7 +22,7 @@
             </div>
             <div class="video-info-bottom">
               <div class="video-stat"><i class="fas fa-expand"></i>1920x1080</div>
-              <div class="video-stat"><i class="fas fa-tachometer-alt"></i>30 FPS</div>
+              <div class="video-stat"><i class="fas fa-tachometer-alt"></i>MJPEG</div>
             </div>
           </div>
         </div>
@@ -56,8 +56,8 @@
               <div class="camera-name">CAM-02</div>
             </div>
             <div class="video-info-bottom">
-              <div class="video-stat"><i class="fas fa-expand"></i>1920x1080</div>
-              <div class="video-stat"><i class="fas fa-tachometer-alt"></i>30 FPS</div>
+              <div class="video-stat"><i class="fas fa-plug"></i>串口实时</div>
+              <div class="video-stat"><i class="fas fa-tachometer-alt"></i>MJPEG</div>
             </div>
           </div>
         </div>
@@ -109,17 +109,15 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { ref } from 'vue'
 import { apiUrl } from '@/api/http'
 
 import '@/assets/styles/cameras-page.css'
 
-const tick = ref(0)
-const robotSrc = computed(() => `${apiUrl('/api/video/robot')}?t=${tick.value}`)
-const tankSrc = computed(() => `${apiUrl('/api/video/tank')}?t=${tick.value}`)
+const robotSrc = apiUrl('/api/video/robot')
+const tankSrc = apiUrl('/api/video/tank')
 const recRobot = ref(false)
 const recTank = ref(false)
-let timer = null
 
 function toggleFullscreen(which) {
   const el = document.getElementById(`${which}Video`)
@@ -141,14 +139,4 @@ function stopRecording(which) {
   if (which === 'robot') recRobot.value = false
   else recTank.value = false
 }
-
-onMounted(() => {
-  timer = setInterval(() => {
-    tick.value = Date.now()
-  }, 100)
-})
-
-onUnmounted(() => {
-  if (timer) clearInterval(timer)
-})
 </script>

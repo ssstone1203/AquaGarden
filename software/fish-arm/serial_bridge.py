@@ -3,13 +3,18 @@ serial_bridge.py — MCU UART → Spring Boot 桥接脚本
 ================================================
 读取 hardware/demo_wyr 固件（Communicate_Task_entry.c）发出的二进制上行帧，
 解析后 POST 到 /api/sensors/ingest，后端前端轮询 /api/sensors 即可得到真实数据。
+鱼缸 USB 摄像头默认使用索引 1，本脚本会用 OpenCV 抓帧并 POST 到
+/api/video/tank/ingest，前端摄像头页通过 /api/video/tank 展示实时画面。
+如果同一串口也混入 JPEG 数据，本脚本仍会按 FF D8 ... FF D9 提取图片帧上传。
 
 依赖：
-    pip install pyserial requests
+    pip install pyserial requests opencv-python
 
 用法：
     python serial_bridge.py --port COM3 --backend http://localhost:8090
     python serial_bridge.py --port /dev/ttyUSB0 --backend http://127.0.0.1:8090
+    python serial_bridge.py --port COM3 --backend http://localhost:8090 --max-jpeg-bytes 1048576
+    python serial_bridge.py --port COM3 --backend http://localhost:8090 --tank-camera-index 1
 
 MCU 上行帧格式（每 250 ms 一帧，Modbus CRC-16）：
   [0]    0x55          同步头 0
@@ -47,9 +52,13 @@ PAYLOAD 字段（30 字节，均为小端）：
 """
 
 import argparse
+import base64
+import binascii
 import logging
 import struct
+import threading
 import time
+from dataclasses import dataclass
 
 import requests
 import serial
@@ -67,6 +76,20 @@ HEADER_LEN = 6   # sync0 + sync1 + version + seq + payload_len(2)
 CRC_LEN = 2
 EXPECTED_PAYLOAD_LEN = 30
 PUSH_INTERVAL_SEC = 1.0
+JPEG_SOI = b"\xff\xd8"
+JPEG_EOI = b"\xff\xd9"
+DEFAULT_MAX_JPEG_BYTES = 512 * 1024
+BASE64_PREFIX = b"data:image/jpeg;base64,"
+ASCII_LINE_LIMIT_FACTOR = 2
+DEFAULT_TANK_CAMERA_INDEX = 1
+DEFAULT_CAMERA_FPS = 10.0
+JPEG_ENCODE_QUALITY = 80
+
+
+@dataclass
+class SerialPacket:
+    kind: str
+    data: bytes
 
 
 def crc16_modbus(data: bytes) -> int:
@@ -128,38 +151,126 @@ def parse_payload(payload: bytes) -> dict:
     }
 
 
-def read_frame(ser: serial.Serial) -> bytes | None:
-    """从串口读取并验证一帧，返回完整帧字节（含 CRC）或 None。"""
-    # 对齐同步头
+def decode_text_jpeg(line: bytes) -> bytes | None:
+    """兼容串口输出 base64/hex 文本图片帧。"""
+    text = line.strip()
+    if not text:
+        return None
+
+    if text.startswith(BASE64_PREFIX):
+        text = text[len(BASE64_PREFIX):]
+    else:
+        start = text.find(b"/9j/")
+        if start >= 0:
+            text = text[start:]
+
+    if text.startswith(b"/9j/"):
+        allowed = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+        payload = bytes(ch for ch in text if ch in allowed)
+        try:
+            frame = base64.b64decode(payload, validate=False)
+        except (binascii.Error, ValueError):
+            return None
+        return frame if is_jpeg(frame) else None
+
+    if text[:4].upper() == b"FFD8":
+        hex_payload = bytes(ch for ch in text if chr(ch).isalnum())
+        try:
+            frame = bytes.fromhex(hex_payload.decode("ascii"))
+        except ValueError:
+            return None
+        return frame if is_jpeg(frame) else None
+
+    return None
+
+
+def is_jpeg(frame: bytes) -> bool:
+    return (
+        len(frame) >= 4
+        and frame[0:2] == JPEG_SOI
+        and frame[-2:] == JPEG_EOI
+    )
+
+
+def read_packet(ser: serial.Serial, max_jpeg_bytes: int) -> SerialPacket | None:
+    """从混合串口流读取传感器帧或 JPEG 帧。"""
     b0 = ser.read(1)
-    if not b0 or b0[0] != SYNC0:
-        return None
-    b1 = ser.read(1)
-    if not b1 or b1[0] != SYNC1:
+    if not b0:
         return None
 
-    header_rest = ser.read(HEADER_LEN - 2)  # version + seq + payload_len(2)
-    if len(header_rest) < 4:
+    # 传感器帧：55 AA ...
+    if b0[0] == SYNC0:
+        b1 = ser.read(1)
+        if not b1:
+            return None
+        if b1[0] != SYNC1:
+            return None
+
+        header_rest = ser.read(HEADER_LEN - 2)  # version + seq + payload_len(2)
+        if len(header_rest) < 4:
+            return None
+
+        payload_len = struct.unpack_from("<H", header_rest, 2)[0]
+        if payload_len > 64:  # 防止把摄像头二进制流误判为传感器帧
+            return None
+
+        body = ser.read(payload_len + CRC_LEN)
+        if len(body) < payload_len + CRC_LEN:
+            return None
+
+        frame = bytes([SYNC0, SYNC1]) + header_rest + body
+        data_part = frame[:-2]
+        recv_crc = struct.unpack_from("<H", frame, len(frame) - 2)[0]
+        calc_crc = crc16_modbus(data_part)
+
+        if recv_crc != calc_crc:
+            log.warning("CRC 校验失败：期望 0x%04X，收到 0x%04X", calc_crc, recv_crc)
+            return None
+
+        return SerialPacket("sensor", frame)
+
+    # 摄像头帧：标准 JPEG SOI/EOI。图片本身可能包含 55 AA，所以进入 JPEG 后不再解析传感器帧。
+    if b0 == JPEG_SOI[:1]:
+        b1 = ser.read(1)
+        if not b1:
+            return None
+        if b1 != JPEG_SOI[1:]:
+            return None
+
+        jpg = bytearray(JPEG_SOI)
+        prev = b1[0]
+        while len(jpg) < max_jpeg_bytes:
+            chunk = ser.read(1)
+            if not chunk:
+                return None
+            cur = chunk[0]
+            jpg.append(cur)
+            if prev == JPEG_EOI[0] and cur == JPEG_EOI[1]:
+                return SerialPacket("jpeg", bytes(jpg))
+            prev = cur
+
+        log.warning("JPEG 帧超过上限 %d 字节，已丢弃", max_jpeg_bytes)
         return None
 
-    payload_len = struct.unpack_from("<H", header_rest, 2)[0]
-    if payload_len > 64:  # 防止超大帧
+    # 一些摄像头模块会把 JPEG 通过 base64/hex 文本行发出，而不是直接发二进制 JPEG。
+    if 32 <= b0[0] <= 126:
+        line = bytearray(b0)
+        limit = max_jpeg_bytes * ASCII_LINE_LIMIT_FACTOR
+        while len(line) < limit:
+            chunk = ser.read(1)
+            if not chunk:
+                return None
+            line.extend(chunk)
+            if chunk in (b"\n", b"\r"):
+                frame = decode_text_jpeg(bytes(line))
+                if frame is not None and len(frame) <= max_jpeg_bytes:
+                    return SerialPacket("jpeg", frame)
+                return None
+
+        log.warning("文本图片帧超过上限 %d 字节，已丢弃", limit)
         return None
 
-    body = ser.read(payload_len + CRC_LEN)
-    if len(body) < payload_len + CRC_LEN:
-        return None
-
-    frame = bytes([SYNC0, SYNC1]) + header_rest + body
-    data_part = frame[:-2]
-    recv_crc = struct.unpack_from("<H", frame, len(frame) - 2)[0]
-    calc_crc = crc16_modbus(data_part)
-
-    if recv_crc != calc_crc:
-        log.warning("CRC 校验失败：期望 0x%04X，收到 0x%04X", calc_crc, recv_crc)
-        return None
-
-    return frame
+    return None
 
 
 def post_ingest(backend: str, data: dict, timeout: float = 5.0) -> tuple[bool, str]:
@@ -177,21 +288,107 @@ def post_ingest(backend: str, data: dict, timeout: float = 5.0) -> tuple[bool, s
         return False, str(e)
 
 
-def run(port: str, baud: int, backend: str, verbose: bool) -> None:
+def post_tank_frame(backend: str, frame: bytes, timeout: float = 5.0) -> tuple[bool, str]:
+    url = backend.rstrip("/") + "/api/video/tank/ingest"
+    try:
+        r = requests.post(url, data=frame, headers={"Content-Type": "image/jpeg"}, timeout=timeout)
+        if r.ok:
+            return True, f"HTTP {r.status_code}"
+
+        detail = r.text.strip()
+        if len(detail) > 200:
+            detail = detail[:200] + "..."
+        return False, f"HTTP {r.status_code} {detail or '(empty body)'}"
+    except requests.RequestException as e:
+        return False, str(e)
+
+
+def run_tank_usb_camera(
+    backend: str,
+    camera_index: int,
+    fps: float,
+    verbose: bool,
+    stop_event: threading.Event,
+) -> None:
+    try:
+        import cv2
+    except ImportError:
+        log.error("未安装 OpenCV，无法读取 USB 摄像头。请执行：pip install opencv-python")
+        return
+
+    interval = 1.0 / max(fps, 0.1)
+    log.info("鱼缸 USB 摄像头：index=%d，目标 %.1f FPS", camera_index, fps)
+
+    while not stop_event.is_set():
+        cap = cv2.VideoCapture(camera_index, cv2.CAP_DSHOW)
+        if not cap.isOpened():
+            cap.release()
+            cap = cv2.VideoCapture(camera_index)
+
+        if not cap.isOpened():
+            log.warning("无法打开鱼缸 USB 摄像头 index=%d，3 秒后重试", camera_index)
+            stop_event.wait(3.0)
+            continue
+
+        log.info("鱼缸 USB 摄像头已打开：index=%d", camera_index)
+        last_log_at = 0.0
+        try:
+            while not stop_event.is_set():
+                ok, frame = cap.read()
+                if not ok or frame is None:
+                    log.warning("读取鱼缸 USB 摄像头失败，准备重连")
+                    break
+
+                ok, jpg = cv2.imencode(
+                    ".jpg",
+                    frame,
+                    [int(cv2.IMWRITE_JPEG_QUALITY), JPEG_ENCODE_QUALITY],
+                )
+                if not ok:
+                    log.warning("鱼缸 USB 摄像头 JPEG 编码失败")
+                    stop_event.wait(interval)
+                    continue
+
+                payload = jpg.tobytes()
+                posted, reason = post_tank_frame(backend, payload, timeout=2.0)
+                now = time.monotonic()
+                if not posted:
+                    log.warning("鱼缸 USB 摄像头帧推送失败：%s", reason)
+                elif verbose and now - last_log_at >= 2.0:
+                    log.info("鱼缸 USB 摄像头帧推送成功：%d bytes", len(payload))
+                    last_log_at = now
+
+                stop_event.wait(interval)
+        finally:
+            cap.release()
+
+        stop_event.wait(1.0)
+
+
+def run(port: str, baud: int, backend: str, verbose: bool, max_jpeg_bytes: int) -> None:
     log.info("串口：%s @ %d 波特，后端：%s", port, baud, backend)
     with serial.Serial(port, baud, timeout=1.0) as ser:
         log.info("串口已打开，开始监听…")
         fail_streak = 0
         last_push_at = 0.0
         while True:
-            frame = read_frame(ser)
-            if frame is None:
+            packet = read_packet(ser, max_jpeg_bytes)
+            if packet is None:
                 fail_streak += 1
                 if fail_streak % 20 == 0:
-                    log.warning("连续 %d 次未能解析帧，检查串口连接和波特率", fail_streak)
+                    log.warning("连续 %d 次未能解析帧，检查串口连接、波特率和摄像头数据格式", fail_streak)
                 continue
 
             fail_streak = 0
+            if packet.kind == "jpeg":
+                ok, reason = post_tank_frame(backend, packet.data)
+                if not ok:
+                    log.warning("鱼缸摄像头帧推送失败：%s，大小=%d bytes", reason, len(packet.data))
+                elif verbose:
+                    log.info("鱼缸摄像头帧推送成功：%d bytes", len(packet.data))
+                continue
+
+            frame = packet.data
             payload = frame[HEADER_LEN : HEADER_LEN + (len(frame) - HEADER_LEN - CRC_LEN)]
 
             try:
@@ -227,15 +424,29 @@ def main() -> None:
     parser.add_argument("--baud", type=int, default=115200, help="波特率，默认 115200")
     parser.add_argument("--backend", default="http://localhost:8090", help="Spring Boot 后端地址")
     parser.add_argument("--verbose", action="store_true", help="打印每帧解析结果")
+    parser.add_argument("--max-jpeg-bytes", type=int, default=DEFAULT_MAX_JPEG_BYTES, help="单张 JPEG 最大字节数")
+    parser.add_argument("--tank-camera-index", type=int, default=DEFAULT_TANK_CAMERA_INDEX, help="鱼缸 USB 摄像头索引；设为 -1 可禁用")
+    parser.add_argument("--tank-camera-fps", type=float, default=DEFAULT_CAMERA_FPS, help="鱼缸 USB 摄像头推流 FPS")
     args = parser.parse_args()
+
+    stop_event = threading.Event()
+    if args.tank_camera_index >= 0:
+        camera_thread = threading.Thread(
+            target=run_tank_usb_camera,
+            args=(args.backend, args.tank_camera_index, args.tank_camera_fps, args.verbose, stop_event),
+            name="tank-usb-camera",
+            daemon=True,
+        )
+        camera_thread.start()
 
     while True:
         try:
-            run(args.port, args.baud, args.backend, args.verbose)
+            run(args.port, args.baud, args.backend, args.verbose, args.max_jpeg_bytes)
         except serial.SerialException as e:
             log.error("串口错误：%s，5 秒后重试…", e)
             time.sleep(5)
         except KeyboardInterrupt:
+            stop_event.set()
             log.info("退出")
             break
 

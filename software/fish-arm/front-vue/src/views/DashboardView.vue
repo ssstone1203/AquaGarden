@@ -12,7 +12,11 @@
             <img :src="tank1Src" alt="Tank 1 Live Feed" />
             <div class="vbadge vbadge-live"><i class="fas fa-circle"></i> Live</div>
             <div class="vbadge vbadge-cam"><i class="fas fa-video"></i></div>
-            <div class="vbadge vbadge-res">1080p</div>
+            <div class="vbadge vbadge-res">{{ tankStatus.hasFrame ? '串口实时' : '等待串口帧' }}</div>
+            <div v-if="!tankStatus.hasFrame" class="video-waiting">
+              <i class="fas fa-plug"></i>
+              <span>后端还没有收到鱼缸摄像头帧</span>
+            </div>
           </div>
           <div class="video-controls">
             <div class="vctrl-left">
@@ -285,9 +289,9 @@ const soilMoisture = ref('62')     // ADC 土壤湿度 (%)
 
 const waterTempF = computed(() => (parseFloat(waterTemp.value) * 9 / 5 + 32).toFixed(1))
 
-const camTick = ref(0)
-const tank1Src = computed(() => `${apiUrl('/api/video/tank')}?t=${camTick.value}`)
-const tank2Src = computed(() => `${apiUrl('/api/video/robot')}?t=${camTick.value}`)
+const tank1Src = apiUrl('/api/video/tank')
+const tank2Src = apiUrl('/api/video/robot')
+const tankStatus = reactive({ hasFrame: false, seq: 0, bytes: 0, updatedAt: 0 })
 
 const HISTORY_LEN = 20
 
@@ -359,9 +363,23 @@ async function updateSensorData() {
   }
 }
 
+async function updateVideoStatus() {
+  try {
+    const r = await fetch(apiUrl('/api/video/tank/status'))
+    if (!r.ok) return
+    const d = await r.json()
+    tankStatus.hasFrame = Boolean(d.hasFrame)
+    tankStatus.seq = Number(d.seq ?? 0)
+    tankStatus.bytes = Number(d.bytes ?? 0)
+    tankStatus.updatedAt = Number(d.updatedAt ?? 0)
+  } catch {
+    tankStatus.hasFrame = false
+  }
+}
+
 let ws = null
 let sensorTimer = null
-let camTimer = null
+let videoStatusTimer = null
 
 // ---- Sensor detail modal ----
 // 每项参数与 MCU 传感器规格一一对应：
@@ -469,14 +487,15 @@ function connectWs() {
 
 onMounted(() => {
   updateSensorData()
+  updateVideoStatus()
   sensorTimer = setInterval(updateSensorData, 5000)
-  camTimer = setInterval(() => { camTick.value = Date.now() }, 2000)
+  videoStatusTimer = setInterval(updateVideoStatus, 2000)
   connectWs()
 })
 
 onUnmounted(() => {
   if (sensorTimer) clearInterval(sensorTimer)
-  if (camTimer) clearInterval(camTimer)
+  if (videoStatusTimer) clearInterval(videoStatusTimer)
   if (ws) ws.close()
 })
 </script>
@@ -484,6 +503,25 @@ onUnmounted(() => {
 <style scoped>
 .sensor-card-clickable { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
 .sensor-card-clickable:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(139,92,246,0.18); }
+
+.video-waiting {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(255,255,255,0.85);
+  background: rgba(15,23,42,0.42);
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.video-waiting i {
+  font-size: 22px;
+}
 
 /* Modal overlay */
 .sensor-modal-overlay {
