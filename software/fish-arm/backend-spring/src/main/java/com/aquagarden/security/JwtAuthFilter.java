@@ -79,6 +79,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 || uri.startsWith("/api/sensors/history")
                 || uri.startsWith("/api/robot/status")
                 || uri.startsWith("/api/video/")
+                || uri.startsWith("/api/aqua/video/")
                 || uri.startsWith("/ws/")
                 || uri.startsWith("/error");
     }

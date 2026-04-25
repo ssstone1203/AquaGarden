@@ -21,7 +21,7 @@
               <div class="camera-name">CAM-01</div>
             </div>
             <div class="video-info-bottom">
-              <div class="video-stat"><i class="fas fa-expand"></i>1920x1080</div>
+              <div class="video-stat"><i class="fas fa-robot"></i>机械臂 RGB</div>
               <div class="video-stat"><i class="fas fa-tachometer-alt"></i>MJPEG</div>
             </div>
           </div>
@@ -56,7 +56,7 @@
               <div class="camera-name">CAM-02</div>
             </div>
             <div class="video-info-bottom">
-              <div class="video-stat"><i class="fas fa-plug"></i>串口实时</div>
+              <div class="video-stat"><i class="fas fa-plug"></i>USB 实时</div>
               <div class="video-stat"><i class="fas fa-tachometer-alt"></i>MJPEG</div>
             </div>
           </div>
@@ -114,7 +114,7 @@ import { apiUrl } from '@/api/http'
 
 import '@/assets/styles/cameras-page.css'
 
-const robotSrc = apiUrl('/api/video/robot')
+const robotSrc = apiUrl('/api/aqua/video/rgb')
 const tankSrc = apiUrl('/api/video/tank')
 const recRobot = ref(false)
 const recTank = ref(false)

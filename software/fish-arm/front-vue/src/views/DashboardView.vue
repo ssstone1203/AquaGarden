@@ -4,19 +4,15 @@
     <div class="video-row">
       <div class="video-card">
         <div class="video-card-header">
-          <span class="video-title">Tank 1 Live Feed <span class="video-title-cn">(鱼缸1直播)</span></span>
+          <span class="video-title">Robot Arm Camera <span class="video-title-cn">(机械臂摄像头)</span></span>
           <button type="button" class="menu-btn"><i class="fas fa-ellipsis-h"></i></button>
         </div>
         <div class="video-body">
           <div class="video-area">
-            <img :src="tank1Src" alt="Tank 1 Live Feed" />
+            <img :src="robotCameraSrc" alt="Robot Arm Camera" />
             <div class="vbadge vbadge-live"><i class="fas fa-circle"></i> Live</div>
             <div class="vbadge vbadge-cam"><i class="fas fa-video"></i></div>
-            <div class="vbadge vbadge-res">{{ tankStatus.hasFrame ? '串口实时' : '等待串口帧' }}</div>
-            <div v-if="!tankStatus.hasFrame" class="video-waiting">
-              <i class="fas fa-plug"></i>
-              <span>后端还没有收到鱼缸摄像头帧</span>
-            </div>
+            <div class="vbadge vbadge-res">RGB</div>
           </div>
           <div class="video-controls">
             <div class="vctrl-left">
@@ -34,15 +30,19 @@
 
       <div class="video-card">
         <div class="video-card-header">
-          <span class="video-title">Tank 2 Live Feed <span class="video-title-cn">(鱼缸2直播)</span></span>
+          <span class="video-title">Tank Camera <span class="video-title-cn">(鱼缸摄像头)</span></span>
           <button type="button" class="menu-btn"><i class="fas fa-ellipsis-h"></i></button>
         </div>
         <div class="video-body">
           <div class="video-area">
-            <img :src="tank2Src" alt="Tank 2 Live Feed" />
+            <img :src="tankCameraSrc" alt="Tank Camera" />
             <div class="vbadge vbadge-live"><i class="fas fa-circle"></i> Live</div>
             <div class="vbadge vbadge-cam"><i class="fas fa-video"></i></div>
-            <div class="vbadge vbadge-res">1080p</div>
+            <div class="vbadge vbadge-res">{{ tankStatus.hasFrame ? 'USB 实时' : '等待鱼缸帧' }}</div>
+            <div v-if="!tankStatus.hasFrame" class="video-waiting">
+              <i class="fas fa-plug"></i>
+              <span>后端还没有收到鱼缸摄像头帧</span>
+            </div>
           </div>
           <div class="video-controls">
             <div class="vctrl-left">
@@ -281,7 +281,7 @@ import { apiUrl, authHeaders, logout, wsLogsUrl } from '@/api/http'
 const router = useRouter()
 
 // 5 个传感器（与 MCU 上行帧字段一一对应）
-const waterTemp    = ref('24.0')   // DS18B20 水温 (°C)
+const waterTemp    = ref('20.0')   // DS18B20 水温 (°C)
 const airTemp      = ref('26.0')   // SHT30 空气温度 (°C)
 const airHumidity  = ref('55.0')   // SHT30 空气湿度 (%RH)
 const wqi          = ref('72')     // WQM11S 水质综合指数 (0-100)
@@ -289,13 +289,13 @@ const soilMoisture = ref('62')     // ADC 土壤湿度 (%)
 
 const waterTempF = computed(() => (parseFloat(waterTemp.value) * 9 / 5 + 32).toFixed(1))
 
-const tank1Src = apiUrl('/api/video/tank')
-const tank2Src = apiUrl('/api/video/robot')
+const robotCameraSrc = apiUrl('/api/aqua/video/rgb')
+const tankCameraSrc = apiUrl('/api/video/tank')
 const tankStatus = reactive({ hasFrame: false, seq: 0, bytes: 0, updatedAt: 0 })
 
 const HISTORY_LEN = 20
 
-const waterTempHistory   = ref(Array.from({ length: HISTORY_LEN }, () => 24 + Math.random() * 2 - 1))
+const waterTempHistory   = ref(Array.from({ length: HISTORY_LEN }, () => 20 + Math.random() * 2 - 1))
 const airTempHistory     = ref(Array.from({ length: HISTORY_LEN }, () => 26 + Math.random() * 4 - 2))
 const airHumidityHistory = ref(Array.from({ length: HISTORY_LEN }, () => 55 + Math.random() * 10 - 5))
 const wqiHistory         = ref(Array.from({ length: HISTORY_LEN }, () => 72 + Math.random() * 12 - 6))

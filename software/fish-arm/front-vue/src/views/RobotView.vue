@@ -1,19 +1,72 @@
 <template>
   <div class="robot-page">
+    <div class="quick-panel">
+      <div class="quick-header">
+        <div>
+          <h3><i class="fas fa-robot"></i> 机械臂快捷操作</h3>
+          <p>常用任务和滑轨移动放在顶部，执行前请确认相机画面和 Bridge 状态。</p>
+        </div>
+        <span :class="['quick-status', connected ? 'online' : 'offline']">{{ connected ? 'Bridge 在线' : 'Bridge 离线' }}</span>
+      </div>
+
+      <div class="primary-task-grid">
+        <button class="primary-task-btn task-loosen" :disabled="busy" @click="sendTask('loosen')">
+          <i class="fas fa-seedling"></i>
+          <span>松土</span>
+        </button>
+        <button class="primary-task-btn task-feed" :disabled="busy" @click="sendTask('feed')">
+          <i class="fas fa-utensils"></i>
+          <span>喂食</span>
+        </button>
+        <button class="primary-task-btn task-prune" :disabled="busy" @click="sendTask('prune')">
+          <i class="fas fa-cut"></i>
+          <span>裁剪黄色叶子</span>
+        </button>
+        <button class="primary-task-btn task-stop" @click="stopTask">
+          <i class="fas fa-hand-paper"></i>
+          <span>停止</span>
+        </button>
+      </div>
+
+      <div class="rail-panel rail-panel-top">
+        <div class="rail-title">
+          <span><i class="fas fa-arrows-alt-h"></i> 滑轨移动（0-4000）</span>
+          <b>当前位置：{{ railPositionText }}</b>
+        </div>
+        <input v-model.number="railTarget" class="rail-range" type="range" min="0" max="4000" step="10" />
+        <div class="rail-row">
+          <button class="rail-btn" @click="setRailTarget(0)">回到 0</button>
+          <input v-model.number="railTarget" class="rail-input" type="number" min="0" max="4000" step="10" />
+          <button class="rail-btn" @click="setRailTarget(4000)">到 4000</button>
+          <button class="rail-btn rail-btn-primary" :disabled="busy" @click="moveRail">移动滑轨</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 左侧面板：摄像头 + 控制按钮 -->
     <div class="robot-left">
       <!-- 摄像头区域 -->
       <div class="camera-panel">
         <div class="panel-header">
           <span><i class="fas fa-video"></i> 机械臂视角</span>
-          <span class="badge-live"><span class="live-dot"></span>Live</span>
+          <div class="camera-header-actions">
+            <button type="button" :class="['mode-btn', cameraMode === 'rgb' ? 'active' : '']" @click="setCameraMode('rgb')">RGB</button>
+            <button type="button" :class="['mode-btn', cameraMode === 'depth' ? 'active' : '']" @click="setCameraMode('depth')">深度图</button>
+            <span class="badge-live"><span class="live-dot"></span>Live</span>
+          </div>
         </div>
         <div class="camera-body">
-          <img :src="camSrc" alt="Robot Camera" class="camera-img" />
+          <img :key="camSrc" :src="camSrc" alt="Robot Camera" class="camera-img" @load="cameraError = ''" @error="cameraError = '机械臂相机画面加载失败，请检查树莓派 Bridge 视频流'" />
+          <div v-if="cameraError" class="camera-error">
+            <i class="fas fa-video-slash"></i>
+            <span>{{ cameraError }}</span>
+            <small>当前地址：{{ camSrc }}</small>
+          </div>
           <div class="cam-overlay-info">
-            <span>J1:{{ servoAngles[0] }}°</span>
-            <span>J2:{{ servoAngles[1] }}°</span>
-            <span>J3:{{ servoAngles[2] }}°</span>
+            <span>{{ cameraMode === 'rgb' ? 'RGB' : 'Depth' }}</span>
+            <span>J1:{{ servoAngles[0] }}</span>
+            <span>J2:{{ servoAngles[1] }}</span>
+            <span>J3:{{ servoAngles[2] }}</span>
           </div>
         </div>
       </div>
@@ -21,33 +74,15 @@
       <!-- 控制区域 -->
       <div class="control-panel">
         <div class="panel-header">
-          <span><i class="fas fa-gamepad"></i> 方向控制</span>
-          <span class="kbd-hint">键盘: A/D 左右 &nbsp; W/S 前后 &nbsp; Q/E Z轴</span>
+          <span><i class="fas fa-crosshairs"></i> 绝对位置控制</span>
+          <span class="kbd-hint">已禁用点按增量移动，仅保留绝对位置下发</span>
         </div>
 
-        <!-- 方向按钮 -->
         <div class="control-body">
-          <div class="dir-grid">
-            <div></div>
-            <button class="dir-btn" @click="control('forward')" title="前进(W)"><i class="fas fa-chevron-up"></i></button>
-            <div></div>
-            <button class="dir-btn dir-btn-left" @click="control('left')" title="左移(A)">
-              <i class="fas fa-arrow-left"></i><span>左</span>
-            </button>
-            <button class="dir-btn dir-btn-center" @click="centerRobot" title="复位(空格)">
-              <i class="fas fa-crosshairs"></i>
-            </button>
-            <button class="dir-btn dir-btn-right" @click="control('right')" title="右移(D)">
-              <span>右</span><i class="fas fa-arrow-right"></i>
-            </button>
-            <div></div>
-            <button class="dir-btn" @click="control('backward')" title="后退(S)"><i class="fas fa-chevron-down"></i></button>
-            <div></div>
-          </div>
-
-          <div class="z-btns">
-            <button class="z-btn" @click="control('up')"><i class="fas fa-arrow-up"></i> Z+</button>
-            <button class="z-btn" @click="control('down')"><i class="fas fa-arrow-down"></i> Z−</button>
+          <div class="move-disabled-box">
+            <i class="fas fa-ban"></i>
+            <span>方向点按移动已关闭</span>
+            <small>请使用上方滑轨绝对位置控制（0-4000）</small>
           </div>
 
           <!-- 位置显示 -->
@@ -57,13 +92,6 @@
             <span class="pos-item"><b>Z</b> {{ posZ }}</span>
           </div>
 
-          <!-- 预设任务按钮 -->
-          <div class="task-btns">
-            <button class="task-btn" @click="sendTask('feed')"><i class="fas fa-utensils"></i> 喂食</button>
-            <button class="task-btn" @click="sendTask('scoop')"><i class="fas fa-hand-sparkles"></i> 捞叶</button>
-            <button class="task-btn" @click="sendTask('loosen')"><i class="fas fa-seedling"></i> 松土</button>
-            <button class="task-btn task-btn-stop" @click="emergencyStop"><i class="fas fa-hand-paper"></i> 急停</button>
-          </div>
         </div>
       </div>
     </div>
@@ -88,7 +116,7 @@
               <div class="servo-bar-bg">
                 <div class="servo-bar-fill" :style="{ width: (angle / 180 * 100) + '%' }"></div>
               </div>
-              <span class="servo-val">{{ angle }}°</span>
+              <span class="servo-val">{{ angle }}</span>
             </div>
           </div>
         </div>
@@ -100,12 +128,28 @@
             <span class="info-val">{{ currentTask }}</span>
           </div>
           <div class="info-row">
+            <span class="info-label"><i class="fas fa-project-diagram"></i> 当前阶段</span>
+            <span class="info-val">{{ phase }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label"><i class="fas fa-arrows-alt-h"></i> 滑轨位置</span>
+            <span class="info-val">{{ railPositionText }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label"><i class="fas fa-camera"></i> 相机</span>
+            <span class="info-val">RGB:{{ cameraState.hasRgb ? 'OK' : '--' }} / D:{{ cameraState.hasDepth ? 'OK' : '--' }}</span>
+          </div>
+          <div class="info-row">
             <span class="info-label"><i class="fas fa-clock"></i> 运行时长</span>
             <span class="info-val">{{ uptime }}</span>
           </div>
           <div class="info-row">
             <span class="info-label"><i class="fas fa-map-marker-alt"></i> 末端位置</span>
             <span class="info-val">X:{{ posX }} Y:{{ posY }} Z:{{ posZ }}</span>
+          </div>
+          <div v-if="lastError" class="info-row info-row-error">
+            <span class="info-label"><i class="fas fa-exclamation-triangle"></i> 错误</span>
+            <span class="info-val">{{ lastError }}</span>
           </div>
         </div>
 
@@ -129,7 +173,7 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiUrl, authHeaders, logout } from '@/api/http'
 
@@ -141,14 +185,23 @@ const posZ = ref(0)
 const servoAngles = ref([90, 45, 120, 60, 90, 30])
 const connected = ref(true)
 const currentTask = ref('待命')
+const phase = ref('idle')
+const busy = ref(false)
+const lastError = ref('')
 const uptime = ref('00:00:00')
 const logs = ref([])
 const logContainer = ref(null)
-const camTick = ref(0)
-const camSrc = ref('')
+const cameraMode = ref('rgb')
+const cameraError = ref('')
+const cameraReloadKey = ref(Date.now())
+const railTarget = ref(0)
+const railPosition = ref(null)
+const cameraState = reactive({ hasRgb: false, hasDepth: false, ageSec: null })
+const servoPulse = ref({ 1: 220, 2: 489, 3: 130, 4: 842, 5: 836, 6: 509 })
+const camSrc = computed(() => apiUrl(`/api/aqua/video/${cameraMode.value}`) + `?t=${cameraReloadKey.value}`)
+const railPositionText = computed(() => railPosition.value == null ? '--' : String(railPosition.value))
 
 let statusTimer = null
-let camTimer = null
 
 function addLog(msg, type = 'info') {
   const time = new Date().toLocaleTimeString('zh-CN')
@@ -161,101 +214,153 @@ function addLog(msg, type = 'info') {
 
 function clearLogs() { logs.value = [] }
 
-async function control(direction) {
+function setCameraMode(mode) {
+  if (cameraMode.value === mode) return
+  cameraMode.value = mode
+  cameraReloadKey.value = Date.now()
+  cameraError.value = ''
+  addLog(`切换机械臂相机：${mode === 'rgb' ? 'RGB' : '深度图'}`, 'system')
+}
+
+function setRailTarget(value) {
+  railTarget.value = Math.max(0, Math.min(4000, Number(value) || 0))
+}
+
+async function armHome() {
+  addLog('请求机械臂回初始位姿', 'system')
   try {
-    const r = await fetch(apiUrl('/api/robot/control'), {
+    const r = await fetch(apiUrl('/api/aqua/arm/home'), {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ direction }),
     })
-    if (r.ok) {
-      const d = await r.json()
-      posX.value = d.position.x
-      posY.value = d.position.y
-      posZ.value = d.position.z
-      addLog(`移动 ${direction} → X:${posX.value} Y:${posY.value} Z:${posZ.value}`, 'robot')
-    } else if (r.status === 401) {
-      addLog('登录已过期', 'error')
-      setTimeout(() => logout(router), 2000)
+    const d = await r.json().catch(() => ({}))
+    if (!r.ok || d.ok === false) {
+      throw new Error(d.message || `回初始位姿失败 HTTP ${r.status}`)
     }
-  } catch {
-    simulateMovement(direction)
-    addLog(`[离线] 模拟移动 ${direction}`, 'warn')
+    posX.value = 0
+    posY.value = 0
+    posZ.value = 0
+    fetchStatus()
+  } catch (e) {
+    addLog(e.message || '机械臂回初始位姿失败', 'error')
   }
 }
 
-function simulateMovement(direction) {
-  const step = 1
-  if (direction === 'forward')  posY.value = Math.min(10, posY.value + step)
-  if (direction === 'backward') posY.value = Math.max(-10, posY.value - step)
-  if (direction === 'left')     posX.value = Math.max(-10, posX.value - step)
-  if (direction === 'right')    posX.value = Math.min(10, posX.value + step)
-  if (direction === 'up')       posZ.value = Math.min(20, posZ.value + step)
-  if (direction === 'down')     posZ.value = Math.max(0, posZ.value - step)
-}
-
-function centerRobot() {
-  posX.value = 0; posY.value = 0; posZ.value = 0
-  addLog('机械臂已复位到原点', 'system')
-}
-
 async function sendTask(taskName) {
-  const labels = { feed: '自动喂食', scoop: '捞取落叶', loosen: '松土' }
+  const labels = { feed: '自动喂食', loosen: '松土', prune: '裁剪黄色叶子' }
   addLog(`触发任务: ${labels[taskName] ?? taskName}`, 'task')
   currentTask.value = labels[taskName] ?? taskName
+  busy.value = true
   try {
-    await fetch(apiUrl('/api/robot/task'), {
+    const r = await fetch(apiUrl(`/api/aqua/tasks/${taskName}`), {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ task: taskName }),
     })
-  } catch { /* offline */ }
-  setTimeout(() => { currentTask.value = '待命'; addLog(`任务 ${labels[taskName]} 完成`, 'task') }, 4000)
+    const d = await r.json().catch(() => ({}))
+    if (!r.ok || d.ok === false) {
+      throw new Error(d.message || `任务启动失败 HTTP ${r.status}`)
+    }
+    addLog(`任务已提交: ${labels[taskName] ?? taskName}`, 'task')
+    fetchStatus()
+  } catch (e) {
+    busy.value = false
+    addLog(e.message || '任务启动失败', 'error')
+  }
 }
 
-function emergencyStop() {
-  addLog('⚠ 紧急停止已触发！', 'error')
-  currentTask.value = '已急停'
+async function stopTask() {
+  addLog('请求停止当前任务', 'warn')
+  try {
+    const r = await fetch(apiUrl('/api/aqua/tasks/stop'), {
+      method: 'POST',
+      headers: authHeaders(),
+    })
+    const d = await r.json().catch(() => ({}))
+    if (!r.ok || d.ok === false) {
+      throw new Error(d.message || `停止失败 HTTP ${r.status}`)
+    }
+    currentTask.value = '停止中'
+    phase.value = 'stopping'
+  } catch (e) {
+    addLog(e.message || '停止任务失败', 'error')
+  }
+}
+
+async function moveRail() {
+  setRailTarget(railTarget.value)
+  addLog(`滑轨移动到 ${railTarget.value}`, 'robot')
+  try {
+    let r = await fetch(apiUrl('/api/aqua/rail/position'), {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ position: railTarget.value }),
+    })
+    // 兼容旧后端：仅实现了 /api/aqua/rail/move
+    if (r.status === 404) {
+      r = await fetch(apiUrl('/api/aqua/rail/move'), {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ position: railTarget.value }),
+      })
+    }
+    const d = await r.json().catch(() => ({}))
+    if (!r.ok || d.ok === false) {
+      throw new Error(d.message || `滑轨移动失败 HTTP ${r.status}`)
+    }
+    railPosition.value = railTarget.value
+    fetchStatus()
+  } catch (e) {
+    addLog(e.message || '滑轨移动失败', 'error')
+  }
 }
 
 async function fetchStatus() {
   try {
-    const r = await fetch(apiUrl('/api/robot/status'))
+    const r = await fetch(apiUrl('/api/aqua/status'), { headers: authHeaders() })
     if (r.ok) {
       const d = await r.json()
-      if (Array.isArray(d.servoAngles)) servoAngles.value = d.servoAngles
-      connected.value = d.connected ?? true
+      const pulses = d.servoPulse
+      if (pulses && typeof pulses === 'object') {
+        servoPulse.value = { ...servoPulse.value, ...pulses }
+        servoAngles.value = [1, 2, 3, 4, 5, 6].map(i => Number(pulses[String(i)] ?? servoAngles.value[i - 1]))
+      } else if (Array.isArray(d.servoAngles)) {
+        servoAngles.value = d.servoAngles
+      }
+      connected.value = d.connected ?? d.ok ?? true
+      busy.value = Boolean(d.busy)
       currentTask.value = d.currentTask ?? '待命'
-      uptime.value = d.uptime ?? uptime.value
+      phase.value = d.phase ?? 'idle'
+      railPosition.value = d.railPosition ?? railPosition.value
+      railTarget.value = Number(railPosition.value ?? railTarget.value)
+      lastError.value = d.lastError ?? ''
+      if (d.uptimeSec != null) uptime.value = formatUptime(Number(d.uptimeSec))
+      else uptime.value = d.uptime ?? uptime.value
+      if (d.camera) {
+        cameraState.hasRgb = Boolean(d.camera.hasRgb)
+        cameraState.hasDepth = Boolean(d.camera.hasDepth)
+        cameraState.ageSec = d.camera.ageSec ?? null
+      }
     }
   } catch { connected.value = false }
 }
 
-function onKey(e) {
-  const map = { ArrowUp:'forward', w:'forward', W:'forward', ArrowDown:'backward', s:'backward', S:'backward',
-    ArrowLeft:'left', a:'left', A:'left', ArrowRight:'right', d:'right', D:'right',
-    q:'up', Q:'up', e:'down', E:'down' }
-  if (map[e.key]) control(map[e.key])
-  if (e.key === ' ') { e.preventDefault(); centerRobot() }
+function formatUptime(seconds) {
+  const s = Math.max(0, Math.floor(seconds))
+  const h = String(Math.floor(s / 3600)).padStart(2, '0')
+  const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0')
+  const sec = String(s % 60).padStart(2, '0')
+  return `${h}:${m}:${sec}`
 }
 
 onMounted(() => {
-  window.addEventListener('keydown', onKey)
   addLog('机械臂控制台已加载', 'system')
-  addLog('键盘: WASD 前后左右 | Q/E Z轴 | 空格 归零', 'system')
+  addLog('已切换为绝对位置控制模式（禁用点按增量移动）', 'system')
   fetchStatus()
   statusTimer = setInterval(fetchStatus, 1500)
-  camTimer = setInterval(() => {
-    camTick.value = Date.now()
-    camSrc.value = apiUrl('/api/video/robot') + '?t=' + camTick.value
-  }, 2000)
-  camSrc.value = apiUrl('/api/video/robot')
 })
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', onKey)
   if (statusTimer) clearInterval(statusTimer)
-  if (camTimer) clearInterval(camTimer)
 })
 </script>
 
@@ -264,12 +369,114 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: 1fr 380px;
   gap: 20px;
+  grid-template-areas:
+    "quick quick"
+    "left right";
   height: calc(100vh - 120px);
   min-height: 600px;
 }
 
+.quick-panel {
+  grid-area: quick;
+  background: var(--bg-card);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+  padding: 16px 18px;
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) minmax(360px, 1.1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.quick-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.quick-header h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.quick-header h3 i {
+  color: var(--primary-color);
+  margin-right: 8px;
+}
+
+.quick-header p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.quick-status {
+  flex: none;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.quick-status.online {
+  color: #10b981;
+  background: rgba(16,185,129,0.12);
+}
+
+.quick-status.offline {
+  color: #ef4444;
+  background: rgba(239,68,68,0.12);
+}
+
+.primary-task-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.primary-task-btn {
+  min-height: 82px;
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.18s, filter 0.18s, opacity 0.18s;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+}
+
+.primary-task-btn i {
+  font-size: 22px;
+}
+
+.primary-task-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+
+.primary-task-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.task-loosen { background: linear-gradient(135deg, #10b981, #059669); }
+.task-feed { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.task-prune { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+.task-stop { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
 /* ---- Left Panel ---- */
 .robot-left {
+  grid-area: left;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -281,6 +488,33 @@ onUnmounted(() => {
   border-radius: 14px;
   box-shadow: var(--shadow-md);
   overflow: hidden;
+}
+
+.camera-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  text-align: center;
+  color: rgba(255,255,255,0.9);
+  background: rgba(15,23,42,0.78);
+  font-size: 13px;
+  z-index: 2;
+}
+
+.camera-error i {
+  font-size: 24px;
+  color: #f87171;
+}
+
+.camera-error small {
+  color: rgba(255,255,255,0.62);
+  word-break: break-all;
+  font-family: monospace;
 }
 
 .panel-header {
@@ -295,6 +529,30 @@ onUnmounted(() => {
 }
 .panel-header i { color: var(--primary-color); margin-right: 6px; }
 .kbd-hint { font-size: 11px; color: var(--text-secondary); font-weight: 400; }
+
+.camera-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-btn {
+  border: 1px solid rgba(139,92,246,0.25);
+  background: var(--bg-main);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.mode-btn.active,
+.mode-btn:hover {
+  background: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
+}
 
 .badge-live {
   display: flex; align-items: center; gap: 5px;
@@ -334,6 +592,31 @@ onUnmounted(() => {
   justify-content: center;
 }
 
+.dir-grid-lr {
+  grid-template-rows: 56px;
+}
+
+.move-disabled-box {
+  border: 1px dashed rgba(139,92,246,0.4);
+  background: rgba(139,92,246,0.08);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.move-disabled-box i {
+  color: #ef4444;
+}
+
+.move-disabled-box small {
+  color: var(--text-secondary);
+}
+
 .dir-btn {
   border: none;
   background: var(--bg-main);
@@ -353,21 +636,92 @@ onUnmounted(() => {
 .dir-btn-left, .dir-btn-right { font-size: 13px; font-weight: 600; }
 .dir-btn-center { background: rgba(139,92,246,0.12); color: var(--primary-color); }
 
-.z-btns { display: flex; gap: 10px; }
-.z-btn {
-  flex: 1; padding: 10px; background: var(--bg-main); color: var(--text-primary);
-  border: none; border-radius: 10px; cursor: pointer; font-size: 13px;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  transition: all 0.18s;
-}
-.z-btn:hover { background: var(--bg-gradient); color: #fff; }
-
 .pos-bar {
   display: flex; justify-content: center; gap: 20px;
   background: var(--bg-main); border-radius: 10px; padding: 10px 16px;
   font-size: 15px; font-family: monospace;
 }
 .pos-item b { color: var(--primary-color); margin-right: 4px; }
+
+.rail-panel {
+  background: var(--bg-main);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rail-panel-top {
+  background: rgba(15,15,26,0.78);
+}
+
+.rail-title,
+.rail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rail-title {
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.rail-title i {
+  color: var(--primary-color);
+  margin-right: 6px;
+}
+
+.rail-title b {
+  color: var(--text-primary);
+  font-family: monospace;
+}
+
+.rail-range {
+  width: 100%;
+  accent-color: var(--primary-color);
+}
+
+.rail-input {
+  min-width: 0;
+  flex: 1;
+  height: 34px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 0 10px;
+  font-family: monospace;
+}
+
+.rail-btn {
+  height: 34px;
+  border: none;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  padding: 0 10px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.rail-btn:hover {
+  background: rgba(139,92,246,0.15);
+  color: var(--primary-color);
+}
+
+.rail-btn-primary {
+  background: var(--primary-color);
+  color: #fff;
+}
+
+.rail-btn:disabled,
+.task-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 
 .task-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .task-btn {
@@ -381,7 +735,7 @@ onUnmounted(() => {
 .task-btn-stop:hover { background: #ef4444; color: #fff; }
 
 /* ---- Right Panel: Terminal ---- */
-.robot-right { min-width: 0; }
+.robot-right { grid-area: right; min-width: 0; }
 .terminal-panel {
   display: flex;
   flex-direction: column;
@@ -411,6 +765,15 @@ onUnmounted(() => {
 .info-label { color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
 .info-label i { color: var(--primary-color); font-size: 12px; }
 .info-val { color: var(--text-primary); font-weight: 600; font-family: monospace; }
+.info-row-error {
+  align-items: flex-start;
+  gap: 12px;
+}
+.info-row-error .info-val {
+  color: #f87171;
+  text-align: right;
+  white-space: normal;
+}
 
 /* Log section */
 .log-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -447,7 +810,22 @@ onUnmounted(() => {
 .log-msg { color: #d1d5db; flex: 1; word-break: break-all; }
 
 @media (max-width: 1024px) {
-  .robot-page { grid-template-columns: 1fr; height: auto; }
+  .robot-page {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "quick"
+      "left"
+      "right";
+    height: auto;
+  }
+  .quick-panel { grid-template-columns: 1fr; }
+  .primary-task-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
   .terminal-panel { min-height: 500px; }
+}
+
+@media (max-width: 640px) {
+  .primary-task-grid { grid-template-columns: 1fr; }
+  .rail-row { flex-wrap: wrap; }
+  .rail-input { flex-basis: 100%; }
 }
 </style>
