@@ -1,0 +1,2 @@
+# dtc 编译产物，由 install_spidev_overlay.sh apply 在每次部署时重新生成
+*.dtbo

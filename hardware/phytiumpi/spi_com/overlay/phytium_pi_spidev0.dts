@@ -1,0 +1,31 @@
+/*
+ * phytium_pi_spidev0.dts — 给飞腾派 SPI0 (/soc/spi@2803a000) 加一个 spidev@0
+ *
+ * 现象：内置 DTB 里 spi@2803a000 节点 status=okay 但没有任何子设备，
+ *       所以即便 spidev.ko 加载，/dev/spidev0.0 也永不出现。
+ * 修复：以 DT overlay 在 configfs 在线挂载，往 spi@2803a000 添加一个
+ *       compatible="rohm,dh2228fv"（spidev 模块识别的占位 compatible）
+ *       的子节点，绑定到 CS0。spi-max-frequency 设 16 MHz，daemon 仍按
+ *       SPI_IOC_WR_MAX_SPEED_HZ 在每次事务里限速到 1 MHz / 500 kHz。
+ *
+ * 编译：   dtc -@ -I dts -O dtb -o phytium_pi_spidev0.dtbo phytium_pi_spidev0.dts
+ * 挂载：   sudo install_spidev_overlay.sh apply
+ * 卸载：   sudo install_spidev_overlay.sh remove
+ */
+
+/dts-v1/;
+/plugin/;
+
+/*
+ * 父节点 /soc/spi@2803a000 已经在内置 DTB 里声明了
+ *   #address-cells/#size-cells/status/clocks/interrupts/num-cs ...
+ * overlay 只需要往下增加一个子节点，不要重定义父节点的属性，
+ * 否则会触发 dmesg "OF: overlay: WARNING: memory leak..." 的良性告警。
+ */
+&{/soc/spi@2803a000} {
+    spidev@0 {
+        compatible = "rohm,dh2228fv";
+        reg = <0>;                       /* CS0 = SPI0_CSN0 = RA6E2 P103 */
+        spi-max-frequency = <16000000>;
+    };
+};

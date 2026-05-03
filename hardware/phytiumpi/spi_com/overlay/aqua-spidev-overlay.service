@@ -1,0 +1,15 @@
+[Unit]
+Description=Apply Phytium-Pi SPI0 spidev overlay (aqua_spidev0)
+DefaultDependencies=no
+After=systemd-tmpfiles-setup.service
+Before=local-fs.target sysinit.target
+ConditionPathExists=!/sys/kernel/config/device-tree/overlays/aqua_spidev0
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/install_spidev_overlay.sh apply
+ExecStop=/usr/local/sbin/install_spidev_overlay.sh remove
+
+[Install]
+WantedBy=sysinit.target

@@ -25,7 +25,11 @@ spi_com/
 │   ├── spi_codec.{h,c}
 │   ├── Communicate_Task_entry.c       # 替换原 UART 版本
 │   ├── sync_from_canonical.sh         # 一键同步脚本
-│   └── FSP_CHANGES.md                 # FSP Configurator 改动指南
+│   └── FSP_CHANGES.md                 # RASC + Keil 工程改动指南
+├── overlay/                           # 飞腾派 spidev DT overlay（首次部署必跑）
+│   ├── phytium_pi_spidev0.dts
+│   ├── install_spidev_overlay.sh      # 编译 + configfs 在线挂载（apply/remove/status）
+│   └── aqua-spidev-overlay.service    # 开机自动加载（可选）
 └── Makefile
 ```
 
@@ -85,7 +89,50 @@ sudo mv /tmp/aqua_spi* /usr/local/bin/
 | CS   | SPI0_CSN0 | P103 | |
 | GND  | GND       | GND  | **必须共地** |
 
-### 5) 启动 daemon + 调试
+### 5) 飞腾派 spidev 节点准备（**首次部署必做**）
+
+飞腾派出厂 DTB 里 `/soc/spi@2803a000` 控制器节点 status=okay 但**没有任何子设备**，
+所以 `spidev.ko` 加载后 `/dev/spidev0.0` 永不出现，daemon 启动会报：
+
+```
+[ERR] 打开 /dev/spidev0.0 失败: No such file or directory
+```
+
+修复方式是写一个 DT overlay 通过 configfs 在线挂载（不动 /boot 下的 DTB，也不需重启）：
+
+```bash
+cd hardware/phytiumpi/spi_com/overlay
+
+# 一次性应用（编译 .dts → .dtbo → 挂到 /sys/kernel/config/device-tree/overlays/aqua_spidev0/）
+sudo ./install_spidev_overlay.sh apply
+
+# 期待输出：
+# [OK]  编译成功 (...bytes)
+# [INF] overlay status = applied
+# [OK]  /dev/spidev* 已就绪：crw------- 1 root root 153, 0 ... /dev/spidev0.0
+
+# 卸载（不需要时）
+sudo ./install_spidev_overlay.sh remove
+
+# 看状态
+sudo ./install_spidev_overlay.sh status
+```
+
+要让重启后自动加载，把 service 装上：
+
+```bash
+sudo cp install_spidev_overlay.sh /usr/local/sbin/
+sudo cp aqua-spidev-overlay.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now aqua-spidev-overlay.service
+```
+
+> **机制说明**：飞腾派内核启用了 `CONFIG_OF_OVERLAY=y` + `CONFIG_OF_CONFIGFS=y`，
+> overlay 通过 vendor 提供的 configfs 接口加载，给 SPI master 增加一个
+> `compatible="rohm,dh2228fv"` 的子节点（spidev 模块识别的占位 compatible），
+> CS=0、最大 16 MHz。daemon 仍按 `-s` 选项实际限速到 1 MHz / 500 kHz。
+
+### 6) 启动 daemon + 调试
 
 在飞腾派上：
 
@@ -130,7 +177,7 @@ aqua_spi_cli stats
 
 CLI 完整子命令：`aqua_spi_cli --help`
 
-### 6) systemd 部署（可选）
+### 7) systemd 部署 daemon（可选）
 
 `/etc/systemd/system/aqua-spid.service`:
 
@@ -161,7 +208,7 @@ journalctl -u aqua-spid -f      # 看日志
 
 | 现象 | 检查 |
 |------|------|
-| `打开 /dev/spidev0.0 失败` | dmesg 看 spi-phytium 是否加载；`ls /dev/spidev*` |
+| `打开 /dev/spidev0.0 失败` | 99% 是 §5 的 overlay 没装：`sudo overlay/install_spidev_overlay.sh status` 看是否 `applied`；没装就 `apply` |
 | 启动后 `RA6E2 在 5 秒内未上线` | 接线/共地；示波器看 SCK 有无；RA6E2 烧录是否成功 |
 | `stats` 显示 `rx_crc_err` 持续增加 | 90% 是 DMAC 字宽未改 1 Byte（见 FSP_CHANGES.md §2.1）；其次是布线干扰 |
 | `rx_sof_err` 增加 | SPI 错位；通常下一次 CS 边沿会自愈，但若持续→改速率到 500 kHz 再排查 |
