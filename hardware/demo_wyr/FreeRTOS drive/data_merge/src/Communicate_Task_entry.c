@@ -1,78 +1,59 @@
+/*
+ * Communicate_Task_entry.c — RA6E2 SPI Slave 通信任务（替换 UART 版）
+ *
+ * 与原 UART 版本相比：
+ *   - 删除 SCI0 直寄存器收发上位机协议（host_uart0_*、host_parse_downlink_stream）
+ *     —— SCI0 端口仍保留作日志通道，由 app_log_uart_* 管理
+ *   - 主循环改为：g_com_spi.p_api->writeRead() 启动一次 64B 全双工事务，
+ *     等待 Com_SPI_Callback 在 EOT 中断里 give 信号量，然后处理 RX、装 TX，
+ *     立即重新 writeRead。
+ *   - 复用：CRC16/Modbus、字段编码 helper、host_apply_command(...)（语义重写）
+ *           、host_update_alarm_flags、host_build_uplink_frame
+ *   - 命令空间：DEV(1B) + CMD(1B) 二级（见 spi_protocol.h），不再用扁平 HOST_CMD_*
+ *
+ * 部署到 Keil + RASC 工程：
+ *   1) 把本文件覆盖到 src/Communicate_Task_entry.c
+ *   2) 复制 ra6e2_patch/spi_protocol.h、spi_codec.h、spi_codec.c 到 src/
+ *      （由 sync_from_canonical.sh 维护与 Linux 端一致）
+ *   3) 在 RASC 中把 SPI1 (g_com_spi) 的 TX/RX DMAC 字宽从
+ *      TRANSFER_SIZE_2_BYTE 改为 TRANSFER_SIZE_1_BYTE，并把 P103 选作
+ *      SPI1.SSLB0 外设引脚，重新生成代码（详见 FSP_CHANGES.md）
+ *   4) SCI0 UART 模块仍保留作日志通道：
+ *        app_log_uart_init()         — 任务启动时已自动调用
+ *        app_log_uart_write(buf,len) — 业务方任意时刻可调，写阻塞 ≤ 5 ms / byte
+ */
+
 #include "Communicate_Task.h"
 #include "sensor_fusion.h"
 #include "wqs_sensor.h"
 #include "ds18b20.h"
 #include "sht30.h"
 
-#define HOST_UART_BAUD_BRR                 (53U)
-#define HOST_UPLINK_SYNC0                  (0x55U)
-#define HOST_UPLINK_SYNC1                  (0xAAU)
-#define HOST_UPLINK_VERSION                (0x01U)
-#define HOST_DOWNLINK_SYNC0                (0x5AU)
-#define HOST_DOWNLINK_SYNC1                (0xA5U)
-#define HOST_DOWNLINK_MAX_PAYLOAD          (16U)
-#define HOST_ALARM_PRESSURE_HIGH_KG        (4.8F)
-#define HOST_UART_WAIT_TIMEOUT_MS          (5U)
+#include "spi_protocol.h"
+#include "spi_codec.h"
 
-enum
-{
-    HOST_CMD_SET_MANUAL_PUMP = 0x01U,
-    HOST_CMD_SET_SOIL_CFG    = 0x02U,
-    HOST_CMD_SET_LINKAGE_CFG = 0x03U,
-    HOST_CMD_PUMP_START      = 0x04U,
-    HOST_CMD_PUMP_STOP       = 0x05U,
-    HOST_CMD_SET_PUMP_PWM    = 0x06U,
-    HOST_CMD_SET_PUMP_AUTO   = 0x07U,
-    HOST_CMD_SET_PUMP_CYCLE_CFG = 0x08U,
-    HOST_CMD_SET_PUMP_CYCLE_CTRL = 0x09U,
-};
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
 
-static uint8_t host_clamp_percent_u8(uint8_t value)
-{
-    return (value > 100U) ? 100U : value;
-}
+#include <string.h>
 
-static uint16_t host_crc16_modbus(const uint8_t * p_data, uint16_t len)
-{
-    uint16_t crc = 0xFFFFU;
-    for (uint16_t i = 0U; i < len; i++)
-    {
-        crc ^= p_data[i];
-        for (uint8_t b = 0U; b < 8U; b++)
-        {
-            if (0U != (crc & 0x0001U))
-            {
-                crc = (uint16_t) ((crc >> 1U) ^ 0xA001U);
-            }
-            else
-            {
-                crc = (uint16_t) (crc >> 1U);
-            }
-        }
-    }
-    return crc;
-}
+/* FSP 在 ra_gen/Communicate_Task.c 中定义 */
+extern const spi_instance_t  g_com_spi;
+extern const uart_instance_t g_com_uart0;
 
-static void host_uart0_init(void)
-{
-    R_BSP_MODULE_START(FSP_IP_SCI, 0U);
+/* ------------------------------------------------------------------ */
+/* SCI0 UART 日志通道（保留串口功能；不参与上位机通信）                */
+/* ------------------------------------------------------------------ */
 
-    R_SCI0->SCR = 0x00U;
-    R_SCI0->SMR = 0x00U;
-    R_SCI0->SEMR_b.BGDM = 1U;
-    R_SCI0->SEMR_b.ABCS = 0U;
-    R_SCI0->SEMR_b.ABCSE = 0U;
-    R_SCI0->SEMR_b.BRME = 0U;
-    R_SCI0->BRR = HOST_UART_BAUD_BRR;
-    R_BSP_SoftwareDelay(1U, BSP_DELAY_UNITS_MILLISECONDS);
-    R_SCI0->SCR_b.RE = 1U;
-    R_SCI0->SCR_b.TE = 1U;
-}
+#define APP_LOG_UART_TX_TIMEOUT_MS  (5u)
 
-static bool host_uart_wait_tdre(TickType_t timeout_ticks)
+static volatile uint8_t s_log_uart_opened;
+
+static bool app_log_uart_wait_tdre(TickType_t timeout_ticks)
 {
     TickType_t start = xTaskGetTickCount();
-    while (0U == R_SCI0->SSR_b.TDRE)
+    while (0u == R_SCI0->SSR_b.TDRE)
     {
         if ((xTaskGetTickCount() - start) >= timeout_ticks)
         {
@@ -83,10 +64,10 @@ static bool host_uart_wait_tdre(TickType_t timeout_ticks)
     return true;
 }
 
-static bool host_uart_wait_tend(TickType_t timeout_ticks)
+static bool app_log_uart_wait_tend(TickType_t timeout_ticks)
 {
     TickType_t start = xTaskGetTickCount();
-    while (0U == R_SCI0->SSR_b.TEND)
+    while (0u == R_SCI0->SSR_b.TEND)
     {
         if ((xTaskGetTickCount() - start) >= timeout_ticks)
         {
@@ -97,452 +78,433 @@ static bool host_uart_wait_tend(TickType_t timeout_ticks)
     return true;
 }
 
-static bool host_uart0_write_bytes(const uint8_t * p_data, uint16_t len)
+void app_log_uart_init(void)
 {
-    const TickType_t timeout_ticks = pdMS_TO_TICKS(HOST_UART_WAIT_TIMEOUT_MS);
+    if (0u != s_log_uart_opened) return;
 
-    for (uint16_t i = 0U; i < len; i++)
+    /* 由 FSP 完成 SCI0 模块上电、波特率、TE/RE、NVIC 等。callback=NULL，
+     * 不挂中断回调；TX 走 TDR 轮询，RX 不消费（RDRF/ORER 自然丢弃）。 */
+    fsp_err_t err = g_com_uart0.p_api->open(&g_com_uart0_ctrl, &g_com_uart0_cfg);
+    if (err == FSP_SUCCESS)
     {
-        if (!host_uart_wait_tdre(timeout_ticks))
-        {
-            return false;
-        }
-        R_SCI0->TDR = p_data[i];
-        R_SCI0->SSR_b.TDRE = 0U;
+        s_log_uart_opened = 1u;
     }
-
-    if (!host_uart_wait_tend(timeout_ticks))
-    {
-        return false;
-    }
-
-    return true;
 }
 
-static bool host_uart0_try_read_byte(uint8_t * p_byte)
+bool app_log_uart_write(const uint8_t *buf, uint16_t len)
 {
-    if (NULL == p_byte)
-    {
-        return false;
-    }
+    if (0u == s_log_uart_opened || NULL == buf || 0u == len) return false;
 
-    if ((0U != R_SCI0->SSR_b.ORER) || (0U != R_SCI0->SSR_b.FER) || (0U != R_SCI0->SSR_b.PER))
-    {
-        R_SCI0->SSR_b.ORER = 0U;
-        R_SCI0->SSR_b.FER = 0U;
-        R_SCI0->SSR_b.PER = 0U;
-        g_comm_rx_crc_error_count++;
-        g_alarm_flags |= SENSOR_ALARM_COMM_RX_ERROR;
-        g_alarm_latched_flags |= SENSOR_ALARM_COMM_RX_ERROR;
-    }
+    const TickType_t per_byte_to = pdMS_TO_TICKS(APP_LOG_UART_TX_TIMEOUT_MS);
 
-    if (0U == R_SCI0->SSR_b.RDRF)
+    for (uint16_t i = 0; i < len; i++)
     {
-        return false;
+        if (!app_log_uart_wait_tdre(per_byte_to)) return false;
+        R_SCI0->TDR = buf[i];
+        R_SCI0->SSR_b.TDRE = 0u;
     }
-
-    *p_byte = R_SCI0->RDR;
-    R_SCI0->SSR_b.RDRF = 0U;
-    return true;
+    return app_log_uart_wait_tend(per_byte_to);
 }
 
-static int16_t host_float_to_i16_x10(float value)
+/* ------------------------------------------------------------------ */
+/* 应用层版本号                                                       */
+/* ------------------------------------------------------------------ */
+
+#define APP_VER_MAJOR  1u
+#define APP_VER_MINOR  0u
+#define APP_VER_PATCH  0u
+
+#define HOST_ALARM_PRESSURE_HIGH_KG   (4.8F)
+
+/* ------------------------------------------------------------------ */
+/* 双缓冲帧 + 同步原语                                                */
+/* ------------------------------------------------------------------ */
+
+/* 必须用对齐缓冲，DMAC 才能稳定搬 1 字节宽度 */
+static uint8_t s_tx_frame[SPI_FRAME_LEN] __attribute__((aligned(4)));
+static uint8_t s_rx_frame[SPI_FRAME_LEN] __attribute__((aligned(4)));
+
+static SemaphoreHandle_t s_spi_done_sem;
+static volatile spi_event_t s_last_event;
+
+/* ------------------------------------------------------------------ */
+/* 字段助手（复用原 UART 版的浮点 → 定点压缩函数）                    */
+/* ------------------------------------------------------------------ */
+
+static uint8_t app_clamp_percent_u8(uint8_t v)
 {
-    float scaled = value * 10.0F;
-    if (scaled > 32767.0F)
-    {
-        return 32767;
-    }
-    if (scaled < -32768.0F)
-    {
-        return -32768;
-    }
-    return (int16_t) scaled;
+    return (v > 100u) ? 100u : v;
 }
 
-static uint16_t host_float_to_u16_x100(float value)
+static int16_t app_float_to_i16_x10(float v)
 {
-    float scaled = value * 100.0F;
-    if (scaled < 0.0F)
-    {
-        return 0U;
-    }
-    if (scaled > 65535.0F)
-    {
-        return 65535U;
-    }
-    return (uint16_t) scaled;
+    float s = v * 10.0F;
+    if (s > 32767.0F)  return 32767;
+    if (s < -32768.0F) return -32768;
+    return (int16_t)s;
 }
 
-static void host_u16_put(uint8_t * p_buf, uint16_t value)
+static uint16_t app_float_to_u16_x100(float v)
 {
-    p_buf[0] = (uint8_t) (value & 0xFFU);
-    p_buf[1] = (uint8_t) ((value >> 8U) & 0xFFU);
+    float s = v * 100.0F;
+    if (s < 0.0F)       return 0;
+    if (s > 65535.0F)   return 65535;
+    return (uint16_t)s;
 }
 
-static void host_u32_put(uint8_t * p_buf, uint32_t value)
+/* ------------------------------------------------------------------ */
+/* 装配 SENSOR_DATA 48B PAYLOAD（字段顺序 = §3.3）                    */
+/* ------------------------------------------------------------------ */
+
+static uint8_t app_build_sensor_payload(uint8_t *p)
 {
-    p_buf[0] = (uint8_t) (value & 0xFFU);
-    p_buf[1] = (uint8_t) ((value >> 8U) & 0xFFU);
-    p_buf[2] = (uint8_t) ((value >> 16U) & 0xFFU);
-    p_buf[3] = (uint8_t) ((value >> 24U) & 0xFFU);
+    memset(p, 0, SPI_SENSOR_PAYLOAD_LEN);
+
+    spi_u32_put(&p[SPI_SENS_OFF_TIMESTAMP_MS],        g_jscope_time_ms);
+    spi_u16_put(&p[SPI_SENS_OFF_AIR_TEMP_X10],        (uint16_t)app_float_to_i16_x10(g_sht30_temperature_c));
+    spi_u16_put(&p[SPI_SENS_OFF_AIR_HUMIDITY_X10],    (uint16_t)app_float_to_i16_x10(g_sht30_humidity_rh));
+    spi_u16_put(&p[SPI_SENS_OFF_WATER_TEMP_X10],      (uint16_t)app_float_to_i16_x10(g_uwt_temperature_c));
+    p[SPI_SENS_OFF_SOIL_MOISTURE_PCT]               = g_soil_moisture_percent;
+    p[SPI_SENS_OFF_WQI]                             = g_wqs_info.wqs_info_wqi;
+    p[SPI_SENS_OFF_PUMP_POWER_PCT]                  = g_pump_actual_power_percent;
+    p[SPI_SENS_OFF_NEED_WATERING]                   = g_control_need_watering;
+    spi_u16_put(&p[SPI_SENS_OFF_PRESSURE_KG_0_X100], app_float_to_u16_x100(g_pressure_latest.pressure_kg[0]));
+    spi_u16_put(&p[SPI_SENS_OFF_PRESSURE_KG_1_X100], app_float_to_u16_x100(g_pressure_latest.pressure_kg[1]));
+    spi_u16_put(&p[SPI_SENS_OFF_PRESSURE_KG_2_X100], app_float_to_u16_x100(g_pressure_latest.pressure_kg[2]));
+    spi_u32_put(&p[SPI_SENS_OFF_ALARM_FLAGS],        g_alarm_flags);
+    spi_u16_put(&p[SPI_SENS_OFF_AIR_RETRY],          (uint16_t)g_air_retry_count);
+    spi_u16_put(&p[SPI_SENS_OFF_WQS_RETRY],          (uint16_t)g_wqs_retry_count);
+    spi_u16_put(&p[SPI_SENS_OFF_UWT_RETRY],          (uint16_t)g_uwt_retry_count);
+    p[SPI_SENS_OFF_PUMP_CYCLE_ENABLE]               = g_pump_cycle_enable;
+    p[SPI_SENS_OFF_PUMP_CYCLE_START]                = g_pump_cycle_start;
+    p[SPI_SENS_OFF_PUMP_CYCLE_ACTIVE]               = g_pump_cycle_active;
+    p[SPI_SENS_OFF_PUMP_CYCLE_STATE]                = g_pump_cycle_state;
+    p[SPI_SENS_OFF_PUMP_CYCLE_POWER]                = g_pump_cycle_power_percent;
+    spi_u16_put(&p[SPI_SENS_OFF_PUMP_CYCLE_DONE],    (uint16_t)g_pump_cycle_done_count);
+
+    return SPI_SENSOR_PAYLOAD_LEN;
 }
 
-static uint16_t host_u16_get(const uint8_t * p_buf)
-{
-    return (uint16_t) ((uint16_t) p_buf[0] | ((uint16_t) p_buf[1] << 8U));
-}
+/* ------------------------------------------------------------------ */
+/* 告警位刷新（搬自原 host_update_alarm_flags）                       */
+/* ------------------------------------------------------------------ */
 
-static uint32_t host_u32_get(const uint8_t * p_buf)
+static void app_update_alarm_flags(void)
 {
-    return ((uint32_t) p_buf[0]) |
-           ((uint32_t) p_buf[1] << 8U) |
-           ((uint32_t) p_buf[2] << 16U) |
-           ((uint32_t) p_buf[3] << 24U);
-}
+    uint32_t alarm = 0u;
 
-static int16_t host_i16_get(const uint8_t * p_buf)
-{
-    return (int16_t) host_u16_get(p_buf);
-}
-
-static void host_update_alarm_flags(void)
-{
-    uint32_t alarm = 0U;
-
-    if (0U != g_soil_sensor_state)
-    {
-        alarm |= SENSOR_ALARM_SOIL_SENSOR_FAULT;
-    }
-    if (FSP_SUCCESS != g_pressure_last_err)
-    {
-        alarm |= SENSOR_ALARM_PRESSURE_READ_FAIL;
-    }
-    if (FSP_SUCCESS != g_air_last_err)
-    {
-        alarm |= SENSOR_ALARM_AIR_READ_FAIL;
-    }
-    if (FSP_SUCCESS != g_wqs_last_err)
-    {
-        alarm |= SENSOR_ALARM_WQS_READ_FAIL;
-    }
-    if (FSP_SUCCESS != g_uwt_last_err)
-    {
-        alarm |= SENSOR_ALARM_UWT_READ_FAIL;
-    }
+    if (0u != g_soil_sensor_state)                                        alarm |= SENSOR_ALARM_SOIL_SENSOR_FAULT;
+    if (FSP_SUCCESS != g_pressure_last_err)                               alarm |= SENSOR_ALARM_PRESSURE_READ_FAIL;
+    if (FSP_SUCCESS != g_air_last_err)                                    alarm |= SENSOR_ALARM_AIR_READ_FAIL;
+    if (FSP_SUCCESS != g_wqs_last_err)                                    alarm |= SENSOR_ALARM_WQS_READ_FAIL;
+    if (FSP_SUCCESS != g_uwt_last_err)                                    alarm |= SENSOR_ALARM_UWT_READ_FAIL;
     if ((FSP_SUCCESS == g_uwt_last_err) && (g_uwt_temperature_c >= g_ctrl_water_temp_high_c))
-    {
-        alarm |= SENSOR_ALARM_WATER_TEMP_HIGH;
-    }
-    if ((0U != g_wqs_last_read_ok) && (g_wqs_info.wqs_info_wqi <= g_ctrl_wqi_low_threshold))
-    {
-        alarm |= SENSOR_ALARM_WQI_LOW;
-    }
+                                                                          alarm |= SENSOR_ALARM_WATER_TEMP_HIGH;
+    if ((0u != g_wqs_last_read_ok) && (g_wqs_info.wqs_info_wqi <= g_ctrl_wqi_low_threshold))
+                                                                          alarm |= SENSOR_ALARM_WQI_LOW;
     if ((g_pressure_latest.pressure_kg[0] >= HOST_ALARM_PRESSURE_HIGH_KG) ||
         (g_pressure_latest.pressure_kg[1] >= HOST_ALARM_PRESSURE_HIGH_KG) ||
         (g_pressure_latest.pressure_kg[2] >= HOST_ALARM_PRESSURE_HIGH_KG))
-    {
-        alarm |= SENSOR_ALARM_PRESSURE_HIGH;
-    }
-    if (g_comm_rx_crc_error_count > 0U)
-    {
-        alarm |= SENSOR_ALARM_COMM_RX_ERROR;
-    }
+                                                                          alarm |= SENSOR_ALARM_PRESSURE_HIGH;
+    if (g_comm_rx_crc_error_count > 0u)                                   alarm |= SENSOR_ALARM_COMM_RX_ERROR;
 
     g_alarm_flags = alarm;
     g_alarm_latched_flags |= alarm;
     g_jscope_alarm_flags = alarm;
 }
 
-static uint16_t host_build_uplink_frame(uint8_t * p_out)
-{
-    uint8_t * p = p_out;
-    uint8_t payload[48];
-    uint8_t * q = payload;
+/* ------------------------------------------------------------------ */
+/* 命令分发：按 (DEV, CMD) 二级映射                                    */
+/* ------------------------------------------------------------------ */
 
-    host_u32_put(q, g_jscope_time_ms); q += 4;
-    host_u16_put(q, (uint16_t) host_float_to_i16_x10(g_sht30_temperature_c)); q += 2;
-    host_u16_put(q, (uint16_t) host_float_to_i16_x10(g_sht30_humidity_rh)); q += 2;
-    host_u16_put(q, (uint16_t) host_float_to_i16_x10(g_uwt_temperature_c)); q += 2;
-    *q++ = g_soil_moisture_percent;
-    *q++ = g_wqs_info.wqs_info_wqi;
-    *q++ = g_pump_actual_power_percent;
-    *q++ = g_control_need_watering;
-    host_u16_put(q, host_float_to_u16_x100(g_pressure_latest.pressure_kg[0])); q += 2;
-    host_u16_put(q, host_float_to_u16_x100(g_pressure_latest.pressure_kg[1])); q += 2;
-    host_u16_put(q, host_float_to_u16_x100(g_pressure_latest.pressure_kg[2])); q += 2;
-    host_u32_put(q, g_alarm_flags); q += 4;
-    host_u16_put(q, (uint16_t) g_air_retry_count); q += 2;
-    host_u16_put(q, (uint16_t) g_wqs_retry_count); q += 2;
-    host_u16_put(q, (uint16_t) g_uwt_retry_count); q += 2;
-    *q++ = g_pump_cycle_enable;
-    *q++ = g_pump_cycle_start;
-    *q++ = g_pump_cycle_active;
-    *q++ = g_pump_cycle_state;
-    *q++ = g_pump_cycle_power_percent;
-    host_u16_put(q, (uint16_t) g_pump_cycle_done_count); q += 2;
-
-    uint16_t payload_len = (uint16_t) (q - payload);
-    *p++ = HOST_UPLINK_SYNC0;
-    *p++ = HOST_UPLINK_SYNC1;
-    *p++ = HOST_UPLINK_VERSION;
-    *p++ = (uint8_t) (g_comm_tx_seq & 0xFFU);
-    host_u16_put(p, payload_len); p += 2;
-    for (uint16_t i = 0U; i < payload_len; i++)
-    {
-        *p++ = payload[i];
-    }
-
-    uint16_t crc = host_crc16_modbus(p_out, (uint16_t) (p - p_out));
-    host_u16_put(p, crc);
-    p += 2;
-    return (uint16_t) (p - p_out);
-}
-
-static void host_apply_command(uint8_t cmd, const uint8_t * p_payload, uint8_t len)
+/* 业务级 cmd 处理（PUMP / LINKAGE）。返回 spi_status_t。 */
+static uint8_t app_handle_pump(uint8_t cmd, const uint8_t *p, uint8_t len)
 {
     switch (cmd)
     {
-        case HOST_CMD_SET_MANUAL_PUMP:
-            if (len >= 2U)
-            {
-                g_pump_manual_mode = (0U != p_payload[0]) ? 1U : 0U;
-                g_pump_manual_power_percent = host_clamp_percent_u8(p_payload[1]);
-            }
-            break;
+    case SPI_CMD_PUMP_START:
+        g_pump_manual_mode = 1u;
+        if (len >= 1u)
+        {
+            g_pump_manual_power_percent = app_clamp_percent_u8(p[0]);
+            g_pump_cycle_power_percent  = g_pump_manual_power_percent;
+        }
+        if (0u == g_pump_manual_power_percent)
+        {
+            g_pump_manual_power_percent = 60u;
+            g_pump_cycle_power_percent  = 60u;
+        }
+        return SPI_STATUS_OK;
 
-        case HOST_CMD_SET_SOIL_CFG:
-            if (len >= 2U)
-            {
-                g_soil_watering_threshold = host_clamp_percent_u8(p_payload[0]);
-                g_soil_watering_hysteresis = host_clamp_percent_u8(p_payload[1]);
-            }
-            break;
+    case SPI_CMD_PUMP_STOP:
+        g_pump_manual_mode = 1u;
+        g_pump_manual_power_percent = 0u;
+        return SPI_STATUS_OK;
 
-        case HOST_CMD_SET_LINKAGE_CFG:
-            if (len >= 4U)
-            {
-                g_ctrl_enable_soil = (0U != (p_payload[0] & 0x01U)) ? 1U : 0U;
-                g_ctrl_enable_water_temp = (0U != (p_payload[0] & 0x02U)) ? 1U : 0U;
-                g_ctrl_enable_wqi = (0U != (p_payload[0] & 0x04U)) ? 1U : 0U;
-                g_ctrl_water_temp_high_c = (float) host_i16_get(&p_payload[1]) / 10.0F;
-                g_ctrl_wqi_low_threshold = p_payload[3];
-                if (g_ctrl_wqi_low_threshold > 100U)
-                {
-                    g_ctrl_wqi_low_threshold = 100U;
-                }
-                if (g_ctrl_water_temp_high_c < 0.0F)
-                {
-                    g_ctrl_water_temp_high_c = 0.0F;
-                }
-                if (g_ctrl_water_temp_high_c > 100.0F)
-                {
-                    g_ctrl_water_temp_high_c = 100.0F;
-                }
-            }
-            break;
+    case SPI_CMD_PUMP_SET_PWM:
+        if (len < 1u) return SPI_STATUS_BAD_PAYLOAD_LEN;
+        g_pump_manual_mode = 1u;
+        g_pump_manual_power_percent = app_clamp_percent_u8(p[0]);
+        g_pump_cycle_power_percent  = g_pump_manual_power_percent;
+        return SPI_STATUS_OK;
 
-        case HOST_CMD_PUMP_START:
-            /* Optional payload[0] as start speed percentage; if omitted, keep previous manual power. */
-            g_pump_manual_mode = 1U;
-            if (len >= 1U)
-            {
-                g_pump_manual_power_percent = host_clamp_percent_u8(p_payload[0]);
-                g_pump_cycle_power_percent = g_pump_manual_power_percent;
-            }
-            if (0U == g_pump_manual_power_percent)
-            {
-                g_pump_manual_power_percent = 60U;
-                g_pump_cycle_power_percent = 60U;
-            }
-            break;
+    case SPI_CMD_PUMP_SET_AUTO:
+        g_pump_manual_mode = 0u;
+        return SPI_STATUS_OK;
 
-        case HOST_CMD_PUMP_STOP:
-            g_pump_manual_mode = 1U;
-            g_pump_manual_power_percent = 0U;
-            break;
+    case SPI_CMD_PUMP_SET_MANUAL:
+        if (len < 2u) return SPI_STATUS_BAD_PAYLOAD_LEN;
+        g_pump_manual_mode          = (0u != p[0]) ? 1u : 0u;
+        g_pump_manual_power_percent = app_clamp_percent_u8(p[1]);
+        return SPI_STATUS_OK;
 
-        case HOST_CMD_SET_PUMP_PWM:
-            if (len >= 1U)
-            {
-                g_pump_manual_mode = 1U;
-                g_pump_manual_power_percent = host_clamp_percent_u8(p_payload[0]);
-                g_pump_cycle_power_percent = g_pump_manual_power_percent;
-            }
-            break;
+    case SPI_CMD_PUMP_SET_CYCLE_CFG:
+        if (len < 11u) return SPI_STATUS_BAD_PAYLOAD_LEN;
+        g_pump_cycle_enable        = (0u != p[0]) ? 1u : 0u;
+        g_pump_cycle_start         = (0u != p[1]) ? 1u : 0u;
+        g_pump_cycle_power_percent = app_clamp_percent_u8(p[2]);
+        g_pump_cycle_run_time_ms   = spi_u16_get(&p[3]);
+        g_pump_cycle_stop_time_ms  = spi_u16_get(&p[5]);
+        g_pump_cycle_interval_time_ms = spi_u16_get(&p[7]);
+        g_pump_cycle_total_count   = spi_u16_get(&p[9]);
+        return SPI_STATUS_OK;
 
-        case HOST_CMD_SET_PUMP_AUTO:
-            g_pump_manual_mode = 0U;
-            break;
+    case SPI_CMD_PUMP_SET_CYCLE_CTRL:
+        if (len < 1u) return SPI_STATUS_BAD_PAYLOAD_LEN;
+        g_pump_cycle_enable = (0u != p[0]) ? 1u : 0u;
+        if (len >= 2u) g_pump_cycle_start = (0u != p[1]) ? 1u : 0u;
+        if (len >= 6u) g_pump_cycle_total_count = spi_u32_get(&p[2]);
+        return SPI_STATUS_OK;
 
-        case HOST_CMD_SET_PUMP_CYCLE_CFG:
-            /*
-             * Payload format (11 bytes):
-             * [0]=enable, [1]=start, [2]=power%
-             * [3..4]=run_ms, [5..6]=stop_ms, [7..8]=interval_ms, [9..10]=total_count
-             */
-            if (len >= 11U)
-            {
-                g_pump_cycle_enable = (0U != p_payload[0]) ? 1U : 0U;
-                g_pump_cycle_start = (0U != p_payload[1]) ? 1U : 0U;
-                g_pump_cycle_power_percent = host_clamp_percent_u8(p_payload[2]);
-                g_pump_cycle_run_time_ms = host_u16_get(&p_payload[3]);
-                g_pump_cycle_stop_time_ms = host_u16_get(&p_payload[5]);
-                g_pump_cycle_interval_time_ms = host_u16_get(&p_payload[7]);
-                g_pump_cycle_total_count = host_u16_get(&p_payload[9]);
-            }
-            break;
+    case SPI_CMD_PUMP_GET_STATUS:
+        return SPI_STATUS_OK; /* PAYLOAD 由调用方按 RSP_TYPE_STATUS 装 */
 
-        case HOST_CMD_SET_PUMP_CYCLE_CTRL:
-            /*
-             * Payload format:
-             * [0]=enable (optional), [1]=start (optional), [2..5]=total_count (optional)
-             */
-            if (len >= 1U)
-            {
-                g_pump_cycle_enable = (0U != p_payload[0]) ? 1U : 0U;
-            }
-            if (len >= 2U)
-            {
-                g_pump_cycle_start = (0U != p_payload[1]) ? 1U : 0U;
-            }
-            if (len >= 6U)
-            {
-                g_pump_cycle_total_count = host_u32_get(&p_payload[2]);
-            }
-            break;
-
-        default:
-            break;
+    default:
+        return SPI_STATUS_UNKNOWN_CMD;
     }
 }
 
-static void host_parse_downlink_stream(void)
+static uint8_t app_handle_linkage(uint8_t cmd, const uint8_t *p, uint8_t len)
 {
-    static uint8_t  state = 0U;
-    static uint8_t  len = 0U;
-    static uint8_t  cmd = 0U;
-    static uint8_t  payload[HOST_DOWNLINK_MAX_PAYLOAD];
-    static uint8_t  idx = 0U;
-    static uint8_t  crc_lo = 0U;
-    static uint8_t  frame[2U + 1U + 1U + HOST_DOWNLINK_MAX_PAYLOAD];
-    uint8_t byte = 0U;
-
-    while (host_uart0_try_read_byte(&byte))
+    switch (cmd)
     {
-        switch (state)
-        {
-            case 0U:
-                state = (byte == HOST_DOWNLINK_SYNC0) ? 1U : 0U;
-                break;
-            case 1U:
-                state = (byte == HOST_DOWNLINK_SYNC1) ? 2U : 0U;
-                break;
-            case 2U:
-                len = byte;
-                if ((len < 1U) || (len > (1U + HOST_DOWNLINK_MAX_PAYLOAD)))
-                {
-                    state = 0U;
-                }
-                else
-                {
-                    state = 3U;
-                }
-                break;
-            case 3U:
-                cmd = byte;
-                idx = 0U;
-                if (len == 1U)
-                {
-                    state = 5U;
-                }
-                else
-                {
-                    state = 4U;
-                }
-                break;
-            case 4U:
-                payload[idx++] = byte;
-                if (idx >= (uint8_t) (len - 1U))
-                {
-                    state = 5U;
-                }
-                break;
-            case 5U:
-                crc_lo = byte;
-                state = 6U;
-                break;
-            case 6U:
-            {
-                uint16_t frame_len = (uint16_t) (2U + 1U + 1U + (len - 1U));
-                uint16_t expect_crc;
-                uint16_t rx_crc = (uint16_t) ((uint16_t) crc_lo | ((uint16_t) byte << 8U));
+    case SPI_CMD_LINK_SET_SOIL_CFG:
+        if (len < 2u) return SPI_STATUS_BAD_PAYLOAD_LEN;
+        g_soil_watering_threshold  = app_clamp_percent_u8(p[0]);
+        g_soil_watering_hysteresis = app_clamp_percent_u8(p[1]);
+        return SPI_STATUS_OK;
 
-                frame[0] = HOST_DOWNLINK_SYNC0;
-                frame[1] = HOST_DOWNLINK_SYNC1;
-                frame[2] = len;
-                frame[3] = cmd;
-                for (uint8_t i = 0U; i < (uint8_t) (len - 1U); i++)
-                {
-                    frame[4U + i] = payload[i];
-                }
+    case SPI_CMD_LINK_SET_RULE:
+    {
+        if (len < 4u) return SPI_STATUS_BAD_PAYLOAD_LEN;
+        g_ctrl_enable_soil       = (0u != (p[0] & 0x01u)) ? 1u : 0u;
+        g_ctrl_enable_water_temp = (0u != (p[0] & 0x02u)) ? 1u : 0u;
+        g_ctrl_enable_wqi        = (0u != (p[0] & 0x04u)) ? 1u : 0u;
+        float wt = (float)spi_i16_get(&p[1]) / 10.0F;
+        if (wt < 0.0F)   wt = 0.0F;
+        if (wt > 100.0F) wt = 100.0F;
+        g_ctrl_water_temp_high_c = wt;
+        uint8_t low = p[3];
+        if (low > 100u) low = 100u;
+        g_ctrl_wqi_low_threshold = low;
+        return SPI_STATUS_OK;
+    }
 
-                expect_crc = host_crc16_modbus(frame, frame_len);
-                if (expect_crc == rx_crc)
-                {
-                    host_apply_command(cmd, payload, (uint8_t) (len - 1U));
-                    g_comm_rx_cmd_count++;
-                }
-                else
-                {
-                    g_comm_rx_crc_error_count++;
-                    g_alarm_flags |= SENSOR_ALARM_COMM_RX_ERROR;
-                    g_alarm_latched_flags |= SENSOR_ALARM_COMM_RX_ERROR;
-                }
-                state = 0U;
-                break;
-            }
-            default:
-                state = 0U;
-                break;
-        }
+    default:
+        return SPI_STATUS_UNKNOWN_CMD;
     }
 }
 
-void Com_SPI_Callback(spi_callback_args_t * p_args)
+/*
+ * 解析 RX 帧并装配 TX 帧。
+ * rx, tx 都是 SPI_FRAME_LEN 字节缓冲。
+ */
+static void app_dispatch(const uint8_t *rx, uint8_t *tx)
 {
-    FSP_PARAMETER_NOT_USED(p_args);
-}
-
-/* Com_Thread entry function */
-/* pvParameters contains TaskHandle_t */
-void Communicate_Task_entry(void * pvParameters)
-{
-    FSP_PARAMETER_NOT_USED(pvParameters);
-    vTaskPrioritySet(NULL, 2U);
-    host_uart0_init();
-
-    const TickType_t period_ticks = pdMS_TO_TICKS(250U);
-    while (1)
+    /* 1. 帧整体校验 */
+    int v = spi_validate_frame(rx, /*is_cmd*/1);
+    if (v != 0)
     {
-        sensor_fusion_update_jscope_time();
-        host_update_alarm_flags();
-
-        uint8_t frame[64];
-        uint16_t frame_len = host_build_uplink_frame(frame);
-        bool tx_ok = host_uart0_write_bytes(frame, frame_len);
-        g_comm_last_tx_ok = tx_ok ? 1U : 0U;
-        if (tx_ok)
+        uint8_t status = (uint8_t)(-v);
+        if (status == SPI_STATUS_CRC_ERR)
         {
-            g_comm_tx_seq++;
-        }
-        else
-        {
+            g_comm_rx_crc_error_count++;
             g_alarm_flags |= SENSOR_ALARM_COMM_RX_ERROR;
             g_alarm_latched_flags |= SENSOR_ALARM_COMM_RX_ERROR;
         }
+        /* 校验失败时，ack_seq 用 0xFF（无可信 SEQ） */
+        spi_pack_rsp(tx, 0xFFu, status, SPI_RSP_TYPE_ACK, NULL, 0,
+                     (g_alarm_flags ? SPI_RSP_FLAG_ALARM : 0),
+                     (uint32_t)xTaskGetTickCount() * portTICK_PERIOD_MS);
+        return;
+    }
 
-        host_parse_downlink_stream();
-        vTaskDelay(period_ticks);
+    uint8_t  seq     = rx[SPI_CMD_OFF_SEQ];
+    uint8_t  dev     = rx[SPI_CMD_OFF_DEV];
+    uint8_t  cmd     = rx[SPI_CMD_OFF_CMD];
+    uint8_t  len     = rx[SPI_CMD_OFF_LEN];
+    const uint8_t *payload = &rx[SPI_CMD_OFF_PAYLOAD];
+
+    g_comm_rx_cmd_count++;
+
+    uint8_t status   = SPI_STATUS_OK;
+    uint8_t rsp_type = SPI_RSP_TYPE_ACK;
+    uint8_t rsp_payload[SPI_RSP_PAYLOAD_MAX];
+    uint8_t rsp_len  = 0;
+
+    switch (dev)
+    {
+    case SPI_DEV_SYSTEM:
+        switch (cmd)
+        {
+        case SPI_CMD_SYS_NOP:
+        case SPI_CMD_SYS_PING:
+        case SPI_CMD_SYS_GET_UPTIME:
+            /* 单纯 ACK，uptime 在 RSP 帧固定字段里 */
+            break;
+        case SPI_CMD_SYS_GET_VERSION:
+            rsp_payload[SPI_VER_OFF_PROTO] = SPI_PROTO_VERSION;
+            rsp_payload[SPI_VER_OFF_MAJOR] = APP_VER_MAJOR;
+            rsp_payload[SPI_VER_OFF_MINOR] = APP_VER_MINOR;
+            rsp_payload[SPI_VER_OFF_PATCH] = APP_VER_PATCH;
+            rsp_len  = SPI_VERSION_PAYLOAD_LEN;
+            rsp_type = SPI_RSP_TYPE_VERSION;
+            break;
+        case SPI_CMD_SYS_RESET_ALARM:
+            g_alarm_latched_flags = 0u;
+            break;
+        case SPI_CMD_SYS_HELLO:
+            /* 主机重启通知；可在此清统计/重置 SEQ 跟踪等 */
+            g_comm_rx_crc_error_count = 0u;
+            g_comm_rx_cmd_count       = 0u;
+            break;
+        default:
+            status = SPI_STATUS_UNKNOWN_CMD;
+            break;
+        }
+        break;
+
+    case SPI_DEV_PUMP:
+        status = app_handle_pump(cmd, payload, len);
+        break;
+
+    case SPI_DEV_SENSOR:
+        if (cmd == SPI_CMD_SENSOR_POLL_ALL ||
+            cmd == SPI_CMD_SENSOR_POLL_AIR ||
+            cmd == SPI_CMD_SENSOR_POLL_WATER ||
+            cmd == SPI_CMD_SENSOR_POLL_SOIL ||
+            cmd == SPI_CMD_SENSOR_POLL_PRESSURE)
+        {
+            /* v1 实现里：所有 POLL_* 都返回完整 SensorData，主机各取所需 */
+            rsp_len  = app_build_sensor_payload(rsp_payload);
+            rsp_type = SPI_RSP_TYPE_SENSOR_DATA;
+        }
+        else
+        {
+            status = SPI_STATUS_UNKNOWN_CMD;
+        }
+        break;
+
+    case SPI_DEV_LINKAGE:
+        status = app_handle_linkage(cmd, payload, len);
+        break;
+
+    default:
+        status = SPI_STATUS_UNKNOWN_DEV;
+        break;
+    }
+
+    uint8_t flags = 0u;
+    if (g_alarm_flags) flags |= SPI_RSP_FLAG_ALARM;
+
+    uint32_t uptime = (uint32_t)xTaskGetTickCount() * portTICK_PERIOD_MS;
+    spi_pack_rsp(tx, seq, status, rsp_type, rsp_payload, rsp_len, flags, uptime);
+}
+
+/* ------------------------------------------------------------------ */
+/* SPI 完成回调（中断上下文）                                          */
+/* ------------------------------------------------------------------ */
+
+void Com_SPI_Callback(spi_callback_args_t *p_args)
+{
+    if (p_args == NULL || s_spi_done_sem == NULL) return;
+
+    s_last_event = p_args->event;
+
+    BaseType_t hp_woken = pdFALSE;
+    xSemaphoreGiveFromISR(s_spi_done_sem, &hp_woken);
+    portYIELD_FROM_ISR(hp_woken);
+}
+
+/* ------------------------------------------------------------------ */
+/* 任务入口                                                            */
+/* ------------------------------------------------------------------ */
+
+void Communicate_Task_entry(void *pvParameters)
+{
+    FSP_PARAMETER_NOT_USED(pvParameters);
+
+    /* 该任务必须比传感器采样任务高，避免装载 RSP 时被打断 */
+    vTaskPrioritySet(NULL, 3u);
+
+    s_spi_done_sem = xSemaphoreCreateBinary();
+    configASSERT(s_spi_done_sem != NULL);
+
+    /* 0) 打开 SCI0 作为日志通道（保留 UART 串口功能）。失败不影响 SPI 通信。 */
+    app_log_uart_init();
+
+    /* 1) 打开 SPI Slave */
+    fsp_err_t err = g_com_spi.p_api->open(g_com_spi.p_ctrl, g_com_spi.p_cfg);
+    configASSERT(err == FSP_SUCCESS);
+
+    /* 2) 上电先装一帧"Idle 响应"，让首次主机事务能拿到合法帧 */
+    spi_pack_rsp(s_tx_frame, SPI_SEQ_IDLE, SPI_STATUS_OK,
+                 SPI_RSP_TYPE_ACK, NULL, 0, 0,
+                 (uint32_t)xTaskGetTickCount() * portTICK_PERIOD_MS);
+
+    const TickType_t xfer_wait = pdMS_TO_TICKS(1000u);
+
+    for (;;)
+    {
+        /* 3) 启动一次 64B 全双工事务（异步：装好 DMAC 即返回）
+         *    TX = s_tx_frame（已是上一次装好的响应或 Idle）
+         *    RX = s_rx_frame
+         */
+        err = g_com_spi.p_api->writeRead(g_com_spi.p_ctrl,
+                                         s_tx_frame, s_rx_frame,
+                                         (uint32_t)SPI_FRAME_LEN,
+                                         SPI_BIT_WIDTH_8_BITS);
+        if (err != FSP_SUCCESS)
+        {
+            /* 启动失败：稍等重试 */
+            vTaskDelay(pdMS_TO_TICKS(2u));
+            continue;
+        }
+
+        /* 4) 等主机驱动 SCK 完成 + DMAC EOT */
+        if (xSemaphoreTake(s_spi_done_sem, xfer_wait) != pdTRUE)
+        {
+            /* 主机长时间无事务（>1 s）：取消并重新挂 DMAC */
+            (void)g_com_spi.p_api->close(g_com_spi.p_ctrl);
+            err = g_com_spi.p_api->open(g_com_spi.p_ctrl, g_com_spi.p_cfg);
+            configASSERT(err == FSP_SUCCESS);
+            continue;
+        }
+
+        if (s_last_event != SPI_EVENT_TRANSFER_COMPLETE)
+        {
+            /* SPI 总线错误（PER/MODF/OVR）：记一次然后重试 */
+            g_alarm_flags |= SENSOR_ALARM_COMM_RX_ERROR;
+            g_alarm_latched_flags |= SENSOR_ALARM_COMM_RX_ERROR;
+            continue;
+        }
+
+        /* 5) 解析本次 CMD 并装好下一次要发的 RSP */
+        app_update_alarm_flags();
+        app_dispatch(s_rx_frame, s_tx_frame);
+        sensor_fusion_update_jscope_time();
+
+        g_comm_tx_seq++;
+        g_comm_last_tx_ok = 1u;
     }
 }

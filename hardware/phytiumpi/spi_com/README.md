@@ -44,22 +44,28 @@ make test
 
 ### 2) 编译飞腾派可执行
 
-**方式 A：在开发机上交叉编译**（推荐）
+**方式 A：直接在飞腾派上本机编译**（推荐，零 glibc 兼容性问题）
 
 ```bash
+# 飞腾派上：
+cd ~/AquaGarden/hardware/phytiumpi/spi_com
+make linux-native                               # 输出 build/native/
+sudo cp build/native/aqua_spid build/native/aqua_spi_cli /usr/local/bin/
+```
+
+**方式 B：在 x86 开发机上交叉编译再传过去**
+
+```bash
+# 开发机上：
 sudo apt install gcc-aarch64-linux-gnu          # 一次性
 make linux                                      # 输出 build/linux/
-scp build/linux/aqua_spid build/linux/aqua_spi_cli  user@phytium:/usr/local/bin/
+scp build/linux/aqua_spi* user@<飞腾派IP>:/tmp/
+
+# 飞腾派上：
+sudo mv /tmp/aqua_spi* /usr/local/bin/
 ```
 
-**方式 B：在飞腾派本机编译**
-
-```bash
-# 把整个 spi_com/ 目录拷到飞腾派
-make linux-native                               # 输出 build/native/
-sudo cp build/native/aqua_spid /usr/local/bin/
-sudo cp build/native/aqua_spi_cli /usr/local/bin/
-```
+> ⚠️ 不要把开发机交叉编译产物提交进 git 然后在飞腾派 git pull。glibc 版本差异可能导致加载失败，**始终在飞腾派上用方式 A 重新编译**最稳妥。
 
 ### 3) RA6E2 端
 

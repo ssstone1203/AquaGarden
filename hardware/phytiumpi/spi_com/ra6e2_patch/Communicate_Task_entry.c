@@ -2,7 +2,8 @@
  * Communicate_Task_entry.c — RA6E2 SPI Slave 通信任务（替换 UART 版）
  *
  * 与原 UART 版本相比：
- *   - 删除 SCI0 直寄存器收发、host_uart0_*、host_parse_downlink_stream
+ *   - 删除 SCI0 直寄存器收发上位机协议（host_uart0_*、host_parse_downlink_stream）
+ *     —— SCI0 端口仍保留作日志通道，由 app_log_uart_* 管理
  *   - 主循环改为：g_com_spi.p_api->writeRead() 启动一次 64B 全双工事务，
  *     等待 Com_SPI_Callback 在 EOT 中断里 give 信号量，然后处理 RX、装 TX，
  *     立即重新 writeRead。
@@ -10,13 +11,16 @@
  *           、host_update_alarm_flags、host_build_uplink_frame
  *   - 命令空间：DEV(1B) + CMD(1B) 二级（见 spi_protocol.h），不再用扁平 HOST_CMD_*
  *
- * 部署到 e2studio 工程：
+ * 部署到 Keil + RASC 工程：
  *   1) 把本文件覆盖到 src/Communicate_Task_entry.c
  *   2) 复制 ra6e2_patch/spi_protocol.h、spi_codec.h、spi_codec.c 到 src/
  *      （由 sync_from_canonical.sh 维护与 Linux 端一致）
- *   3) 在 FSP Configurator 中把 SPI1 (g_com_spi) 的 TX/RX DMAC 字宽从
- *      TRANSFER_SIZE_2_BYTE 改为 TRANSFER_SIZE_1_BYTE，重新生成代码
- *   4) （可选）SCI0 UART 模块仍可保留作日志，但不再承担与上位机通信
+ *   3) 在 RASC 中把 SPI1 (g_com_spi) 的 TX/RX DMAC 字宽从
+ *      TRANSFER_SIZE_2_BYTE 改为 TRANSFER_SIZE_1_BYTE，并把 P103 选作
+ *      SPI1.SSLB0 外设引脚，重新生成代码（详见 FSP_CHANGES.md）
+ *   4) SCI0 UART 模块仍保留作日志通道：
+ *        app_log_uart_init()         — 任务启动时已自动调用
+ *        app_log_uart_write(buf,len) — 业务方任意时刻可调，写阻塞 ≤ 5 ms / byte
  */
 
 #include "Communicate_Task.h"
@@ -34,8 +38,73 @@
 
 #include <string.h>
 
-/* FSP 在 Communicate_Task.c 中定义 */
-extern const spi_instance_t g_com_spi;
+/* FSP 在 ra_gen/Communicate_Task.c 中定义 */
+extern const spi_instance_t  g_com_spi;
+extern const uart_instance_t g_com_uart0;
+
+/* ------------------------------------------------------------------ */
+/* SCI0 UART 日志通道（保留串口功能；不参与上位机通信）                */
+/* ------------------------------------------------------------------ */
+
+#define APP_LOG_UART_TX_TIMEOUT_MS  (5u)
+
+static volatile uint8_t s_log_uart_opened;
+
+static bool app_log_uart_wait_tdre(TickType_t timeout_ticks)
+{
+    TickType_t start = xTaskGetTickCount();
+    while (0u == R_SCI0->SSR_b.TDRE)
+    {
+        if ((xTaskGetTickCount() - start) >= timeout_ticks)
+        {
+            return false;
+        }
+        taskYIELD();
+    }
+    return true;
+}
+
+static bool app_log_uart_wait_tend(TickType_t timeout_ticks)
+{
+    TickType_t start = xTaskGetTickCount();
+    while (0u == R_SCI0->SSR_b.TEND)
+    {
+        if ((xTaskGetTickCount() - start) >= timeout_ticks)
+        {
+            return false;
+        }
+        taskYIELD();
+    }
+    return true;
+}
+
+void app_log_uart_init(void)
+{
+    if (0u != s_log_uart_opened) return;
+
+    /* 由 FSP 完成 SCI0 模块上电、波特率、TE/RE、NVIC 等。callback=NULL，
+     * 不挂中断回调；TX 走 TDR 轮询，RX 不消费（RDRF/ORER 自然丢弃）。 */
+    fsp_err_t err = g_com_uart0.p_api->open(&g_com_uart0_ctrl, &g_com_uart0_cfg);
+    if (err == FSP_SUCCESS)
+    {
+        s_log_uart_opened = 1u;
+    }
+}
+
+bool app_log_uart_write(const uint8_t *buf, uint16_t len)
+{
+    if (0u == s_log_uart_opened || NULL == buf || 0u == len) return false;
+
+    const TickType_t per_byte_to = pdMS_TO_TICKS(APP_LOG_UART_TX_TIMEOUT_MS);
+
+    for (uint16_t i = 0; i < len; i++)
+    {
+        if (!app_log_uart_wait_tdre(per_byte_to)) return false;
+        R_SCI0->TDR = buf[i];
+        R_SCI0->SSR_b.TDRE = 0u;
+    }
+    return app_log_uart_wait_tend(per_byte_to);
+}
 
 /* ------------------------------------------------------------------ */
 /* 应用层版本号                                                       */
@@ -380,6 +449,9 @@ void Communicate_Task_entry(void *pvParameters)
 
     s_spi_done_sem = xSemaphoreCreateBinary();
     configASSERT(s_spi_done_sem != NULL);
+
+    /* 0) 打开 SCI0 作为日志通道（保留 UART 串口功能）。失败不影响 SPI 通信。 */
+    app_log_uart_init();
 
     /* 1) 打开 SPI Slave */
     fsp_err_t err = g_com_spi.p_api->open(g_com_spi.p_ctrl, g_com_spi.p_cfg);

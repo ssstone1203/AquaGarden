@@ -455,6 +455,11 @@
               <FilePath>.\src\pump_drv8870.c</FilePath>
             </File>
             <File>
+              <FileName>spi_codec.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\spi_codec.c</FilePath>
+            </File>
+            <File>
               <FileName>ds18b20.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\src\ds18b20.h</FilePath>
@@ -498,6 +503,16 @@
               <FileName>wqs_sensor.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\src\wqs_sensor.h</FilePath>
+            </File>
+            <File>
+              <FileName>spi_codec.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\spi_codec.h</FilePath>
+            </File>
+            <File>
+              <FileName>spi_protocol.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\spi_protocol.h</FilePath>
             </File>
           </Files>
         </Group>
