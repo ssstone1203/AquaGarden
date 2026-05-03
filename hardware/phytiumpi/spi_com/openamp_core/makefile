@@ -18,6 +18,12 @@
 PROJECT_DIR = $(CURDIR)
 SDK_DIR    ?= $(CURDIR)/../../../../../phytium-standalone-sdk
 
+# 让 SDK 直接用 PATH 里找到的 aarch64-none-elf-gcc，
+# 不依赖 AARCH64_CROSS_PATH / install.py / phytium_dev.sh。
+# dpkg 安装 gcc-aarch64-none-elf 或 tar 解压工具链后，只要 PATH 里有就行。
+export AARCH64_CROSS_PATH ?= $(dir $(shell which aarch64-none-elf-gcc 2>/dev/null))/..
+export TOOL_CHAIN_PREFIX  ?= aarch64-none-elf-
+
 # 用户源码：本工程 main + src/ + 共享 spi_codec.c
 USER_CSRC  := main.c
 USER_CSRC  += $(wildcard src/*.c)
@@ -29,7 +35,9 @@ USER_INCLUDE += $(PROJECT_DIR) \
                 $(PROJECT_DIR)/src \
                 $(PROJECT_DIR)/common \
                 $(PROJECT_DIR)/../include \
-                $(PROJECT_DIR)/../linux/libaqua_spi
+                $(PROJECT_DIR)/../linux/libaqua_spi \
+                $(SDK_DIR)/drivers/spi/fspim \
+                $(SDK_DIR)/drivers/spi/fspim_v2_0
 
 include $(SDK_DIR)/tools/build/makeall.mk
 
