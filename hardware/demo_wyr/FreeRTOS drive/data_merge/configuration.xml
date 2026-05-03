@@ -468,7 +468,7 @@
       <property id="_symbol" value="THS_Task"/>
       <property id="rtos.awsfreertos.thread.name" value="THS_Measure"/>
       <property id="rtos.awsfreertos.thread.stack" value="1024"/>
-      <property id="rtos.awsfreertos.thread.priority" value="1"/>
+      <property id="rtos.awsfreertos.thread.priority" value="2"/>
       <property id="rtos.awsfreertos.thread.context" value="NULL"/>
       <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>
       <property id="rtos.awsfreertos.thread.secure_context" value="rtos.awsfreertos.thread.secure_context.enable"/>
@@ -508,7 +508,7 @@
       <property id="_symbol" value="Communicate_Task"/>
       <property id="rtos.awsfreertos.thread.name" value="Com_Thread"/>
       <property id="rtos.awsfreertos.thread.stack" value="1024"/>
-      <property id="rtos.awsfreertos.thread.priority" value="1"/>
+      <property id="rtos.awsfreertos.thread.priority" value="2"/>
       <property id="rtos.awsfreertos.thread.context" value="NULL"/>
       <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>
       <property id="rtos.awsfreertos.thread.secure_context" value="rtos.awsfreertos.thread.secure_context.enable"/>
@@ -672,6 +672,9 @@
       <configSetting altId="p101.gpio_mode.gpio_mode_peripheral" configurationId="p101.gpio_mode"/>
       <configSetting altId="p102.spi1.rspck1" configurationId="p102"/>
       <configSetting altId="p102.gpio_mode.gpio_mode_peripheral" configurationId="p102.gpio_mode"/>
+      <configSetting altId="p103.spi1.sslb0" configurationId="p103"/>
+      <configSetting altId="p103.gpio_speed.gpio_speed_m" configurationId="p103.gpio_drivecapacity"/>
+      <configSetting altId="p103.gpio_mode.gpio_mode_peripheral" configurationId="p103.gpio_mode"/>
       <configSetting altId="p108.jtag_fslash_swd.swdio" configurationId="p108"/>
       <configSetting altId="p108.gpio_mode.gpio_mode_peripheral" configurationId="p108.gpio_mode"/>
       <configSetting altId="p109.sci9.txd9" configurationId="p109"/>
@@ -706,6 +709,7 @@
       <configSetting altId="spi1.mode.enabled.a" configurationId="spi1.mode"/>
       <configSetting altId="spi1.mosi1.p101" configurationId="spi1.mosi1"/>
       <configSetting altId="spi1.rspck1.p102" configurationId="spi1.rspck1"/>
+      <configSetting altId="spi1.sslb0.p103" configurationId="spi1.sslb0"/>
     </pincfg>
   </raPinConfiguration>
 </raConfiguration>
