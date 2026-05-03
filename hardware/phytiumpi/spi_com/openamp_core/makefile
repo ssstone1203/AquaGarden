@@ -27,7 +27,7 @@ export TOOL_CHAIN_PREFIX  ?= aarch64-none-elf-
 # 用户源码：本工程 main + src/ + 共享 spi_codec.c
 USER_CSRC  := main.c
 USER_CSRC  += $(wildcard src/*.c)
-USER_CSRC  += $(PROJECT_DIR)/../linux/libaqua_spi/spi_codec.c
+USER_CSRC  += ../linux/libaqua_spi/spi_codec.c
 
 # 头文件搜索路径
 USER_INCLUDE += $(PROJECT_DIR) \

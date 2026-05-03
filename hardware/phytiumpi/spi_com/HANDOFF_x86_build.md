@@ -39,96 +39,173 @@ aarch64-none-elf-gcc (Linaro GCC 7.3-2018.05) 7.3.1
 
 ---
 
-## 当前卡点 — 需要在 x86 上完成
+## 当前状态 — 主线已完成
 
-### 第 1 步：编译裸机固件（**当前任务**）
+> 更新时间：2026-05-04 03:43
+>
+> v2 OpenAMP/RPMsg 主链路已完成：裸机固件已编译、部署到飞腾派，`aqua-openamp-load` 与
+> `aqua-rpmsgd` 已正常运行，CLI `ping` / `stats` / `sensor poll` 已通过。
+
+---
+
+## 本次执行结果
+
+### ✅ 第 1 步：编译裸机固件
+
+x86 主机编译目录：
 
 ```bash
 cd ~/AquaGarden/hardware/phytiumpi/spi_com/openamp_core
-make all -j$(nproc) 2>&1 | tail -40
+make all -j$(nproc)
 ```
 
-**注意事项：**
-- `sdkconfig` 已存在，不需要跑 `menuconfig`
-- `phytium-standalone-sdk` 路径：`~/phytium-standalone-sdk`（makefile 里 `SDK_DIR` 会自动找到）
-- 不需要执行 `install.py`，不需要 `source` 任何环境变量
-- `TOOL_CHAIN_PREFIX` 已在 makefile 里覆盖为 `aarch64-none-elf-`，直接用 PATH 里的编译器
+编译已成功，产物：
 
-**编译成功后产物：**
 ```
-openamp_core/image/openamp_spi_core0.elf   （或类似路径，看 build 输出）
+~/AquaGarden/hardware/phytiumpi/spi_com/openamp_core/pe2204_aarch64_phytiumpi_openamp_spi_core0.elf
 ```
 
-**如果报错 `fspim.h: No such file or directory`：**
-已修复（在 `makefile` 的 `USER_INCLUDE` 里加了 `$(SDK_DIR)/drivers/spi/fspim`），重试即可。
+本地 ELF 校验：
 
-**如果 `SDK_DIR` 找不到：**
-```bash
-make all -j$(nproc) SDK_DIR=$HOME/phytium-standalone-sdk
 ```
+33e5970035d76b1f31659f240528d317a41edbadb17b54eb0878f866113f9c0a
+```
+
+本次编译过程中已修复：
+
+- `openamp_core/makefile`：`spi_codec.c` 改为相对路径，确保进入 `libuser.a`。
+- `phytium-standalone-sdk/soc/common/fmmu_code_table.c`：修复 `num_regions` 静态初始化兼容问题。
+- `phytium-standalone-sdk/arch/armv8/aarch64/gcc/fcrt0.S`：将 AArch64 汇编里的 `lr` 改为显式 `x30`。
 
 ---
 
-### 第 2 步：把 .elf 传到飞腾派
+### ✅ 第 2 步：把 `.elf` 传到飞腾派
 
 飞腾派 IP：`192.168.136.165`，用户名：`user`
 
-```bash
-# 先确认 .elf 在哪
-find ~/AquaGarden/hardware/phytiumpi/spi_com/openamp_core -name "*.elf"
+已传到：
 
-# scp 传过去
-scp <elf路径> user@192.168.136.165:/tmp/openamp_spi_core0.elf
+```
+/tmp/openamp_spi_core0.elf
+```
+
+飞腾派上校验一致：
+
+```
+33e5970035d76b1f31659f240528d317a41edbadb17b54eb0878f866113f9c0a  /tmp/openamp_spi_core0.elf
+33e5970035d76b1f31659f240528d317a41edbadb17b54eb0878f866113f9c0a  /lib/firmware/openamp_spi_core0.elf
+```
+
+如需重新传：
+
+```bash
+scp ~/AquaGarden/hardware/phytiumpi/spi_com/openamp_core/pe2204_aarch64_phytiumpi_openamp_spi_core0.elf \
+  user@192.168.136.165:/tmp/openamp_spi_core0.elf
 ```
 
 ---
 
-### 第 3 步：在飞腾派上部署（SSH 进去操作）
+### ✅ 第 3 步：在飞腾派上部署
 
-```bash
-ssh user@192.168.136.165
+已完成：
 
-# 放到 remoteproc firmware 目录
-sudo cp /tmp/openamp_spi_core0.elf /lib/firmware/openamp_spi_core0.elf
+- 固件已部署到 `/lib/firmware/openamp_spi_core0.elf`
+- systemd 服务已部署到 `/etc/systemd/system/`
+  - `aqua-openamp-load.service`
+  - `aqua-rpmsgd.service`
+  - `aqua-spid.service`
+- Linux 用户态程序已部署到 `/opt/aqua/bin/`
+  - `aqua_rpmsgd`
+  - `aqua_spid`
+  - `aqua_spi_cli`
 
-# 安装 systemd 服务（从 x86 scp 过来）
-# 服务文件在 ~/AquaGarden/hardware/phytiumpi/spi_com/deploy/systemd/
-sudo cp aqua-openamp-load.service aqua-rpmsgd.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable aqua-openamp-load
-sudo systemctl start aqua-openamp-load
-```
+部署中修复过的关键点：
+
+- `aqua-openamp-load.service` 中 `udevadm` 路径改为 `/usr/bin/udevadm`。
+- `aqua-openamp-load.service` 改为幂等启动：目标固件已 running 时不再 stop/start remoteproc。
+- `aqua-openamp-load.service` 写入 `driver_override` 后会显式 bind `rpmsg_chrdev`，确保 `/dev/rpmsg_ctrl0` 出现。
+- Linux 用户态程序改为静态链接，避免飞腾派 Ubuntu 20.04 上缺少 `GLIBC_2.34`。
+- `aqua_backend_rpmsg.c` 不再固定打开 `/dev/rpmsg0`，而是选择 `/sys/class/rpmsg` 中服务名为 `aqua-spi` 的最新 `/dev/rpmsgN`。
 
 ---
 
-### 第 4 步：验证 v2（飞腾派上）
+### ✅ 第 4 步：验证 v2
+
+最终状态：
 
 ```bash
-# 查看 remoteproc 是否加载成功
+systemctl status aqua-openamp-load aqua-rpmsgd --no-pager -l
+```
+
+结果：
+
+- `aqua-openamp-load.service`: `active (exited)`
+- `aqua-rpmsgd.service`: `active (running)`
+- `remoteproc0/state`: `running`
+- `remoteproc0/firmware`: `openamp_spi_core0.elf`
+- `rpmsg` endpoint：`aqua-spi`
+
+CLI 验证已通过：
+
+```bash
+/opt/aqua/bin/aqua_spi_cli ping
+/opt/aqua/bin/aqua_spi_cli stats
+/opt/aqua/bin/aqua_spi_cli sensor poll
+```
+
+已确认结果：
+
+- `ping`: `daemon: alive`
+- `sensor poll`: `RSP: status=OK type=SENSOR_DATA`
+- `stats`: `rx_rsp_ok` 持续增长，`rx_timeout=0`，`rx_crc_err=0`，`rx_sof_err=0`，`consecutive_err=0`
+
+---
+
+### ✅ 第 5 步：v1 / v2 互斥验证
+
+已完成**安全互斥验证**：
+
+- 尝试启动 `aqua-spid.service` 时，因 `/dev/spidev0.0` 不存在，`ExecStartPre=/usr/bin/test -c /dev/spidev0.0` 失败。
+- `Conflicts=aqua-rpmsgd.service` 生效：启动 v1 时 `aqua-rpmsgd` 被停掉。
+- 重新启动 `aqua-rpmsgd` 后，v2 立即恢复正常。
+- 恢复后 CLI `ping` / `sensor poll` / `stats` 全部通过。
+
+未执行完整 v1 overlay 实机切换。原因：
+
+- 当前 BSP 的 `homo_rproc` 在 `stop` 后可能出现 sysfs 显示 `offline`、但 PSCI 返回 `CPU already on (-4)` 的不一致状态。
+- 该状态会导致 `echo start > /sys/class/remoteproc/remoteproc0/state` 卡住或失败，通常需要 reboot 恢复。
+- 因此本次没有主动 stop remoteproc 去完整切换 v1 fallback。
+
+如未来必须完整验证 v1 fallback，建议单独安排窗口，并预期可能需要重启飞腾派。
+
+---
+
+## 当前可用命令
+
+### 查看 v2 状态
+
+```bash
+systemctl status aqua-openamp-load aqua-rpmsgd --no-pager -l
 cat /sys/class/remoteproc/remoteproc0/state
-
-# 查看 rpmsg 设备是否出现
-ls /dev/rpmsg*
-
-# 启动 v2 daemon
-sudo systemctl start aqua-rpmsgd
-
-# 用 CLI 测试
-aqua_spi_cli ping
-aqua_spi_cli poll
+cat /sys/class/remoteproc/remoteproc0/firmware
+ls -l /dev/rpmsg_ctrl* /dev/rpmsg* 2>&1
 ```
 
----
-
-### 第 5 步：v1 / v2 互切验证互斥
+### CLI 验证
 
 ```bash
-# 切到 v1
-sudo bash ~/AquaGarden/.../deploy/scripts/switch_to_v1.sh
-
-# 切回 v2
-sudo bash ~/AquaGarden/.../deploy/scripts/switch_to_v2.sh
+/opt/aqua/bin/aqua_spi_cli ping
+/opt/aqua/bin/aqua_spi_cli stats
+/opt/aqua/bin/aqua_spi_cli sensor poll
 ```
+
+### 重启 v2 daemon
+
+```bash
+sudo systemctl restart aqua-rpmsgd
+```
+
+注意：不要随意 `systemctl stop aqua-openamp-load` 后再手动 stop/start remoteproc；当前内核/固件组合下 remoteproc 二次启动有风险。
 
 ---
 

@@ -13,12 +13,9 @@ RemainAfterExit=yes
 # 1) 备份当前 firmware 名（停服务时恢复）
 ExecStartPre=/bin/sh -c 'cat /sys/class/remoteproc/remoteproc0/firmware > /run/aqua_prev_firmware.txt 2>/dev/null || true'
 
-# 2) 如果当前 remoteproc 已 running（之前跑着 echo demo），先 stop
-ExecStartPre=/bin/sh -c '[ "$(cat /sys/class/remoteproc/remoteproc0/state)" = "running" ] && echo stop > /sys/class/remoteproc/remoteproc0/state || true'
-
-# 3) 写入我们的固件名 + 启动远程核
-ExecStart=/bin/sh -c 'echo openamp_spi_core0.elf > /sys/class/remoteproc/remoteproc0/firmware'
-ExecStart=/bin/sh -c 'echo start                 > /sys/class/remoteproc/remoteproc0/state'
+# 2) 幂等启动：homo_rproc stop 后可能让 sysfs=offline 但 PSCI 仍 already-on，
+#    因此如果目标固件已经 running，不再 stop/start 远程核。
+ExecStart=/bin/sh -c 'state=$(cat /sys/class/remoteproc/remoteproc0/state); fw=$(cat /sys/class/remoteproc/remoteproc0/firmware); if [ "$state" = "running" ] && [ "$fw" = "openamp_spi_core0.elf" ]; then exit 0; fi; if [ "$state" = "running" ]; then echo stop > /sys/class/remoteproc/remoteproc0/state; fi; echo openamp_spi_core0.elf > /sys/class/remoteproc/remoteproc0/firmware; echo start > /sys/class/remoteproc/remoteproc0/state'
 
 # 4) 等待远程核 announce endpoint 出来（最多 3 秒）
 ExecStart=/bin/sh -c 'for i in 1 2 3 4 5 6 ; do sleep 0.5 ; ls /sys/bus/rpmsg/devices/virtio0.aqua-spi.* 2>/dev/null && exit 0 ; done ; echo "[WARN] aqua-spi endpoint 在 3 秒内未出现" >&2'
@@ -26,10 +23,10 @@ ExecStart=/bin/sh -c 'for i in 1 2 3 4 5 6 ; do sleep 0.5 ; ls /sys/bus/rpmsg/de
 # 5) 加载 rpmsg_char 模块 + 把 aqua-spi 端点 override 成 char device
 ExecStart=/sbin/modprobe rpmsg_char
 ExecStart=/bin/sh -c 'for d in /sys/bus/rpmsg/devices/virtio0.aqua-spi.*/driver_override ; do [ -e "$d" ] && echo rpmsg_chrdev > "$d" ; done'
-ExecStart=/sbin/udevadm settle
+ExecStart=/bin/sh -c 'for dev in /sys/bus/rpmsg/devices/virtio0.aqua-spi.* ; do [ -e "$dev" ] || continue; [ -e "$dev/driver" ] && continue; echo "$(basename "$dev")" > /sys/bus/rpmsg/drivers/rpmsg_chrdev/bind; done; exit 0'
+ExecStart=/usr/bin/udevadm settle
 
-# 关闭顺序：先 stop 远程核，恢复原 firmware
-ExecStop=/bin/sh -c 'echo stop > /sys/class/remoteproc/remoteproc0/state || true'
+# 关闭时不自动 stop 远程核；当前 homo_rproc/固件组合 stop 后无法可靠二次 start。
 ExecStop=/bin/sh -c 'p=$(cat /run/aqua_prev_firmware.txt 2>/dev/null); [ -n "$p" ] && echo "$p" > /sys/class/remoteproc/remoteproc0/firmware || true'
 
 [Install]

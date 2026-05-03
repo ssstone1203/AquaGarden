@@ -35,7 +35,8 @@
 │ │                        ▼                                        │ │
 │ │  ┌─────────────────────────────────────────────────────────┐    │ │
 │ │  │ aqua_rpmsgd（守护进程，单线程）                           │    │ │
-│ │  │ - 独占 /dev/rpmsg0（v2 路径）                             │    │ │
+│ │  │ - 独占 /dev/rpmsgN（v2 路径，N 由内核动态分配，daemon 通过 │    │ │
+│ │  │   扫描 /sys/class/rpmsg/ 找 name="aqua-spi" 的最大编号）  │    │ │
 │ │  │   或 /dev/spidev0.0（v1 fallback 路径，自动检测）         │    │ │
 │ │  │ - 周期 250 ms 自动 SENSOR_POLL_ALL → 缓存最近快照         │    │ │
 │ │  │ - 处理 IPC：SEND_CMD / GET_SNAPSHOT / GET_STATS           │    │ │
@@ -225,6 +226,11 @@ int aqua_spi_xfer_64(const uint8_t *tx, uint8_t *rx)
 
 > Linux 端通过 `RPMSG_CREATE_EPT_IOCTL` 用同名 endpoint 名 `"aqua-spi"` 与裸机核协商。
 > 与 SDK 自带例程的 `RPMSG_SERVICE_NAME` 不同名，避免冲突。
+>
+> **设备节点动态发现：** Linux 内核 `rpmsg_char` 驱动会按 endpoint 注册顺序分配 `/dev/rpmsg0`、`/dev/rpmsg1`...
+> 编号不是固定的（如果系统里还跑别的 RPMsg 服务，编号会漂移）。daemon 实际不写死路径，
+> 而是先 `RPMSG_CREATE_EPT_IOCTL` 注册端点，然后扫描 `/sys/class/rpmsg/` 下所有 `rpmsgN`，
+> 找 `name=aqua-spi` 中编号最大的那个再 `open`。这样无论裸机核是第一个还是第 N 个 announce 服务都能命中。
 
 ### 2.4 双向数据流约定
 
@@ -342,46 +348,69 @@ RPMsg/IPI       ──────►SGI 中断到 core0──────►   
 
 ```
 启动:
-    if (探测 /sys/class/remoteproc/remoteproc0 存在 &&
-        /lib/firmware/openamp_spi_core0.elf 存在):
-        启动 remoteproc → 等待 /dev/rpmsg0 出现（最多 5 s）
-        模式 = "v2 OpenAMP"
-        rpmsg_open()
-    else:
-        卸载 spidev overlay 反向 apply（如果 user 装过）
-        spidev_open(/dev/spidev0.0)
-        模式 = "v1 fallback"
+    # daemon 不主动启动 remoteproc——那是 systemd 单元 aqua-openamp-load.service
+    # 在 daemon 之前完成的事（remoteproc start + modprobe rpmsg_char +
+    # /sys/bus/rpmsg/.../driver_override = rpmsg_chrdev）。
+    # daemon 这里只做 autoselect：
+    backend = aqua_backend_autoselect():
+        if access(/dev/rpmsg_ctrl0, RW) == 0:
+            ctrl_fd = open(/dev/rpmsg_ctrl0)
+            ioctl(ctrl_fd, RPMSG_CREATE_EPT_IOCTL, {name="aqua-spi", src=0, dst=ANY})
+            best = scan(/sys/class/rpmsg/, name=="aqua-spi")  # 找最大编号
+            rpmsg_fd = open(/dev/rpmsg<best>)
+            return rpmsg_backend
+        if access(/dev/spidev0.0, RW) == 0:
+            spidev_fd = open(/dev/spidev0.0)
+            ioctl(SPI_IOC_WR_BITS_PER_WORD=8, SPI_IOC_WR_MAX_SPEED_HZ=1MHz)
+            return spidev_backend
+        return NULL  # 两个后端都不可用，daemon 启动失败
 
     listen_socket(/tmp/aqua_spi.sock)
-    SYS_HELLO + SYS_PING （5 s 内重试至 STATUS=OK）
+    SYS_HELLO + SYS_PING （5 s 内重试至 STATUS=OK；超时不退出，
+                            交给周期重试自愈）
 
 主循环（poll, 唤醒源 = 周期定时 / 客户端连接 / 信号）:
     if 周期到:
-        send_cmd(SENSOR, POLL_ALL, ...) → 缓存 SensorData
+        do_send_cmd(SENSOR, POLL_ALL, ...) → 缓存 SensorData
     if 客户端连接:
         accept → ipc_handle() → close
-    if 信号:
-        rpmsg_close() / spidev_close()
+    if 信号(SIGINT/SIGTERM):
+        backend->close()
         退出
 
-send_cmd(dev, cmd, payload, len, flags):     # 后端无关
-    spi_pack_cmd(frame_64B, ++seq, dev, cmd, payload, len, flags)
-    if 模式 == "v2":
-        write(rpmsg_fd, frame_64B, 64)
-        read(rpmsg_fd, rsp_64B, 64)          # 阻塞等裸机核回包
-    else:
-        ioctl(spidev_fd, SPI_IOC_MESSAGE, &xfer{tx=frame_64B, rx=null})
-        nanosleep(5 ms)
-        ioctl(spidev_fd, SPI_IOC_MESSAGE, &xfer{tx=NOP, rx=rsp_64B})
-    spi_validate_frame(rsp_64B) → 返回业务结果
+do_send_cmd(dev, cmd, payload, len, flags):     # 后端无关
+    spi_pack_cmd(frame_64B, ++seq, dev, cmd, payload, len, flags|NEED_RSP)
+    rc = backend->xfer(ctx, tx_frame_64B, rx_frame_64B)
+        # 实现：
+        # rpmsg : write(rpmsg_fd, tx, 64) + read(rpmsg_fd, rx, 64) + poll() 超时 100 ms
+        # spidev: ioctl(SPI_IOC_MESSAGE, tx) + nanosleep(5 ms) +
+        #         ioctl(SPI_IOC_MESSAGE, NOP→rx)
+    if rc != 0:
+        stats.io_err++; consec_err++
+        if consec_err >= 5: backend->reset(ctx); consec_err = 0
+        return rc
+    if spi_validate_frame(rx) != 0:        # CRC / SOF 错
+        stats.crc_err 或 sof_err ++; consec_err++
+        if consec_err >= 5: backend->reset(ctx)
+        return -EBADMSG
+    stats.rx_rsp_ok++; consec_err = 0
+    return rx_frame
 ```
 
 ### 4.5 裸机核端状态机（aqua_dispatch_loop，伪码）
 
 ```
+全局静态缓冲（避免 ISR 上下文里 alloc）:
+    s_nop_frame  [64]   # 上电预先 spi_pack_cmd(SYS_NOP) 一次，后续直接复用
+    s_dummy_rx   [64]   # 第 1 次事务 MISO（是上一帧滞后响应，丢弃）
+    s_rsp_frame  [64]   # 第 2 次事务收回的 RSP，**rpmsg_send 用这个本端缓冲，
+                          # 不要直接重发回调入参 data 指针——那是 vring buf**
+    s_busy_frame [64]   # 上电预生成 STATUS=BUSY 的伪 RSP，SPI 出错时塞给 Linux
+
 init:
     init_system()
-    aqua_spi_init()
+    aqua_spi_master_init()                # FSPIM cfg + IOPad mux
+    aqua_pack_static_frames()             # 预打包 s_nop_frame / s_busy_frame
     platform_create_proc(slave_priv, kick_dev)
     platform_setup_src_table()
     platform_setup_share_mems()
@@ -390,23 +419,31 @@ init:
                      aqua_rpmsg_cb, aqua_rpmsg_unbind)
 
 aqua_rpmsg_cb(ept, data, len, src, priv):
-    if (len != 64) return RPMSG_SUCCESS    # 协议不识别，忽略
-    memcpy(g_cmd_frame, data, 64)
-    aqua_spi_xfer_64(g_cmd_frame, g_dummy_rx)  # 第一次：发 CMD，丢 MISO
+    if (len != 64): log_drop; return RPMSG_SUCCESS    # 协议不识别，忽略但不退出
+    ept->dest_addr = src                              # 锁定回包目标地址
+
+    if aqua_spi_master_xfer_64(data, s_dummy_rx) != 0:
+        rpmsg_send(ept, s_busy_frame, 64); return RPMSG_SUCCESS   # 防 Linux 阻塞
     fsleep_microsec(5000)                       # 5 ms 让 RA6E2 装 RSP
-    spi_pack_cmd(g_nop_frame, 0xFF, SPI_DEV_SYSTEM, SPI_CMD_SYS_NOP, NULL, 0, 0)
-    aqua_spi_xfer_64(g_nop_frame, g_rsp_frame) # 第二次：发 NOP，取 RSP
-    rpmsg_send(ept, g_rsp_frame, 64)            # 透传回 Linux
+    if aqua_spi_master_xfer_64(s_nop_frame, s_rsp_frame) != 0:
+        rpmsg_send(ept, s_busy_frame, 64); return RPMSG_SUCCESS
+    rpmsg_send(ept, s_rsp_frame, 64)            # 透传回 Linux
     return RPMSG_SUCCESS
 
 main_loop:
-    while !shutdown_req:
+    while !shutdown_req && !rproc_get_stop_flag():
         platform_poll(remoteproc)              # 收 IPI、跑回调
-        if rproc_get_stop_flag(): break
     rpmsg_destroy_ept(&lept)
+    platform_release_rpmsg_vdev(rpdev, &remoteproc)
+    aqua_spi_master_deinit()
     platform_cleanup(remoteproc)
-    FPsciCpuOff()
+    FPsciCpuOff()                              # 不再返回；等 Linux remoteproc 重 start
 ```
+
+> **实现注记：** 不要把 `data`（回调入参）直接喂给 `rpmsg_send`——
+> 它指向的是 vring 接收缓冲，rpmsg_send 内部要走自己的 TX vring，**复用同一块内存
+> 会污染 RX 路径**。所以裸机核固件用本端 `s_rsp_frame` 缓冲；这与 SDK echo 例程
+> 的写法不同，是本工程刻意的稳健化。
 
 > **关键：** 整个裸机核固件不识别 DEV/CMD/STATUS 任何字段。它只看 `len == 64`，看其他都是黑盒。这就是"任何业务命令新增不需要重烧裸机固件"的来源。
 
@@ -418,53 +455,70 @@ main_loop:
 
 ```
 hardware/phytiumpi/spi_com/
-├── 任务_功能实现_SPI通信.md           # 不变
+├── 任务_功能实现_SPI通信.md
+├── 任务_RA6E2侧.md
 ├── 设计_SPI通信工程方案.md            # v1（spidev 直驱版本，已落地）
 ├── 设计_SPI通信工程方案_v2_OpenAMP版.md   # 本文档
-├── 设计_SPI通信工程方案_v0_RPMsg版.md.bak # 历史早期方案
-├── README.md                          # 顶部增加 v1/v2 切换章节
-├── Makefile                           # 增 openamp_core / native rpmsgd 目标
+├── HANDOFF_x86_build.md               # x86 主机编译/scp 部署交接
+├── 使用说明.md                        # 飞腾派开机准备 + 日常使用流程
+├── README.md                          # 顶部含 v1/v2 切换章节
+├── Makefile                           # 目标 test / linux / linux-native / clean
 │
-├── include/                           # 协议层（完全复用，0 修改）
-│   └── spi_protocol.h
+├── include/
+│   └── spi_protocol.h                 # 协议唯一定义源（0 修改，v1/v2/RA6E2 共用）
 │
-├── linux/                             # Linux 端
+├── linux/                             # Linux 端用户态
 │   ├── libaqua_spi/
-│   │   ├── spi_codec.{h,c}            # 复用
-│   │   └── aqua_ipc.h                 # 复用
-│   ├── aqua_spid.c                    # v1 spidev daemon（保留作 fallback）
-│   ├── aqua_rpmsgd.c                  # v2 rpmsg daemon（新增）
-│   ├── aqua_backend.h                 # 新增：抽象 spi_send_cmd() 后端接口
+│   │   ├── spi_codec.{h,c}            # CRC + 帧打包/校验（共享）
+│   │   └── aqua_ipc.h                 # daemon ↔ CLI Unix Socket 协议
+│   ├── aqua_backend.h                 # backend 抽象 ops 表 + spidev/rpmsg ctx
 │   ├── aqua_backend_spidev.c          # v1 后端实现
-│   ├── aqua_backend_rpmsg.c           # v2 后端实现
-│   └── aqua_spi_cli.c                 # 完全复用，0 修改
+│   ├── aqua_backend_rpmsg.c           # v2 后端实现 + autoselect()
+│   ├── aqua_daemon_core.{h,c}         # daemon 主循环 + IPC（v1/v2 共用 95% 代码）
+│   ├── aqua_spid.c                    # v1 入口（强制 spidev 后端）
+│   ├── aqua_rpmsgd.c                  # v2 入口（默认 -B auto，可强制 rpmsg/spidev）
+│   └── aqua_spi_cli.c                 # CLI（与后端无关，0 修改）
 │
-├── tests/test_spi_protocol.c          # 完全复用
+├── tests/test_spi_protocol.c          # 协议层 PC 单元测试
+├── ra6e2_patch/                       # RA6E2 端代码与同步脚本（0 修改）
 │
-├── ra6e2_patch/                       # 完全复用，RA6E2 端 0 修改
+├── overlay/                           # v1 spidev overlay
+│   ├── phytium_pi_spidev0.dts
+│   └── install_spidev_overlay.sh
 │
-├── overlay/                           # v1 spidev overlay（v2 部署时必须 remove）
+├── deploy/                            # ★ 飞腾派端部署辅助
+│   ├── README.md
+│   ├── overlay/                       # v2 reserved-memory overlay（fallback；
+│   │   ├── phytium_pi_openamp.dts     #   优先使用飞腾官方 v3-openamp DTB）
+│   │   └── install_openamp_overlay.sh
+│   ├── systemd/                       # 三个互斥的服务单元
+│   │   ├── aqua-spid.service               (v1)
+│   │   ├── aqua-rpmsgd.service             (v2)
+│   │   └── aqua-openamp-load.service       (v2 必需的前置：远程核加载 + rpmsg_chrdev 绑定)
+│   └── scripts/
+│       ├── switch_to_v1.sh
+│       └── switch_to_v2.sh
 │
-└── openamp_core/                      # ★ v2 新增：飞腾派裸机核工程
-    ├── README.md                      # 编译/部署/调试步骤
-    ├── main.c                         # 仅调 aqua_spi_slave_run()
-    ├── makefile                       # 复用 SDK 标准 makefile
-    ├── ft_openamp.ld                  # 复用 SDK 链接脚本
-    ├── sdkconfig                      # 默认走 PHYTIUMPI aarch64 配置
+└── openamp_core/                      # ★ v2 飞腾派裸机核工程
+    ├── README.md
+    ├── main.c                         # 只调 aqua_spi_slave_run()
+    ├── makefile                       # SDK_DIR 默认指 ../../../../../phytium-standalone-sdk
+    ├── ft_openamp.ld                  # 复用 SDK 链接脚本（resource_table 段地址）
+    ├── sdkconfig / sdkconfig.h        # menuconfig 已生成
     ├── Kconfig
     ├── configs/
     │   └── pe2204_aarch64_phytiumpi_aquaspi_core0.config
-    │      （基于 SDK 自带 pe2204_aarch64_phytiumpi_openamp_core0.config 改）
+    │      （基于 SDK 自带 pe2204_aarch64_phytiumpi_openamp_core0.config 改，
+    │       仅多 CONFIG_USE_SPI=y / CONFIG_USE_FSPIM=y 两行）
     ├── common/
-    │   ├── memory_layout.h            # 与 SDK 例程一致：0xC000_0000 共享区
+    │   ├── memory_layout.h            # 0xC000_0000 共享区，0xB010_0000 镜像区
     │   ├── openamp_configs.h
-    │   └── libmetal_configs.h
+    │   └── libmetal_configs.h         # SLAVE_00_SGI = KICK_SGI_NUM_9
     ├── inc/
     │   └── aqua_spi_slave.h
     └── src/
-        ├── aqua_spi_slave.c           # RPMsg endpoint + dispatch loop
-        ├── aqua_spi_master.c          # FSPIM Master 初始化 + 64B 单帧收发
-        └── aqua_spi_master.h
+        ├── aqua_spi_slave.c           # RPMsg endpoint + dispatch loop（含 BUSY 伪 RSP）
+        ├── aqua_spi_master.{h,c}      # FSPIM Master 初始化 + 64B 单帧收发
 ```
 
 ### 5.2 共享协议头（0 修改，完全复用 v1）
@@ -473,203 +527,263 @@ hardware/phytiumpi/spi_com/
 
 ### 5.3 Linux 端：抽象后端接口
 
-新增 `linux/aqua_backend.h`：
+`linux/aqua_backend.h` 实际接口（与代码 1:1 对应，便于后续维护时 grep 上下文）：
 
 ```c
-#ifndef AQUA_BACKEND_H
-#define AQUA_BACKEND_H
-
-#include <stdint.h>
-#include "spi_protocol.h"
-
 typedef enum
 {
-    AQUA_BACKEND_NONE = 0,
-    AQUA_BACKEND_RPMSG,    /* v2: /dev/rpmsg0 */
-    AQUA_BACKEND_SPIDEV,   /* v1: /dev/spidev0.0 */
+    AQUA_BACKEND_NONE   = 0,
+    AQUA_BACKEND_SPIDEV = 1,    /* v1: /dev/spidev0.0 */
+    AQUA_BACKEND_RPMSG  = 2,    /* v2: /dev/rpmsgN (OpenAMP) */
 } aqua_backend_kind_t;
+
+typedef void (*aqua_log_fn)(int prio, const char *fmt, ...);
 
 typedef struct aqua_backend_ops
 {
-    int  (*open)(void *ctx);
-    int  (*close)(void *ctx);
-
-    /* 发一帧 64 B CMD，阻塞收一帧 64 B RSP；返回 0 = OK */
+    /* 阻塞收发：发 64B CMD，收 64B RSP。
+     * 返回 0 = OK；负值 = -errno（-EIO/-ETIMEDOUT/...）。
+     * CRC 校验由 daemon_core 做，backend 不解析帧内容。 */
     int  (*xfer)(void *ctx,
                  const uint8_t cmd_frame[SPI_FRAME_LEN],
                  uint8_t       rsp_frame[SPI_FRAME_LEN]);
 
+    /* 连续错误自愈：close 后重新 open（spidev 重置 / rpmsg 重连）。 */
+    int  (*reset)(void *ctx);
+    void (*close)(void *ctx);
+
     aqua_backend_kind_t kind;
-    const char         *name;
+    const char         *name;     /* "spidev" / "rpmsg" */
 } aqua_backend_ops_t;
 
-extern const aqua_backend_ops_t aqua_backend_rpmsg;
-extern const aqua_backend_ops_t aqua_backend_spidev;
+/* ---- spidev 后端 (v1) ---- */
+typedef struct
+{
+    /* 调用方设置 */
+    const char *device_path;      /* "/dev/spidev0.0" */
+    uint32_t    speed_hz;         /* 1_000_000 */
+    uint32_t    frame_gap_us;     /* 5000 = CMD/NOP 间隔 */
+    aqua_log_fn log;
+    /* 内部 */
+    int      fd;
+    uint64_t io_err_count;        /* 累计 ioctl 失败次数 */
+} aqua_backend_spidev_ctx_t;
 
-/* 自动检测：优先 rpmsg；探测失败回退 spidev；返回 NULL 表示彻底无后端 */
-const aqua_backend_ops_t *aqua_backend_autoselect(void **out_ctx);
+extern const aqua_backend_ops_t aqua_backend_spidev_ops;
+int aqua_backend_spidev_open(aqua_backend_spidev_ctx_t *ctx);
 
-#endif
+/* ---- rpmsg 后端 (v2 OpenAMP) ---- */
+typedef struct
+{
+    /* 调用方设置 */
+    const char *ctrl_path;        /* "/dev/rpmsg_ctrl0" */
+    const char *device_path;      /* "/dev/rpmsg0" — 仅 hint，open 前会被
+                                   *   resolved_device_path 覆盖（按 service name 扫描） */
+    const char *service_name;     /* "aqua-spi" */
+    uint32_t    timeout_ms;       /* 单次 read 超时；默认 100 */
+    aqua_log_fn log;
+    /* 内部 */
+    int      ctrl_fd;
+    int      rpmsg_fd;
+    char     resolved_device_path[64];   /* /sys/class/rpmsg 扫描出来的实际路径 */
+    uint64_t io_err_count;
+} aqua_backend_rpmsg_ctx_t;
+
+extern const aqua_backend_ops_t aqua_backend_rpmsg_ops;
+int aqua_backend_rpmsg_open(aqua_backend_rpmsg_ctx_t *ctx);
+
+/* ---- 自动选择 ----
+ * 优先 rpmsg（探测 /dev/rpmsg_ctrl0 + 尝试 open）；失败回退 spidev。
+ * 调用方需要先在两个 ctx 里准备好 device_path / speed_hz / log 等"输入字段"。 */
+int aqua_backend_autoselect(aqua_backend_spidev_ctx_t *spidev_ctx,
+                            aqua_backend_rpmsg_ctx_t  *rpmsg_ctx,
+                            const aqua_backend_ops_t **out_ops,
+                            void                     **out_ctx);
+
+/* daemon GET_STATS 时用：把 backend 内部累计 IO 错搬到 IPC 统计字段。 */
+uint64_t aqua_backend_io_err_count(const aqua_backend_ops_t *ops, void *ctx);
 ```
 
-实现思路：
+实现要点：
 
-- `aqua_backend_spidev.c`：把现有 `aqua_spid.c` 里 spidev 相关代码抽出来，包成 `xfer()` 内部做 CMD + NOP_READ
-- `aqua_backend_rpmsg.c`：用 `/dev/rpmsg_ctrl0` + `RPMSG_CREATE_EPT_IOCTL` + `/dev/rpmsg0` 收发，**单 write 一次 64 B + 单 read 一次 64 B**（裸机核负责双 SPI 事务）
-- `aqua_rpmsgd.c` 与 `aqua_spid.c`：精简到只剩主循环 + IPC，所有 SPI 收发走 `aqua_backend_ops_t`
+- `aqua_backend_spidev.c`：`xfer()` 内部跑两次 `SPI_IOC_MESSAGE`(CMD) + `nanosleep(5 ms)` + `SPI_IOC_MESSAGE`(NOP→RSP)；
+  `reset()` = close + 10 ms gap（让 RA6E2 DMAC 复位）+ 重新 open。
+- `aqua_backend_rpmsg.c`：`xfer()` = `write_all(64 B)` + `poll(timeout_ms)` + `read_exact(64 B)`，
+  裸机核负责双 SPI 事务。`reset()` = close + 重新 `RPMSG_CREATE_EPT_IOCTL` + 重新扫描 `/sys/class/rpmsg/`。
+- `aqua_rpmsgd.c` 与 `aqua_spid.c`：仅做命令行解析 + 选 backend，主循环全部委托给
+  `aqua_daemon_core.c::aqua_daemon_run()`。两个 daemon 共享 95% 代码。
 
 ### 5.4 v2 后端实现（`aqua_backend_rpmsg.c` 关键片段）
 
 ```c
+#define _GNU_SOURCE
+#include "aqua_backend.h"
 #include <fcntl.h>
+#include <poll.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <sys/ioctl.h>
 #include <linux/rpmsg.h>
-#include "aqua_backend.h"
 
-#define AQUA_RPMSG_SERVICE   "aqua-spi"
-#define AQUA_RPMSG_CTRL      "/dev/rpmsg_ctrl0"
-#define AQUA_RPMSG_DEV       "/dev/rpmsg0"
+#define DEFAULT_RPMSG_CTRL     "/dev/rpmsg_ctrl0"
+#define DEFAULT_RPMSG_DEV      "/dev/rpmsg0"        /* 仅 hint，会被覆盖 */
+#define DEFAULT_RPMSG_SERVICE  "aqua-spi"
+#define DEFAULT_RSP_TIMEOUT_MS 100u
 
-typedef struct
+/* 扫描 /sys/class/rpmsg/，找 name=service_name 中编号最大的 rpmsgN，
+ * 写到 out 中。这样无论 endpoint 是第一个还是第 N 个 announce 出来都能命中。 */
+static int rpmsg_pick_latest_dev(const char *service_name, char *out, size_t out_len)
 {
-    int ctrl_fd;
-    int rpmsg_fd;
-} aqua_rpmsg_ctx_t;
+    DIR *dir = opendir("/sys/class/rpmsg");
+    if (!dir) return -1;
+    int best_id = -1;
+    struct dirent *de;
+    while ((de = readdir(dir)) != NULL)
+    {
+        int id; char extra;
+        if (sscanf(de->d_name, "rpmsg%d%c", &id, &extra) != 1) continue;
+        char path[320], name[64] = {0};
+        snprintf(path, sizeof path, "/sys/class/rpmsg/%s/name", de->d_name);
+        FILE *fp = fopen(path, "r");
+        if (!fp) continue;
+        if (fgets(name, sizeof name, fp)) {
+            name[strcspn(name, "\r\n")] = 0;
+            if (strcmp(name, service_name) == 0 && id > best_id) best_id = id;
+        }
+        fclose(fp);
+    }
+    closedir(dir);
+    if (best_id < 0) return -1;
+    snprintf(out, out_len, "/dev/rpmsg%d", best_id);
+    return 0;
+}
 
-static int rpmsg_open(void *_ctx)
+static int rpmsg_open_inner(aqua_backend_rpmsg_ctx_t *c)
 {
-    aqua_rpmsg_ctx_t *ctx = _ctx;
     struct rpmsg_endpoint_info ept = {0};
 
-    ctx->ctrl_fd = open(AQUA_RPMSG_CTRL, O_RDWR);
-    if (ctx->ctrl_fd < 0) return -1;
+    c->ctrl_fd = open(c->ctrl_path, O_RDWR);
+    if (c->ctrl_fd < 0) return -1;
 
-    snprintf(ept.name, sizeof(ept.name), "%s", AQUA_RPMSG_SERVICE);
+    snprintf(ept.name, sizeof ept.name, "%s", c->service_name);
     ept.src = 0;
-    ept.dst = 0xFFFFFFFF;
-    if (ioctl(ctx->ctrl_fd, RPMSG_CREATE_EPT_IOCTL, &ept) < 0)
-        goto err_ctrl;
-
-    ctx->rpmsg_fd = open(AQUA_RPMSG_DEV, O_RDWR);
-    if (ctx->rpmsg_fd < 0) goto err_ctrl;
+    ept.dst = 0xFFFFFFFFu;          /* "any"，由内核去匹配裸机核 announce 的 endpoint */
+    if (ioctl(c->ctrl_fd, RPMSG_CREATE_EPT_IOCTL, &ept) < 0) {
+        close(c->ctrl_fd); c->ctrl_fd = -1; return -1;
+    }
+    /* 探测真实节点；找不到就保留 device_path 默认值（/dev/rpmsg0）兜底 */
+    if (rpmsg_pick_latest_dev(c->service_name,
+                              c->resolved_device_path,
+                              sizeof c->resolved_device_path) == 0) {
+        c->device_path = c->resolved_device_path;
+    }
+    c->rpmsg_fd = open(c->device_path, O_RDWR);
+    if (c->rpmsg_fd < 0) { close(c->ctrl_fd); c->ctrl_fd = -1; return -1; }
     return 0;
-
-err_ctrl:
-    close(ctx->ctrl_fd);
-    return -1;
 }
 
-static int rpmsg_xfer(void *_ctx,
-                      const uint8_t cmd[SPI_FRAME_LEN],
-                      uint8_t       rsp[SPI_FRAME_LEN])
+static int op_xfer(void *_c,
+                   const uint8_t cmd[SPI_FRAME_LEN],
+                   uint8_t       rsp[SPI_FRAME_LEN])
 {
-    aqua_rpmsg_ctx_t *ctx = _ctx;
-    ssize_t n;
+    aqua_backend_rpmsg_ctx_t *c = _c;
+    if (c->rpmsg_fd < 0) return -EIO;
 
-    n = write(ctx->rpmsg_fd, cmd, SPI_FRAME_LEN);
-    if (n != SPI_FRAME_LEN) return -1;
-
-    n = read(ctx->rpmsg_fd, rsp, SPI_FRAME_LEN);   /* 阻塞，等裸机核回 */
-    if (n != SPI_FRAME_LEN) return -2;
+    /* write_all 处理 EINTR/部分写 */
+    if (write_all(c->rpmsg_fd, cmd, SPI_FRAME_LEN) != SPI_FRAME_LEN) {
+        c->io_err_count++; return -EIO;
+    }
+    /* poll(timeout_ms) → read_exact，避免裸机核挂死时 daemon 卡死 */
+    if (read_exact(c->rpmsg_fd, rsp, SPI_FRAME_LEN, c->timeout_ms) != SPI_FRAME_LEN) {
+        c->io_err_count++; return -EIO;
+    }
     return 0;
 }
 
-const aqua_backend_ops_t aqua_backend_rpmsg = {
-    .open  = rpmsg_open,
-    .close = rpmsg_close,
-    .xfer  = rpmsg_xfer,
+const aqua_backend_ops_t aqua_backend_rpmsg_ops = {
+    .xfer  = op_xfer,
+    .reset = op_reset,        /* close + 重新 open（含重扫 sysfs） */
+    .close = op_close,
     .kind  = AQUA_BACKEND_RPMSG,
-    .name  = "rpmsg(openamp)",
+    .name  = "rpmsg",
 };
 ```
 
+> **稳健性细节：**
+> 1. `rpmsg_pick_latest_dev` 解决了 RPMsg 设备号漂移问题 —
+>    系统里只要还有别的 RPMsg 服务（如 SDK 自带 echo demo），编号就不固定。
+> 2. `op_xfer` 用 `poll` 设了 100 ms 默认超时，比裸机核挂死时 `read` 永久阻塞要好。
+>    daemon 主循环单线程，read 永久阻塞 = daemon 死锁。
+> 3. `reset()` 不仅 close+open ctrl_fd，还会重扫 sysfs。如果 remoteproc restart 过，
+>    新的 rpmsg 节点编号会变，必须重新 pick。
+
 ### 5.5 裸机核端：`openamp_core/src/aqua_spi_slave.c` 关键片段
 
-骨架来自 SDK `example/system/amp/openamp_for_linux/src/slaver_00_example.c`，**保留资源表 / 共享内存 / kick driver 全部不动**，只替换 endpoint 回调与服务名：
+骨架来自 SDK `example/system/amp/openamp_for_linux/src/slaver_00_example.c`，**保留资源表 / 共享内存 / kick driver 全部不动**，只替换 endpoint 回调与服务名。
+关键稳健化（与 SDK echo 例程的两处差异）：
+
+1. `rpmsg_send` 用本端预分配缓冲 `s_rsp_frame`，**不要直接重发回调入参 `data`**
+   （`data` 是 vring RX buffer，复用同一块内存会污染 RX 路径）；
+2. SPI 出错时塞一个上电预生成的 STATUS=BUSY 伪 RSP，避免 Linux 端 `read()` 阻塞超时。
 
 ```c
-#include <stdio.h>
-#include <openamp/open_amp.h>
-#include <metal/alloc.h>
-#include <metal/sleep.h>
-#include "platform_info.h"
-#include "rpmsg_service.h"
-#include "rsc_table.h"
-#include "fcache.h"
-#include "fdebug.h"
-#include "fpsci.h"
-#include "helper.h"
-#include "openamp_configs.h"
-#include "libmetal_configs.h"
-#include "spi_protocol.h"          /* ← AquaGarden 共享头 */
-#include "aqua_spi_master.h"
-
 #define AQUA_TAG               "AQUA_SPI"
 #define AQUA_RPMSG_SERVICE     "aqua-spi"
 #define AQUA_RA6E2_PREP_US     5000U     /* 5 ms 让 RA6E2 装好 RSP */
 
-static volatile int s_shutdown = 0;
+/* 资源表 / kick driver / slave_priv 与 SDK 例程同布局，
+ * 地址来自 common/memory_layout.h（SLAVE00_SHARE_MEM_ADDR=0xFFFFFFFF
+ * 表示等 Linux 主核分配；SLAVE_00_SGI = KICK_SGI_NUM_9 = 9） */
 
-/* 与 SDK 模板一致的资源表 / kick driver / slave_priv （省略，复用 SDK 例程） */
-static struct remote_resource_table __resource s_rsc __attribute__((used)) = {
-    1, NUM_TABLE_ENTRIES, {0,0},
-    { offsetof(struct remote_resource_table, rpmsg_vdev), },
-    { RSC_VDEV, VIRTIO_ID_RPMSG_, VDEV_NOTIFYID, RPMSG_IPU_C0_FEATURES,
-      0, 0, 0, NUM_VRINGS, {0,0}, },
-    { SLAVE00_TX_VRING_ADDR, VRING_ALIGN, SLAVE00_VRING_NUM, 1, 0 },
-    { SLAVE00_RX_VRING_ADDR, VRING_ALIGN, SLAVE00_VRING_NUM, 2, 0 },
-};
-/* ... metal_device kick_driver / remoteproc_priv slave_priv 同 SDK 例程 ... */
+static u8 s_nop_frame  [SPI_FRAME_LEN];   /* 上电 spi_pack_cmd(SYS_NOP) 一次 */
+static u8 s_dummy_rx   [SPI_FRAME_LEN];   /* 第 1 次事务 MISO（丢弃） */
+static u8 s_rsp_frame  [SPI_FRAME_LEN];   /* 第 2 次事务取回的 RSP，本端缓冲 */
+static u8 s_busy_frame [SPI_FRAME_LEN];   /* SPI 错时的伪 BUSY RSP，预生成 */
 
-/* 预先打包好的 NOP CMD 帧，避免每次回调都重新 CRC */
-static uint8_t s_nop_frame[SPI_FRAME_LEN];
-static uint8_t s_rsp_frame[SPI_FRAME_LEN];
-static uint8_t s_dummy_rx[SPI_FRAME_LEN];
-
-static void aqua_pack_nop(void)
+static void aqua_pack_static_frames(void)
 {
     spi_pack_cmd(s_nop_frame,
-                 SPI_SEQ_IDLE,         /* 0xFF */
-                 SPI_DEV_SYSTEM,
-                 SPI_CMD_SYS_NOP,
+                 SPI_SEQ_IDLE,        /* 0xFF */
+                 SPI_DEV_SYSTEM, SPI_CMD_SYS_NOP,
                  NULL, 0, 0);
+    spi_pack_rsp(s_busy_frame,
+                 SPI_SEQ_IDLE, SPI_STATUS_BUSY,
+                 SPI_RSP_TYPE_ACK,
+                 NULL, 0, 0, 0);
 }
+
+static volatile int s_shutdown = 0;
 
 static int aqua_rpmsg_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
                          uint32_t src, void *priv)
 {
-    int rc;
-    (void)priv;
+    int rc; (void)priv;
 
-    if (len != SPI_FRAME_LEN)
-    {
-        FT_DEBUG_PRINT_W(AQUA_TAG, "drop pkt len=%zu", len);
+    if (len != SPI_FRAME_LEN) {
+        FT_DEBUG_PRINT_W(AQUA_TAG, "drop pkt len=%u", (unsigned)len);
         return RPMSG_SUCCESS;
     }
-    ept->dest_addr = src;
+    ept->dest_addr = src;       /* 锁定回包目标地址 */
 
-    /* 第 1 次事务：发 CMD，丢 MISO（上一帧 RSP 已经被取过） */
-    rc = aqua_spi_xfer_64((const uint8_t *)data, s_dummy_rx);
-    if (rc) goto err;
+    /* 第 1 次事务：发 CMD，丢 MISO（是上一帧的滞后响应） */
+    rc = aqua_spi_master_xfer_64((const u8 *)data, s_dummy_rx);
+    if (rc) goto err_busy;
 
     /* 让 RA6E2 ISR + 任务唤醒 + memcpy 准备好 RSP */
-    metal_sleep_usec(AQUA_RA6E2_PREP_US);
+    fsleep_microsec(AQUA_RA6E2_PREP_US);
 
-    /* 第 2 次事务：发 NOP，取 RSP */
-    rc = aqua_spi_xfer_64(s_nop_frame, s_rsp_frame);
-    if (rc) goto err;
+    /* 第 2 次事务：发 NOP，MISO 即本次命令的响应 */
+    rc = aqua_spi_master_xfer_64(s_nop_frame, s_rsp_frame);
+    if (rc) goto err_busy;
 
-    /* 透传回 Linux，不解析任何字段 */
+    /* 注意：用本端 s_rsp_frame，不要把 data 指针直接重发——见小节顶部说明 */
     rpmsg_send(ept, s_rsp_frame, SPI_FRAME_LEN);
     return RPMSG_SUCCESS;
 
-err:
-    /* SPI 出错时也要给 Linux 回个东西，否则它会一直阻塞在 read() */
-    spi_pack_rsp(s_rsp_frame,
-                 SPI_SEQ_IDLE, SPI_STATUS_BUSY,
-                 SPI_RSP_TYPE_ACK, NULL, 0, 0, 0);
-    rpmsg_send(ept, s_rsp_frame, SPI_FRAME_LEN);
+err_busy:
+    /* SPI 出错时塞 BUSY 伪 RSP，防 Linux 端 read() 阻塞到超时；
+     * daemon_core 看到 STATUS=BUSY 会累计 stats、上层判定失败。 */
+    rpmsg_send(ept, s_busy_frame, SPI_FRAME_LEN);
     return RPMSG_SUCCESS;
 }
 
@@ -686,11 +800,11 @@ int aqua_spi_slave_run(void)
     struct rpmsg_device *rpdev;
 
     init_system();
-    if (aqua_spi_init()) return -1;
-    aqua_pack_nop();
+    if (aqua_spi_master_init()) return -1;
+    aqua_pack_static_frames();
 
-    if (!platform_create_proc(&rproc, &slave_priv, &kick_driver)) return -1;
-    rproc.rsc_table = &s_rsc;
+    if (!platform_create_proc(&rproc, &slave_aqua_priv, &kick_driver_aqua)) return -1;
+    rproc.rsc_table = &resources;
     if (platform_setup_src_table(&rproc, rproc.rsc_table)) return -1;
     if (platform_setup_share_mems(&rproc)) return -1;
     rpdev = platform_create_rpmsg_vdev(&rproc, 0, VIRTIO_DEV_DEVICE, NULL, NULL);
@@ -700,13 +814,15 @@ int aqua_spi_slave_run(void)
                          0, RPMSG_ADDR_ANY,
                          aqua_rpmsg_cb, aqua_rpmsg_unbind)) return -1;
 
-    while (!s_shutdown && !rproc_get_stop_flag())
+    while (!s_shutdown && !rproc_get_stop_flag()) {
         platform_poll(&rproc);
+    }
 
     rpmsg_destroy_ept(&lept);
     platform_release_rpmsg_vdev(rpdev, &rproc);
+    aqua_spi_master_deinit();
     platform_cleanup(&rproc);
-    FPsciCpuOff();
+    FPsciCpuOff();        /* PSCI CPU off；不再返回，等下一次 remoteproc start */
     return 0;
 }
 ```
@@ -819,33 +935,42 @@ int main(void)
 
 ### 8.2 daemon 自动检测逻辑
 
+实际签名带两个 ctx 入参（让调用方 daemon 自己控制 ctx 生命周期，而不是 backend 内部 static），
+其余逻辑与设计意图一致：
+
 ```c
-const aqua_backend_ops_t *aqua_backend_autoselect(void **out_ctx)
+int aqua_backend_autoselect(aqua_backend_spidev_ctx_t *spidev_ctx,
+                            aqua_backend_rpmsg_ctx_t  *rpmsg_ctx,
+                            const aqua_backend_ops_t **out_ops,
+                            void                     **out_ctx)
 {
-    /* 优先 v2 OpenAMP */
-    if (access("/dev/rpmsg_ctrl0", R_OK | W_OK) == 0 &&
-        access("/dev/rpmsg0", R_OK | W_OK) == 0)
-    {
-        static aqua_rpmsg_ctx_t ctx;
-        if (aqua_backend_rpmsg.open(&ctx) == 0)
-        {
-            *out_ctx = &ctx;
-            return &aqua_backend_rpmsg;
+    /* 优先 v2 OpenAMP：探测 /dev/rpmsg_ctrl0 是否可访问。
+     * 注意不去探测 /dev/rpmsg0，因为编号是动态的——open 内部会扫 sysfs 找 service。 */
+    if (rpmsg_ctx) {
+        if (!rpmsg_ctx->ctrl_path)   rpmsg_ctx->ctrl_path   = "/dev/rpmsg_ctrl0";
+        if (!rpmsg_ctx->device_path) rpmsg_ctx->device_path = "/dev/rpmsg0";
+        if (access(rpmsg_ctx->ctrl_path, R_OK | W_OK) == 0) {
+            if (aqua_backend_rpmsg_open(rpmsg_ctx) == 0) {
+                *out_ops = &aqua_backend_rpmsg_ops; *out_ctx = rpmsg_ctx; return 0;
+            }
         }
     }
-    /* 退回 v1 spidev */
-    if (access("/dev/spidev0.0", R_OK | W_OK) == 0)
-    {
-        static aqua_spidev_ctx_t ctx;
-        if (aqua_backend_spidev.open(&ctx) == 0)
-        {
-            *out_ctx = &ctx;
-            return &aqua_backend_spidev;
+
+    /* 回退 v1 spidev */
+    if (spidev_ctx) {
+        if (!spidev_ctx->device_path) spidev_ctx->device_path = "/dev/spidev0.0";
+        if (access(spidev_ctx->device_path, R_OK | W_OK) == 0) {
+            if (aqua_backend_spidev_open(spidev_ctx) == 0) {
+                *out_ops = &aqua_backend_spidev_ops; *out_ctx = spidev_ctx; return 0;
+            }
         }
     }
-    return NULL;
+    return -1;
 }
 ```
+
+`aqua_rpmsgd` 命令行还提供 `-B {auto|rpmsg|spidev}` 三种强制模式，
+便于联调时绕过 autoselect 直接走某条链路。
 
 启动时打印：
 
@@ -867,56 +992,141 @@ const aqua_backend_ops_t *aqua_backend_autoselect(void **out_ctx)
 
 ### 8.3 systemd 编排（防止 v1/v2 同时启用）
 
-`/etc/systemd/system/aqua-spi-controller.service`（互斥锁）：
+实际工程提供 **3 个互斥的 service unit**，互斥靠 `Conflicts=`，**不需要额外的"互斥锁 service"**。
+全部位于 `deploy/systemd/`，部署时 `cp /etc/systemd/system/`：
+
+#### `aqua-spid.service`（v1）
 
 ```ini
 [Unit]
-Description=AquaGarden SPI bus access (mutex)
-ConditionPathExists=/dev/spidev0.0|/dev/rpmsg0
-Conflicts=aqua-spidev-overlay.service
+Description=AquaGarden SPI daemon (v1: Linux spidev direct)
+After=local-fs.target
+Conflicts=aqua-rpmsgd.service       # 起 v1 自动停 v2
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/test -c /dev/spidev0.0
+ExecStart=/opt/aqua/bin/aqua_spid -f -p 250 -g 5000
+Restart=on-failure
+```
+
+#### `aqua-openamp-load.service`（v2 必需的前置步骤）
+
+这一步在设计 v0 中只笼统说"启动 remoteproc"，实际比这复杂得多：
+要在远程核 `start` 之后**手动绑定 rpmsg_chrdev** 才能拿到 `/dev/rpmsgN`。
+service 内全部做了，并且**幂等**（同 firmware 已 running 时不重启）：
+
+```ini
+[Unit]
+Description=Load AquaGarden remoteproc firmware (OpenAMP SPI core)
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/bin/true
 
-[Install]
-WantedBy=multi-user.target
+# 1) 备份当前 firmware 名（stop 时恢复，不破坏 SDK 自带 echo demo）
+ExecStartPre=/bin/sh -c 'cat /sys/class/remoteproc/remoteproc0/firmware \
+                         > /run/aqua_prev_firmware.txt 2>/dev/null || true'
+
+# 2) 幂等启动远程核（只有 state≠running 或 firmware 名不对时才 stop+start）
+ExecStart=/bin/sh -c 'state=$(cat /sys/class/remoteproc/remoteproc0/state); \
+                      fw=$(cat /sys/class/remoteproc/remoteproc0/firmware); \
+                      [ "$state" = "running" ] && [ "$fw" = "openamp_spi_core0.elf" ] && exit 0; \
+                      [ "$state" = "running" ] && echo stop > /sys/.../state; \
+                      echo openamp_spi_core0.elf > /sys/.../firmware; \
+                      echo start > /sys/.../state'
+
+# 3) 等远程核 announce endpoint（最多 3 秒）
+ExecStart=/bin/sh -c 'for i in 1 2 3 4 5 6; do sleep 0.5; \
+                      ls /sys/bus/rpmsg/devices/virtio0.aqua-spi.* 2>/dev/null && exit 0; done; \
+                      echo "[WARN] aqua-spi endpoint 在 3 秒内未出现" >&2'
+
+# 4) ★ 关键：modprobe rpmsg_char + 写 driver_override 才会出 /dev/rpmsgN
+ExecStart=/sbin/modprobe rpmsg_char
+ExecStart=/bin/sh -c 'for d in /sys/bus/rpmsg/devices/virtio0.aqua-spi.*/driver_override; \
+                      do [ -e "$d" ] && echo rpmsg_chrdev > "$d"; done'
+ExecStart=/bin/sh -c 'for dev in /sys/bus/rpmsg/devices/virtio0.aqua-spi.*; do \
+                       [ -e "$dev" ] || continue; [ -e "$dev/driver" ] && continue; \
+                       echo "$(basename "$dev")" > /sys/bus/rpmsg/drivers/rpmsg_chrdev/bind; \
+                      done; exit 0'
+ExecStart=/usr/bin/udevadm settle
+
+# 5) Stop 时恢复原 firmware 名（不真正 stop 远程核——
+#    当前 phytium-remoteproc 驱动 stop 后无法可靠二次 start）
+ExecStop=/bin/sh -c 'p=$(cat /run/aqua_prev_firmware.txt 2>/dev/null); \
+                     [ -n "$p" ] && echo "$p" > /sys/.../firmware || true'
+```
+
+> **为什么必须 `modprobe rpmsg_char + driver_override`？**
+> 飞腾派 BSP 的 `rpmsg_char` 模块默认不自动绑定到非 SDK 例程的 endpoint。
+> 不显式 `driver_override = rpmsg_chrdev` 并 `bind`，`/dev/rpmsgN` 就不会出现，
+> 进而 `aqua_rpmsgd` autoselect 会 fallback 到 spidev 或直接失败。
+
+#### `aqua-rpmsgd.service`（v2 daemon）
+
+```ini
+[Unit]
+Description=AquaGarden SPI daemon (v2: OpenAMP/RPMsg)
+After=local-fs.target aqua-openamp-load.service
+Requires=aqua-openamp-load.service     # systemd 自动先拉起 load
+Conflicts=aqua-spid.service            # 起 v2 自动停 v1
+
+[Service]
+Type=simple
+ExecStart=/opt/aqua/bin/aqua_rpmsgd -f -B auto -p 250
+Restart=on-failure
 ```
 
 | 部署模式 | 启用的 service |
 |---------|-------------|
-| **v2 OpenAMP 优先** | `aqua-openamp-load.service`（启动前用 remoteproc 加载固件） + `aqua-rpmsgd.service` + **不启用** `aqua-spidev-overlay.service` |
-| **v1 fallback** | `aqua-spidev-overlay.service`（挂 overlay） + `aqua-spid.service` + **不启用** `aqua-openamp-load.service` |
+| **v2 OpenAMP** | `aqua-openamp-load.service`（自动被 Requires 拉起） + `aqua-rpmsgd.service` |
+| **v1 fallback** | （手动）`overlay/install_spidev_overlay.sh apply` + `aqua-spid.service` |
 
 ### 8.4 切换脚本
 
-`overlay/switch_to_v2.sh`（新增）：
+实际位置在 `deploy/scripts/`，**含完善的前置检查**（DTB 是否含 reserved-memory、固件是否就位、remoteproc 是否启用等），失败会带错误码退出而不是闷头继续。
+
+`deploy/scripts/switch_to_v2.sh` 摘要：
 
 ```bash
 #!/usr/bin/env bash
-set -e
-sudo systemctl stop aqua-spid 2>/dev/null || true
-sudo systemctl disable aqua-spidev-overlay 2>/dev/null || true
-sudo ./install_spidev_overlay.sh remove
-sudo systemctl enable --now aqua-openamp-load.service
-sudo systemctl enable --now aqua-rpmsgd.service
-journalctl -u aqua-rpmsgd -f
+set -euo pipefail
+[[ ${EUID} -eq 0 ]] || { echo "需要 root"; exit 1; }
+
+# 前置检查
+[[ -f /lib/firmware/openamp_spi_core0.elf ]] || { echo "缺裸机核固件"; exit 2; }
+[[ -d /sys/class/remoteproc/remoteproc0 ]]   || { echo "内核未启用 phytium-remoteproc"; exit 3; }
+[[ -d /sys/firmware/devicetree/base/reserved-memory/rproc@b0100000 ]] || {
+    echo "DTB 未含 reserved-memory，sudo ln -snf phytium-pi-board-v3-openamp.dtb \\
+          /boot/phytium-pi-board.dtb && sudo reboot"; exit 4; }
+
+# 1) 停 v1 + 卸载 spidev overlay（释放 SPI0 IOPad 给裸机核）
+systemctl stop aqua-spid.service 2>/dev/null || true
+../../overlay/install_spidev_overlay.sh remove || true
+
+# 2) 启动远程核 + 绑 rpmsg_chrdev
+systemctl restart aqua-openamp-load.service
+
+# 3) 启动 v2 daemon
+systemctl restart aqua-rpmsgd.service
 ```
 
-`overlay/switch_to_v1.sh`：
+`deploy/scripts/switch_to_v1.sh` 摘要：
 
 ```bash
 #!/usr/bin/env bash
-set -e
-sudo systemctl stop aqua-rpmsgd 2>/dev/null || true
-sudo systemctl disable aqua-openamp-load 2>/dev/null || true
-sudo bash -c 'echo stop > /sys/class/remoteproc/remoteproc0/state' || true
-sudo ./install_spidev_overlay.sh apply
-sudo systemctl enable --now aqua-spidev-overlay
-sudo systemctl enable --now aqua-spid
-journalctl -u aqua-spid -f
+set -euo pipefail
+systemctl stop aqua-rpmsgd.service       2>/dev/null || true
+systemctl stop aqua-openamp-load.service 2>/dev/null || true   # 注意：不真正 stop 远程核
+                                                                # 见 §8.3 ExecStop 注释
+../../overlay/install_spidev_overlay.sh apply
+systemctl restart aqua-spid.service
 ```
+
+> **注：** 当前 phytium-remoteproc 驱动的 `stop` 后**无法可靠二次 start**
+> （sysfs 显示 offline 但 PSCI 仍 already-on）。
+> 所以 `switch_to_v1.sh` 只 stop systemd unit、不真正下电远程核；
+> 重切回 v2 时 `aqua-openamp-load.service` 会幂等检测"已 running 同 firmware"直接 exit 0。
 
 ---
 
@@ -1027,72 +1237,131 @@ journalctl -u aqua-spid -f
 
 ### 10.3 编译远程核固件
 
+工程的 `openamp_core/makefile` 已经做过两处适配，**不再需要** `source set_toolchain.sh` 或
+`install.py`：
+- `SDK_DIR ?= $(CURDIR)/../../../../../phytium-standalone-sdk` — 默认就指到用户家目录的 SDK；
+- `TOOL_CHAIN_PREFIX ?= aarch64-none-elf-` — 直接用 `PATH` 里的 Linaro/官方 bare-metal 编译器
+  （Ubuntu 上 `apt install gcc-aarch64-none-elf` 即可），无需 export 任何环境变量。
+
 ```bash
-# 飞腾派或装了 aarch64 工具链的开发机：
+# 在 x86 主机（PATH 里有 aarch64-none-elf-gcc）：
 cd hardware/phytiumpi/spi_com/openamp_core/
 
-# 一次性：把 SDK 路径告诉构建系统
-export STANDALONE_SDK_ROOT=~/phytium-standalone-sdk
+# 首次编译（sdkconfig 已 git 入库，不需要再跑 menuconfig）
+make all -j$(nproc)
+# → 产物 ./pe2204_aarch64_phytiumpi_openamp_spi_core0.elf （SDK 标准命名规则）
 
-make load_kconfig LOAD_CONFIG_NAME=pe2204_aarch64_phytiumpi_aquaspi_core0.config
-make clean
-make image                                 # 输出 openamp_spi_core0.elf
+# 或者用一键打包目标（自动改名为 openamp_spi_core0.elf 拷到 /tmp/aqua_firmware/）
+make image
+# → /tmp/aqua_firmware/openamp_spi_core0.elf
 ```
+
+> **重要：SDK 产物名 ≠ /lib/firmware/ 期望名**
+> SDK makefile 输出的是 `pe2204_aarch64_phytiumpi_openamp_spi_core0.elf`，
+> 而 `aqua-openamp-load.service` 加载的是 `/lib/firmware/openamp_spi_core0.elf`。
+> **scp 到飞腾派时一定要改名**（`make image` / `make scp` 目标已经处理了；手动 `scp` 时记得带新名字）。
 
 ### 10.4 部署到飞腾派
 
-```bash
-# 拷固件
-scp openamp_spi_core0.elf user@phytium:/tmp/
-ssh user@phytium 'sudo mv /tmp/openamp_spi_core0.elf /lib/firmware/'
+推荐用 `rsync` 整树同步（保证 `deploy/scripts/` 与 `overlay/` 的相对路径关系不被破坏，
+切换脚本里有 `../../overlay/install_spidev_overlay.sh` 这种相对引用）：
 
-# 装 daemon 和 service（首次）
-scp build/native/aqua_rpmsgd user@phytium:/tmp/
-scp systemd/aqua-rpmsgd.service systemd/aqua-openamp-load.service user@phytium:/tmp/
-ssh user@phytium <<'EOF'
-sudo mv /tmp/aqua_rpmsgd /usr/local/bin/
-sudo mv /tmp/aqua-rpmsgd.service /tmp/aqua-openamp-load.service /etc/systemd/system/
+```bash
+# x86 主机：
+cd ~/AquaGarden/hardware/phytiumpi/spi_com
+
+# 1) 交叉编译 Linux 端
+make linux                  # 输出 build/linux/{aqua_spid, aqua_rpmsgd, aqua_spi_cli}
+
+# 2) 把整树同步到飞腾派 /opt/aqua/spi_com/
+rsync -av --delete \
+  --exclude=build/ --exclude=openamp_core/build/ \
+  ./ user@<飞腾派IP>:/opt/aqua/spi_com/
+
+# 3) 把三个二进制单独装到 /opt/aqua/bin/
+rsync -av build/linux/{aqua_spid,aqua_rpmsgd,aqua_spi_cli} \
+  user@<飞腾派IP>:/opt/aqua/bin/
+
+# 4) 把裸机核固件改名 scp 到 /lib/firmware/（注意改名！见 §10.3 警告）
+scp openamp_core/pe2204_aarch64_phytiumpi_openamp_spi_core0.elf \
+    user@<飞腾派IP>:/tmp/openamp_spi_core0.elf
+
+# 5) 飞腾派上：装固件 + service + 切换到 v2
+ssh user@<飞腾派IP> <<'EOF'
+sudo mv /tmp/openamp_spi_core0.elf /lib/firmware/
+sudo cp /opt/aqua/spi_com/deploy/systemd/*.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo bash -c 'overlay/switch_to_v2.sh'    # 卸 spidev overlay + 启 v2
+sudo /opt/aqua/spi_com/deploy/scripts/switch_to_v2.sh
 EOF
 ```
 
 ### 10.5 启停远程核（手工调试用）
 
+#### 手动启动远程核 + 出 `/dev/rpmsgN`
+
+实际比"echo start"多两步:必须 `modprobe rpmsg_char` 并写 `driver_override`,否则
+`/dev/rpmsgN` 不会出现。`aqua-openamp-load.service` 已经把这些步骤打包,手动调试时可参考:
+
 ```bash
-# 加载固件并启动
+# 1) 加载固件并启动远程核
 sudo bash -c 'echo openamp_spi_core0.elf > /sys/class/remoteproc/remoteproc0/firmware'
 sudo bash -c 'echo start > /sys/class/remoteproc/remoteproc0/state'
 
 # 应在 dmesg 看到：
 #   remoteproc remoteproc0: powering up phytium-remoteproc
 #   remoteproc remoteproc0: Booting fw image openamp_spi_core0.elf, size XXXX
-#   virtio_rpmsg_bus virtio0: creating channel aqua-spi addr 0x0
+#   virtio_rpmsg_bus virtio0: creating channel aqua-spi addr 0x...
 
-# UART1 (115200 8N1) 应输出：
+# UART1 (ttyAMA1, 115200 8N1) 应输出：
 #   AquaGarden OpenAMP SPI core, build ...
-#   [I] AQUA_SPI    Successfully created rpmsg endpoint.
+#   [I] AQUA_SPI    endpoint 创建成功，等待 Linux 端连接
 
-# 停
+# 2) ★ 关键：让 rpmsg_char 接管 aqua-spi 端点（不做这步 /dev/rpmsgN 永远不出现）
+sudo modprobe rpmsg_char
+for d in /sys/bus/rpmsg/devices/virtio0.aqua-spi.*/driver_override; do
+    sudo bash -c "echo rpmsg_chrdev > $d"
+done
+for dev in /sys/bus/rpmsg/devices/virtio0.aqua-spi.*; do
+    [ -e "$dev/driver" ] && continue
+    sudo bash -c "echo $(basename $dev) > /sys/bus/rpmsg/drivers/rpmsg_chrdev/bind"
+done
+sudo udevadm settle
+
+# 3) 验证
+ls /dev/rpmsg*               # 应出现 /dev/rpmsgN（N 由内核分配，不一定是 0）
+ls /sys/class/rpmsg/         # 同上；cat .../name 应能看到 "aqua-spi"
+```
+
+#### 停（用得很少；当前驱动 stop 后无法可靠二次 start）
+
+```bash
 sudo bash -c 'echo stop > /sys/class/remoteproc/remoteproc0/state'
 ```
+
+> **当前 BSP 限制：** `phytium-remoteproc` 驱动 `stop` 后，sysfs `state` 显示 `offline`，
+> 但底层 PSCI 的 CPU 仍是 already-on 状态，再次 `start` 会失败。
+> 所以 `aqua-openamp-load.service` 是**只 start 不 stop** 的设计——把 firmware 名字改回去
+> 就当 stop 了，等下次重启系统再实际下电。手动调试也尽量不要 stop。
 
 ### 10.6 联调流程
 
 ```bash
-# 1. 启 v2 daemon（前台 + verbose）
-sudo /usr/local/bin/aqua_rpmsgd -f -v
+# 1. 启 v2 daemon（前台 + verbose；注意默认走 -B auto 自动探测后端）
+sudo /opt/aqua/bin/aqua_rpmsgd -f -v -B rpmsg     # -B rpmsg 强制走 v2 不退回
 
-# 期待：
-#   [INF] 后端探测: rpmsg(openamp) ✓
-#   [INF] RA6E2 上线 uptime=1234 ms
+# 期待日志（前台模式走 stderr）：
+#   [INF] 已打开 RPMsg endpoint 'aqua-spi' via /dev/rpmsg0
+#   [INF] aqua_rpmsgd 启动：backend=rpmsg 周期=250 ms
+#   [INF] 监听 /tmp/aqua_spi.sock
+#   [INF] RA6E2 上线，uptime=1234 ms
 
-# 2. 另开终端，用现有 CLI（无需任何改动）
-aqua_spi_cli ping
-aqua_spi_cli sys ping
-aqua_spi_cli sensor poll
-sudo aqua_spi_cli pump start 80
-aqua_spi_cli stats
+# 2. 另开终端，用 CLI（与 v1 完全一样，0 修改）
+/opt/aqua/bin/aqua_spi_cli ping              # 检查 daemon 活着
+/opt/aqua/bin/aqua_spi_cli sys ping          # 心跳 RA6E2
+/opt/aqua/bin/aqua_spi_cli snapshot          # 取缓存的传感器快照
+/opt/aqua/bin/aqua_spi_cli sensor poll       # 强制走一次 SPI 拉数据
+/opt/aqua/bin/aqua_spi_cli pump start 80     # 启泵 80%
+/opt/aqua/bin/aqua_spi_cli stats             # 看通信统计（spidev_io_err=后端 IO 错累计）
 ```
 
 ---
@@ -1114,6 +1383,11 @@ aqua_spi_cli stats
 | Q18 | RPMsg endpoint 服务名 | **`"aqua-spi"`** | 与 SDK 例程默认服务名不冲突；命名清晰 |
 | Q19 | v1/v2 切换粒度 | **每次部署选其一**（互斥） | 同一 SPI0 控制器不能同时被 spidev 内核驱动和裸机核占用；用 systemd Conflicts 强制互斥 |
 | Q20 | Linux 端代码组织 | **抽 `aqua_backend_ops_t` 接口** | v1/v2 daemon 共享 95% 代码；上层 IPC + CLI 完全不动 |
+| Q21 | RPMsg 设备节点编号 | **不写死 `/dev/rpmsg0`，按 service name 扫描 `/sys/class/rpmsg/`** | 系统里其它 RPMsg 服务（如 SDK echo demo）会改变编号；扫描法 robust |
+| Q22 | 裸机核 `rpmsg_send` 用什么缓冲 | **本端 alloc 的 `s_rsp_frame`**，不直接用回调入参 `data` | `data` 是 vring RX buffer；rpmsg_send 内部走 TX vring，复用同块内存会污染 RX |
+| Q23 | SPI 出错时怎么应对 Linux 端 | **裸机核回 STATUS=BUSY 伪 RSP**（非"什么都不发"） | Linux 端 `read(rpmsg_fd)` 设了 100 ms poll 超时；不发包会让 daemon 累计 timeout |
+| Q24 | 远程核 stop 后能不能马上 start | **不能。** 当前 phytium-remoteproc 驱动有 BSP 级 bug | `aqua-openamp-load.service` 用幂等检测代替 stop/start；stop 时只恢复 firmware 名 |
+| Q25 | 出 `/dev/rpmsgN` 需要做什么 | **必须 `modprobe rpmsg_char` + 写 `driver_override=rpmsg_chrdev` + bind** | BSP 默认不自动绑定。`aqua-openamp-load.service` ExecStart 已包含 |
 
 ---
 
@@ -1126,8 +1400,15 @@ aqua_spi_cli stats
 | **`0xC000_0000 ~ 0xC0FF_FFFF`** | **OpenAMP 共享内存区**（16 MB） | `SLAVE00_SHARE_MEM_ADDR`（与 SDK 例程对齐） |
 | `0xC022_4000` | Kick / IPI mailbox 寄存器影子区 | `SLAVE00_KICK_IO_ADDR` |
 | `0x2803_A000` | FSPI0 控制器寄存器（裸机核独占） | `FSPI0_BASE_ADDR` |
-| `0x0000_002F`（SGI 编号） | Linux ↔ 裸机核 IPI | `SLAVE_00_SGI` (SDK 默认) |
+| `9`（SGI 编号） | Linux ↔ 裸机核 IPI | `SLAVE_00_SGI = KICK_SGI_NUM_9`（`common/libmetal_configs.h`） |
 
+> **关于 SGI 编号：** 早期 SDK 例程文档曾写 `0x2F (47)`，但当前 standalone-sdk 的
+> `openamp_for_linux` 例程统一用 SGI 9（`KICK_SGI_NUM_9`），飞腾官方
+> `phytium-pi-board-v3-openamp.dtb` 的 `phytium-remoteproc` 节点也按 9 配置。
+> **本工程跟 SDK 例程保持一致用 9**。如果你的 DTB 用了别的 SGI 号，
+> 联调时表现是"远程核启动正常但 Linux 收不到任何 RPMsg 回包"——
+> 改 `common/libmetal_configs.h::SLAVE_00_SGI` 重编固件即可。
+>
 > 实际地址必须与飞腾派 device-tree reserved-memory 一致，详见 §10.2。
 
 ---
@@ -1157,22 +1438,36 @@ aqua_spi_cli stats
 
 - [ ] `~/phytium-standalone-sdk` 已就位且能编 `openamp_for_linux` 例程
 - [ ] 飞腾派内核 `zcat /proc/config.gz | grep -E 'REMOTEPROC|RPMSG'` 全 `=y`
-- [ ] DTB / overlay 已 reserve `0xB010_0000` + `0xC000_0000` 两段内存
-- [ ] `/lib/firmware/openamp_spi_core0.elf` 已部署
-- [ ] **spidev overlay 已 remove**（`overlay/install_spidev_overlay.sh status` 应为 not-applied）
-- [ ] `aqua_rpmsgd` 已编译并部署
-- [ ] `aqua-spid.service` 已 stop+disable
-- [ ] `aqua-rpmsgd.service` 和 `aqua-openamp-load.service` 已 enable
+- [ ] **DTB 已切到 OpenAMP 版**（验证：`ls /sys/firmware/devicetree/base/reserved-memory/rproc@b0100000`）
+      没切的话：`sudo ln -snf phytium-pi-board-v3-openamp.dtb /boot/phytium-pi-board.dtb && sudo reboot`
+- [ ] `/lib/firmware/openamp_spi_core0.elf` 已部署（注意 SDK 产物名不同，scp 时务必改名 — 见 §10.3）
+- [ ] **spidev overlay 已 remove**（`overlay/install_spidev_overlay.sh status` 应为未挂载）
+- [ ] `/opt/aqua/bin/aqua_rpmsgd` 与 `/opt/aqua/bin/aqua_spi_cli` 已部署并可执行
+- [ ] 三个 service 已 `cp /etc/systemd/system/` + `systemctl daemon-reload`
 
-切回 v1 时反过来跑 `overlay/switch_to_v1.sh` 即可。
+切到 v2:`sudo /opt/aqua/spi_com/deploy/scripts/switch_to_v2.sh`(脚本内会再次自动检查所有前置条件)。
+
+切回 v1:`sudo /opt/aqua/spi_com/deploy/scripts/switch_to_v1.sh`。
 
 ---
 
-> **下一步实现顺序建议（不在本文档范围内，本文档仅为设计交付）：**
->
-> 1. 抽 `aqua_backend.h` 接口，把现有 v1 daemon 拆成 `aqua_backend_spidev.c` + 新 `aqua_rpmsgd.c`（可以先不接 v2，跑通"抽象后的 v1"作为回归基线）
-> 2. `openamp_core/` 复制 SDK `openamp_for_linux` 例程，改服务名 + 加 `aqua_spi_master.c`
-> 3. 飞腾派端 buildroot 重编 OpenAMP 内核（如未启用），写 reserved-memory overlay
-> 4. 联调：先 SDK 原版 echo 例程跑通 → 再换成 aqua-spi 例程跑通（用 stub 不接 RA6E2，loopback MOSI=MISO）→ 最后接 RA6E2 全链路验证
-> 5. 写 systemd 编排 + `switch_to_v1/v2.sh`
-> 6. 文档：在 `README.md` 顶部加 v1/v2 切换章节，把本文档链接放醒目位置
+## 附录 D：实施进度备忘(2026-05 更新)
+
+设计 → 实现 → 联调三阶段都已完成,本节做最后一次状态对账,后续维护者可从这里入手:
+
+| 阶段 | 工作项 | 状态 | 落地位置 |
+|------|-------|------|---------|
+| 实现 | 抽 `aqua_backend.h` 接口,v1 daemon 拆成 backend + core | ✅ | `linux/aqua_backend*.{h,c}` + `linux/aqua_daemon_core.{h,c}` |
+| 实现 | 新增 v2 daemon `aqua_rpmsgd`(`-B auto/rpmsg/spidev`) | ✅ | `linux/aqua_rpmsgd.c` |
+| 实现 | 裸机核工程 `openamp_core/`(基于 SDK echo 例程改) | ✅ | `openamp_core/{main.c, src/, common/, configs/}` |
+| 实现 | x86 主机交叉编译路径(`SDK_DIR` 自动识别 + PATH 工具链) | ✅ | `openamp_core/makefile` |
+| 部署 | `systemd` 三件套 + Conflicts 互斥 | ✅ | `deploy/systemd/` |
+| 部署 | v2 reserved-memory overlay(fallback,优先用官方 v3-openamp DTB) | ✅ | `deploy/overlay/` |
+| 部署 | 一键切换脚本(含前置检查) | ✅ | `deploy/scripts/switch_to_v{1,2}.sh` |
+| 文档 | 顶层 README 加 v1/v2 章节 | ✅ | `README.md` |
+| 文档 | x86 编译交接(`HANDOFF_x86_build.md`) | ✅ | 工程根目录 |
+| 文档 | 飞腾派开机准备 + 日常使用流程 | ✅ | `使用说明.md` |
+| 联调 | 全链路(Linux daemon → 裸机核 → SPI → RA6E2) | ⏳ 待飞腾派部署 | — |
+
+> **下一步**(已超出本设计文档范围,详见 `使用说明.md`):
+> 飞腾派开机后按"开机准备清单"过一遍 → `switch_to_v2.sh` → CLI 验证。

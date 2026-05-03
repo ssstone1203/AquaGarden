@@ -24,6 +24,7 @@
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #include <sys/ioctl.h>
 #include <linux/rpmsg.h>
@@ -89,10 +90,47 @@ static ssize_t write_all(int fd, const void *buf, size_t want)
     return (ssize_t)done;
 }
 
+static int rpmsg_pick_latest_dev(const char *service_name, char *out, size_t out_len)
+{
+    DIR *dir = opendir("/sys/class/rpmsg");
+    if (!dir) return -1;
+
+    int best_id = -1;
+    struct dirent *de;
+    while ((de = readdir(dir)) != NULL)
+    {
+        int id;
+        char extra;
+        if (sscanf(de->d_name, "rpmsg%d%c", &id, &extra) != 1)
+            continue;
+
+        char path[320], name[64] = {0};
+        snprintf(path, sizeof path, "/sys/class/rpmsg/%s/name", de->d_name);
+        FILE *fp = fopen(path, "r");
+        if (!fp) continue;
+        if (fgets(name, sizeof name, fp) == NULL)
+        {
+            fclose(fp);
+            continue;
+        }
+        fclose(fp);
+        name[strcspn(name, "\r\n")] = '\0';
+
+        if (strcmp(name, service_name) == 0 && id > best_id)
+            best_id = id;
+    }
+    closedir(dir);
+
+    if (best_id < 0) return -1;
+    snprintf(out, out_len, "/dev/rpmsg%d", best_id);
+    return 0;
+}
+
 static int rpmsg_open_inner(aqua_backend_rpmsg_ctx_t *c)
 {
     int ctrl = -1, dev = -1;
     struct rpmsg_endpoint_info ept;
+    char selected_dev[64];
 
     ctrl = open(c->ctrl_path, O_RDWR);
     if (ctrl < 0)
@@ -116,6 +154,12 @@ static int rpmsg_open_inner(aqua_backend_rpmsg_ctx_t *c)
                                     c->service_name, strerror(errno));
         close(ctrl);
         return -1;
+    }
+
+    if (rpmsg_pick_latest_dev(c->service_name, selected_dev, sizeof selected_dev) == 0)
+    {
+        snprintf(c->resolved_device_path, sizeof c->resolved_device_path, "%s", selected_dev);
+        c->device_path = c->resolved_device_path;
     }
 
     dev = open(c->device_path, O_RDWR);

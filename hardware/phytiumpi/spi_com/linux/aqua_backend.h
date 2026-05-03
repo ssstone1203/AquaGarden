@@ -99,6 +99,7 @@ typedef struct
     /* 内部 */
     int      ctrl_fd;
     int      rpmsg_fd;
+    char     resolved_device_path[64];
     uint64_t io_err_count;
 } aqua_backend_rpmsg_ctx_t;
 
