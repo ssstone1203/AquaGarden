@@ -1,5 +1,13 @@
 # 任务：实现 PhytiumPi（主机）与 RA6E2（从机）的 SPI 通信
 
+> **当前实现状态（2026-05）**：
+> - **v1 落地版**：[`设计_SPI通信工程方案.md`](./设计_SPI通信工程方案.md) —— Linux spidev 直驱方案（已工作）
+>   决策 Q1 主动放弃 OpenAMP 路径，**与本任务文档 §一 不一致**。
+> - **v2 任务对齐版**：[`设计_SPI通信工程方案_v2_OpenAMP版.md`](./设计_SPI通信工程方案_v2_OpenAMP版.md) —— 飞腾派裸机从核 + RPMsg + FSPIM
+>   严格按本任务文档 §一 实现，v1 作为 fallback 路径并存。
+>
+> 后续迭代请同时维护协议层（`include/spi_protocol.h`）与两个设计文档的对应章节。
+
 ## 一、系统架构
 
 - PhytiumPi：

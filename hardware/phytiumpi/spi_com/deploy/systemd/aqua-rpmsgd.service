@@ -1,0 +1,19 @@
+[Unit]
+Description=AquaGarden SPI daemon (v2: OpenAMP/RPMsg)
+Documentation=file:///opt/aqua/spi_com/README.md
+After=local-fs.target aqua-openamp-load.service
+Requires=aqua-openamp-load.service
+# v1 / v2 互斥
+Conflicts=aqua-spid.service
+
+[Service]
+Type=simple
+# 默认 -B auto：优先 rpmsg，rpmsg 不可用时回退 spidev
+# 如果想强制走 v2 而不退回，改成 -B rpmsg；想强制走 v1 改成 -B spidev
+ExecStart=/opt/aqua/bin/aqua_rpmsgd -f -B auto -p 250
+Restart=on-failure
+RestartSec=2
+SyslogIdentifier=aqua_rpmsgd
+
+[Install]
+WantedBy=multi-user.target

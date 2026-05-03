@@ -1,0 +1,65 @@
+/*
+ * phytium_pi_openamp.dts — v2 OpenAMP 路径必需的 DT overlay
+ *
+ * 给飞腾派加：
+ *   1. /reserved-memory/aqua-fw@b0100000   裸机核固件 ELF 加载区 (16 MiB)
+ *   2. /reserved-memory/aqua-shm@c0000000  OpenAMP 共享内存       (16 MiB)
+ *   3. /aqua_remoteproc                    user-driven remoteproc 节点（可选；
+ *      若用 phytium 官方 firmware-rproc 驱动则跳过此节点，由内核 DTB 内置）
+ *
+ * 地址来自 openamp_core/common/memory_layout.h：
+ *   SLAVE00_SOURCE_TABLE_ADDR = 0xc0000000
+ *   SLAVE00_SHARE_MEM_SIZE    = 0x100000  (1 MiB share + vring，余下留给将来扩展)
+ *   IMAGE_LOAD_ADDRESS        = 0xb0100000
+ *   IMAGE_MAX_LENGTH          = 0x1000000 (16 MiB)
+ *
+ * 编译：   dtc -@ -I dts -O dtb -o phytium_pi_openamp.dtbo phytium_pi_openamp.dts
+ * 挂载：   sudo install_openamp_overlay.sh apply
+ * 卸载：   sudo install_openamp_overlay.sh remove
+ *
+ * 注：本 overlay 与 phytium_pi_spidev0.dts 互斥：
+ *   - v1 路径：只挂 phytium_pi_spidev0.dtbo
+ *   - v2 路径：只挂 phytium_pi_openamp.dtbo
+ * 不要同时挂两个（IOPad 复用器和 spidev 节点都会冲突）。
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+    fragment@0 {
+        target-path = "/reserved-memory";
+        __overlay__ {
+            #address-cells = <2>;
+            #size-cells = <2>;
+
+            aqua_fw_reserved: aqua-fw@b0100000 {
+                reg = <0x0 0xb0100000 0x0 0x01000000>;  /* 16 MiB */
+                no-map;
+            };
+
+            aqua_shm_reserved: aqua-shm@c0000000 {
+                reg = <0x0 0xc0000000 0x0 0x01000000>;  /* 16 MiB */
+                no-map;
+            };
+        };
+    };
+
+    /*
+     * Phytium 官方 BSP 一般已经带 remoteproc 节点；
+     * 若没带，可以打开下面 fragment：
+     */
+    /*
+    fragment@1 {
+        target-path = "/";
+        __overlay__ {
+            aqua_remoteproc: aqua_remoteproc {
+                compatible = "phytium,rproc";
+                memory-region = <&aqua_fw_reserved>, <&aqua_shm_reserved>;
+                phytium,cpu-mask = <0x8>;            // 在第 4 个核 (CPU3) 上跑
+                status = "okay";
+            };
+        };
+    };
+    */
+};

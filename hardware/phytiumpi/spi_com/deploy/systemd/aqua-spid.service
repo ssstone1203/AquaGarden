@@ -1,0 +1,20 @@
+[Unit]
+Description=AquaGarden SPI daemon (v1: Linux spidev direct)
+Documentation=file:///opt/aqua/spi_com/README.md
+After=local-fs.target
+# v1 / v2 互斥：起其中一个会自动停另一个
+Conflicts=aqua-rpmsgd.service
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/test -c /dev/spidev0.0
+ExecStart=/opt/aqua/bin/aqua_spid -f -p 250 -g 5000
+Restart=on-failure
+RestartSec=2
+SyslogIdentifier=aqua_spid
+# 限制：不需要 root，能 R/W /dev/spidev0.0 就行
+# 这里仍以 root 跑，方便 chmod 0666 /tmp/aqua_spi.sock；
+# 如要 drop priv 可以 chown spi:spi /dev/spidev0.0 + User=spi
+
+[Install]
+WantedBy=multi-user.target

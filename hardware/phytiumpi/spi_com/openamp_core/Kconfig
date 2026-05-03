@@ -1,0 +1,39 @@
+#
+# AquaGarden OpenAMP SPI Core - Kconfig
+#
+# 沿用飞腾 standalone-sdk openamp_for_linux 例程的 Kconfig 结构，
+# 仅修改默认 TARGET_NAME = openamp_spi_core0
+#
+
+mainmenu "Phytium Baremetal Configuration"
+
+	menu "Project Configuration"
+
+		menu "Baremetal Configuration"
+		config TARGET_NAME
+			string "Build Target Name"
+			default "openamp_spi_core0"
+			help
+				Build Target name for the demo
+
+	endmenu
+
+	config OPENAMP_TRACE_DEBUG
+		bool "Enable OpenAMP Trace Debug"
+		default "n"
+		help
+			Enable OpenAMP Trace Debug
+
+	config AQUA_RA6E2_PREP_US_OVERRIDE
+		int "RA6E2 prep gap (us) between CMD and NOP_READ"
+		default 5000
+		help
+			How many microseconds the master waits between
+			the CMD frame and the NOP_READ frame, giving RA6E2
+			DMAC enough time to load the response into TX FIFO.
+			Default 5000 us (5 ms) matches v1 spidev behavior.
+
+endmenu
+
+
+source "$(SDK_DIR)/standalone.kconfig"

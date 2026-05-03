@@ -1,0 +1,36 @@
+[Unit]
+Description=Load AquaGarden remoteproc firmware (OpenAMP SPI core)
+Documentation=file:///opt/aqua/spi_com/openamp_core/README.md
+After=local-fs.target
+
+# 与飞腾官方 OpenAMP echo demo 互斥（默认 SDK 装 echo 固件）
+# 想恢复 echo demo 时：systemctl stop aqua-openamp-load && bash ~/open-amp/set_env.sh
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+# 1) 备份当前 firmware 名（停服务时恢复）
+ExecStartPre=/bin/sh -c 'cat /sys/class/remoteproc/remoteproc0/firmware > /run/aqua_prev_firmware.txt 2>/dev/null || true'
+
+# 2) 如果当前 remoteproc 已 running（之前跑着 echo demo），先 stop
+ExecStartPre=/bin/sh -c '[ "$(cat /sys/class/remoteproc/remoteproc0/state)" = "running" ] && echo stop > /sys/class/remoteproc/remoteproc0/state || true'
+
+# 3) 写入我们的固件名 + 启动远程核
+ExecStart=/bin/sh -c 'echo openamp_spi_core0.elf > /sys/class/remoteproc/remoteproc0/firmware'
+ExecStart=/bin/sh -c 'echo start                 > /sys/class/remoteproc/remoteproc0/state'
+
+# 4) 等待远程核 announce endpoint 出来（最多 3 秒）
+ExecStart=/bin/sh -c 'for i in 1 2 3 4 5 6 ; do sleep 0.5 ; ls /sys/bus/rpmsg/devices/virtio0.aqua-spi.* 2>/dev/null && exit 0 ; done ; echo "[WARN] aqua-spi endpoint 在 3 秒内未出现" >&2'
+
+# 5) 加载 rpmsg_char 模块 + 把 aqua-spi 端点 override 成 char device
+ExecStart=/sbin/modprobe rpmsg_char
+ExecStart=/bin/sh -c 'for d in /sys/bus/rpmsg/devices/virtio0.aqua-spi.*/driver_override ; do [ -e "$d" ] && echo rpmsg_chrdev > "$d" ; done'
+ExecStart=/sbin/udevadm settle
+
+# 关闭顺序：先 stop 远程核，恢复原 firmware
+ExecStop=/bin/sh -c 'echo stop > /sys/class/remoteproc/remoteproc0/state || true'
+ExecStop=/bin/sh -c 'p=$(cat /run/aqua_prev_firmware.txt 2>/dev/null); [ -n "$p" ] && echo "$p" > /sys/class/remoteproc/remoteproc0/firmware || true'
+
+[Install]
+WantedBy=multi-user.target
