@@ -25,6 +25,7 @@
 #include <unistd.h>
 
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <sys/un.h>
 
 #include "spi_protocol.h"
@@ -56,11 +57,32 @@ static int ipc_call(const aqua_ipc_req_t *req, aqua_ipc_rsp_t *rsp)
         close(fd);
         return -1;
     }
+
+    /* daemon 在 RPMsg write 阻塞时曾导致本 read 永久挂起；与 SPI 超时解耦的保护 */
+    {
+        unsigned tmo_ms = 8000;
+        if (req->op == AQUA_OP_SEND_CMD)
+        {
+            tmo_ms = (unsigned)req->timeout_ms;
+            if (tmo_ms < 100u) tmo_ms = 100u;
+            tmo_ms = tmo_ms * 80u + 4000u;
+            if (tmo_ms > 60000u) tmo_ms = 60000u;
+        }
+        struct timeval tv = {
+            .tv_sec  = (long)(tmo_ms / 1000u),
+            .tv_usec = (long)((tmo_ms % 1000u) * 1000u),
+        };
+        (void)setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
+    }
+
     ssize_t n = read(fd, rsp, sizeof *rsp);
     close(fd);
     if (n != (ssize_t)sizeof *rsp)
     {
-        fprintf(stderr, "短回包 %zd / %zu\n", n, sizeof *rsp);
+        if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+            fprintf(stderr, "IPC 接收超时（daemon 未在时限内应答，可能卡在 SPI/RPMsg）\n");
+        else
+            fprintf(stderr, "短回包 %zd / %zu\n", n, sizeof *rsp);
         return -1;
     }
     if (rsp->magic != AQUA_IPC_MAGIC)

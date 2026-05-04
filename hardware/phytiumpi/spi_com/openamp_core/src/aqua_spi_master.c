@@ -22,6 +22,9 @@
 #include "fdebug.h"
 #include "spi_protocol.h"           /* SPI_FRAME_LEN */
 
+/* 从机无响应时 FSpimTransferPollFifo 会死等；用带停滞上界的版本以便 RPMsg 仍能回 BUSY 帧 */
+#define AQUA_SPI_POLL_STALL_MAX  900000u
+
 #define AQUA_TAG "AQUA_SPIM"
 #define AQUA_E(fmt, ...)  FT_DEBUG_PRINT_E(AQUA_TAG, fmt, ##__VA_ARGS__)
 #define AQUA_W(fmt, ...)  FT_DEBUG_PRINT_W(AQUA_TAG, fmt, ##__VA_ARGS__)
@@ -67,12 +70,13 @@ int aqua_spi_master_xfer_64(const u8 *tx, u8 *rx)
         return -1;
 
     FSpimSetChipSelection(&s_spim, TRUE);    /* CS↓ */
-    FError err = FSpimTransferPollFifo(&s_spim, tx, rx, SPI_FRAME_LEN);
+    FError err = FSpimTransferPollFifoStallBound(&s_spim, tx, rx, SPI_FRAME_LEN,
+                                                 AQUA_SPI_POLL_STALL_MAX);
     FSpimSetChipSelection(&s_spim, FALSE);   /* CS↑ */
 
     if (err != FSPIM_SUCCESS)
     {
-        AQUA_E("FSpimTransferPollFifo failed: 0x%x", (unsigned)err);
+        AQUA_E("FSpim SPI xfer failed: 0x%x", (unsigned)err);
         return -1;
     }
     return 0;

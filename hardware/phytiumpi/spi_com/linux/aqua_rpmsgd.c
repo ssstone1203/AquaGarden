@@ -25,7 +25,7 @@
 #define DEFAULT_RPMSG_CTRL      "/dev/rpmsg_ctrl0"
 #define DEFAULT_RPMSG_DEV       "/dev/rpmsg0"
 #define DEFAULT_RPMSG_SERVICE   "aqua-spi"
-#define DEFAULT_RSP_TIMEOUT_MS  100u
+#define DEFAULT_RSP_TIMEOUT_MS  500u
 
 #define DEFAULT_SPIDEV          "/dev/spidev0.0"
 #define DEFAULT_SPEED_HZ        1000000u

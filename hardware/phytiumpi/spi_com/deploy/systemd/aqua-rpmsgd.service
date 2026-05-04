@@ -10,7 +10,7 @@ Conflicts=aqua-spid.service
 Type=simple
 # 默认 -B auto：优先 rpmsg，rpmsg 不可用时回退 spidev
 # 如果想强制走 v2 而不退回，改成 -B rpmsg；想强制走 v1 改成 -B spidev
-ExecStart=/opt/aqua/bin/aqua_rpmsgd -f -B auto -p 250
+ExecStart=/opt/aqua/bin/aqua_rpmsgd -f -B auto -p 250 -t 500
 Restart=on-failure
 RestartSec=2
 SyslogIdentifier=aqua_rpmsgd

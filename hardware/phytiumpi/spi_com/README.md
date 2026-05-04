@@ -150,7 +150,9 @@ journalctl -fu aqua-spid                            # 看到 "RA6E2 上线" 即�
 cd openamp_core
 make config_pe2204_phytiumpi_aarch64
 make all -j
-scp openamp_spi_core0.elf root@<飞腾派IP>:/lib/firmware/
+scp openamp_core/pe2204_aarch64_phytiumpi_openamp_spi_core0.elf \
+  root@<飞腾派IP>:/tmp/openamp_spi_core0.elf
+# 在飞腾派上: sudo mv /tmp/openamp_spi_core0.elf /lib/firmware/
 
 # 2) 飞腾派上一次性安装：
 sudo cp build/native/{aqua_rpmsgd,aqua_spi_cli} /opt/aqua/bin/

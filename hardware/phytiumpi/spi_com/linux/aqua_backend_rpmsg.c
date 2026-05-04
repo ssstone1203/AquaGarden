@@ -22,6 +22,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include <syslog.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -30,6 +31,35 @@
 #include <linux/rpmsg.h>
 
 #include "spi_protocol.h"
+
+static void deadline_monotonic(struct timespec *d, uint32_t add_ms)
+{
+    clock_gettime(CLOCK_MONOTONIC, d);
+    d->tv_nsec += (long)(add_ms % 1000u) * 1000000L;
+    d->tv_sec  += (time_t)(add_ms / 1000u);
+    while (d->tv_nsec >= 1000000000L)
+    {
+        d->tv_sec++;
+        d->tv_nsec -= 1000000000L;
+    }
+}
+
+/* 距离 deadline 剩余毫秒，已过期返回 0 */
+static int ms_until_deadline(const struct timespec *deadline)
+{
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    long sec  = deadline->tv_sec - now.tv_sec;
+    long nsec = deadline->tv_nsec - now.tv_nsec;
+    if (nsec < 0)
+    {
+        sec--;
+        nsec += 1000000000L;
+    }
+    if (sec < 0) return 0;
+    if (sec > 86400) return 86400000; /* 防止 poll 溢出 */
+    return (int)(sec * 1000L + nsec / 1000000L);
+}
 
 #define DEFAULT_RPMSG_CTRL     "/dev/rpmsg_ctrl0"
 #define DEFAULT_RPMSG_DEV      "/dev/rpmsg0"
@@ -40,54 +70,137 @@
 #define AS_DEFAULT_SPIDEV_PATH "/dev/spidev0.0"
 
 /* ------------------------------------------------------------------ */
+/* Debug NDJSON（DEBUG MODE / session a3c220）                            */
+/* ------------------------------------------------------------------ */
+
+// #region agent log
+static void agent_dbg_rpmsg_xfer(ssize_t wr, ssize_t rr, uint32_t tmo_ms)
+{
+    struct timespec ts;
+    long long ms;
+
+    if (clock_gettime(CLOCK_REALTIME, &ts) != 0)
+        return;
+    ms = (long long)ts.tv_sec * 1000LL + ts.tv_nsec / 1000000LL;
+
+    FILE *fp = fopen("/home/user/.cursor/debug-a3c220.log", "a");
+    if (!fp)
+        return;
+    fprintf(fp,
+            "{\"sessionId\":\"a3c220\",\"timestamp\":%lld,"
+            "\"location\":\"aqua_backend_rpmsg.c:op_xfer\","
+            "\"message\":\"xfer_IO\","
+            "\"hypothesisId\":\"H_ETIMEDOUT_rpmsg_read\","
+            "\"data\":{\"write_ret\":%zd,\"read_ret\":%zd,\"timeout_ms\":%u},\"runId\":\"diag\"}\n",
+            ms, wr, rr, (unsigned)tmo_ms);
+    fclose(fp);
+}
+// #endregion
+
+/* ------------------------------------------------------------------ */
 /* 内部 helper                                                         */
 /* ------------------------------------------------------------------ */
 
-/* 读完整 N 字节，处理 EINTR；超时阈值 timeout_ms，0 = 阻塞等待。
- * 返回实际读字节数；负值 = -errno。
+/*
+ * rpmsg 字符设备在 O_NONBLOCK 下依赖 rpmsg_trysendto/read；但部分内核版本上
+ * poll(POLLOUT) 不会因「可发送」置位（或长期不唤醒），若在 write 前先 poll，
+ * 会误超时 -ETIMEDOUT(-110)。正确顺序：先试 read/write，仅 EAGAIN 再 poll。
  */
 static ssize_t read_exact(int fd, void *buf, size_t want, uint32_t timeout_ms)
 {
-    if (timeout_ms)
-    {
-        struct pollfd p = { .fd = fd, .events = POLLIN };
-        int pr = poll(&p, 1, (int)timeout_ms);
-        if (pr == 0) return -ETIMEDOUT;
-        if (pr < 0)  return -errno;
-    }
-    size_t got = 0;
+    if (timeout_ms == 0) timeout_ms = DEFAULT_RSP_TIMEOUT_MS;
+    struct timespec deadline;
+    deadline_monotonic(&deadline, timeout_ms);
+
     uint8_t *q = buf;
+    size_t    got = 0;
     while (got < want)
     {
         ssize_t n = read(fd, q + got, want - got);
+        if (n > 0)
+        {
+            got += (size_t)n;
+            continue;
+        }
+        if (n == 0)
+            return -EIO;
         if (n < 0)
         {
-            if (errno == EINTR) continue;
+            if (errno == EINTR)
+                continue;
+            if (errno != EAGAIN && errno != EWOULDBLOCK)
+                return -errno;
+        }
+
+        int wait = ms_until_deadline(&deadline);
+        if (wait <= 0)
+            return -ETIMEDOUT;
+        struct pollfd pf = { .fd = fd, .events = POLLIN };
+        int           pr = poll(&pf, 1, wait);
+        if (pr == 0)
+            return -ETIMEDOUT;
+        if (pr < 0)
+        {
+            if (errno == EINTR)
+                continue;
             return -errno;
         }
-        if (n == 0) return -EIO;            /* EOF：远端断了 */
-        got += (size_t)n;
-        /* RPMsg 一次 read 通常拿一整包；万一包大于剩余缓冲就是协议错 */
-        if ((size_t)n != want && got != want) break;
     }
     return (ssize_t)got;
 }
 
-static ssize_t write_all(int fd, const void *buf, size_t want)
+static ssize_t write_all_timeout(int fd, const void *buf, size_t want, uint32_t timeout_ms)
 {
-    size_t done = 0;
-    const uint8_t *p = buf;
+    if (timeout_ms == 0) timeout_ms = DEFAULT_RSP_TIMEOUT_MS;
+    struct timespec deadline;
+    deadline_monotonic(&deadline, timeout_ms);
+
+    const uint8_t *p   = (const uint8_t *)buf;
+    size_t          done = 0;
     while (done < want)
     {
         ssize_t n = write(fd, p + done, want - done);
+        if (n > 0)
+        {
+            done += (size_t)n;
+            continue;
+        }
+        if (n == 0)
+            return -EIO;
         if (n < 0)
         {
-            if (errno == EINTR) continue;
+            if (errno == EINTR)
+                continue;
+            if (errno != EAGAIN && errno != EWOULDBLOCK)
+                return -errno;
+        }
+
+        int wait = ms_until_deadline(&deadline);
+        if (wait <= 0)
+            return -ETIMEDOUT;
+        struct pollfd po = { .fd = fd, .events = POLLOUT };
+        int           pr = poll(&po, 1, wait);
+        if (pr == 0)
+            return -ETIMEDOUT;
+        if (pr < 0)
+        {
+            if (errno == EINTR)
+                continue;
             return -errno;
         }
-        done += (size_t)n;
     }
     return (ssize_t)done;
+}
+
+static int rpmsg_dev_on_primary_virtio(const char *rpmsg_d_name)
+{
+    char  lpath[384], target[512];
+    snprintf(lpath, sizeof lpath, "/sys/class/rpmsg/%s/device", rpmsg_d_name);
+    ssize_t n = readlink(lpath, target, sizeof target - 1);
+    if (n < 0) return 0;
+    target[n] = '\0';
+    /* 飞腾 OpenAMP Aqua SPI 挂在第一个 virtio 控制通道上；勿误选其它 virtio 的同名残留节点 */
+    return strstr(target, "virtio0") != NULL;
 }
 
 static int rpmsg_pick_latest_dev(const char *service_name, char *out, size_t out_len)
@@ -95,7 +208,8 @@ static int rpmsg_pick_latest_dev(const char *service_name, char *out, size_t out
     DIR *dir = opendir("/sys/class/rpmsg");
     if (!dir) return -1;
 
-    int best_id = -1;
+    int best_id    = -1;
+    int best_v0_id = -1;
     struct dirent *de;
     while ((de = readdir(dir)) != NULL)
     {
@@ -116,13 +230,18 @@ static int rpmsg_pick_latest_dev(const char *service_name, char *out, size_t out
         fclose(fp);
         name[strcspn(name, "\r\n")] = '\0';
 
-        if (strcmp(name, service_name) == 0 && id > best_id)
+        if (strcmp(name, service_name) != 0)
+            continue;
+        if (id > best_id)
             best_id = id;
+        if (rpmsg_dev_on_primary_virtio(de->d_name) && id > best_v0_id)
+            best_v0_id = id;
     }
     closedir(dir);
 
-    if (best_id < 0) return -1;
-    snprintf(out, out_len, "/dev/rpmsg%d", best_id);
+    int pick = (best_v0_id >= 0) ? best_v0_id : best_id;
+    if (pick < 0) return -1;
+    snprintf(out, out_len, "/dev/rpmsg%d", pick);
     return 0;
 }
 
@@ -171,6 +290,11 @@ static int rpmsg_open_inner(aqua_backend_rpmsg_ctx_t *c)
         return -1;
     }
 
+    {
+        int fl = fcntl(dev, F_GETFL, 0);
+        if (fl >= 0) fcntl(dev, F_SETFL, fl | O_NONBLOCK);
+    }
+
     c->ctrl_fd  = ctrl;
     c->rpmsg_fd = dev;
     if (c->log) c->log(LOG_INFO, "已打开 RPMsg endpoint '%s' via %s",
@@ -195,11 +319,12 @@ static int op_xfer(void *_c,
     aqua_backend_rpmsg_ctx_t *c = _c;
     if (c->rpmsg_fd < 0) return -EIO;
 
-    ssize_t w = write_all(c->rpmsg_fd, cmd_frame, SPI_FRAME_LEN);
+    ssize_t w = write_all_timeout(c->rpmsg_fd, cmd_frame, SPI_FRAME_LEN, c->timeout_ms);
     if (w != (ssize_t)SPI_FRAME_LEN)
     {
         c->io_err_count++;
         if (c->log) c->log(LOG_ERR, "rpmsg write 失败: %zd", w);
+        agent_dbg_rpmsg_xfer(w, -1, c->timeout_ms);
         return (int)((w < 0) ? w : -EIO);
     }
 
@@ -208,8 +333,10 @@ static int op_xfer(void *_c,
     {
         c->io_err_count++;
         if (c->log) c->log(LOG_ERR, "rpmsg read 失败: %zd", r);
+        agent_dbg_rpmsg_xfer(w, r, c->timeout_ms);
         return (int)((r < 0) ? r : -EIO);
     }
+    agent_dbg_rpmsg_xfer(w, r, c->timeout_ms);
     return 0;
 }
 

@@ -6,8 +6,7 @@ Before=aqua-rpmsgd.service
 
 [Service]
 Type=oneshot
-; Avoid inlined multiline shell (systemd can strip case-branch terminators and break /bin/sh -c)
-; Canonical copy also lives in deploy/scripts/aqua-openamp-load.service for rsync with install script.
+; Bundled next to install_fixed_openamp_unit.sh so rsync of deploy/scripts/ updates /etc even when deploy/systemd on device is root-only/stale.
 RemainAfterExit=yes
 TimeoutStartSec=120s
 
