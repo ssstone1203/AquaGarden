@@ -148,13 +148,18 @@ static int aqua_rpmsg_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
     int rc;
     (void)priv;
 
+    /* 任何回包前都要先锁定对端地址；否则 len 不匹配时直接 return 会导致 Linux read 超时(-ETIMEDOUT) */
+    ept->dest_addr = src;
+
     if (len != SPI_FRAME_LEN)
     {
-        AQUA_W("drop pkt len=%u (要求 %u)", (unsigned)len, SPI_FRAME_LEN);
+        AQUA_W("RPMsg len=%u 非 %u -> 仍回 BUSY 避免主核超时", (unsigned)len,
+               (unsigned)SPI_FRAME_LEN);
+        rc = rpmsg_send(ept, s_busy_frame, SPI_FRAME_LEN);
+        if (rc < 0)
+            AQUA_W("rpmsg_send busy(len) rc=%d", rc);
         return RPMSG_SUCCESS;
     }
-
-    ept->dest_addr = src;       /* 锁定回包目标地址 */
 
     /* 第 1 次 SPI 事务：发 CMD，丢 MISO（是上一帧滞后响应） */
     rc = aqua_spi_master_xfer_64((const u8 *)data, s_dummy_rx);
