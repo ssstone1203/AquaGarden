@@ -140,7 +140,10 @@ static void aqua_pack_static_frames(void)
 /* RPMsg endpoint 回调：纯透传，不解析协议字段                         */
 /* ------------------------------------------------------------------ */
 
-static volatile int s_shutdown = 0;
+/* Linux close(/dev/rpmsgN) 会触发 unbind；若把整个 app 收尾并断电核，
+ * 守护进程在连续错后 reset() 就会把远端活活「关掉」， virtio 缓冲区耗尽看起来像 -ENOMEM。
+ * 这里只对「远端 STOP」退场；主机反复 detach/attach 时在本循环里重建 endpoint。 */
+static volatile int s_host_detach = 0;
 
 static int aqua_rpmsg_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
                          uint32_t src, void *priv)
@@ -193,8 +196,8 @@ err_busy:
 static void aqua_rpmsg_unbind(struct rpmsg_endpoint *ept)
 {
     (void)ept;
-    AQUA_I("Linux 端关闭了 endpoint，准备退出");
-    s_shutdown = 1;
+    AQUA_I("Linux 关闭了 RPMsg 连接；固件保持运行以待重连（不断电核）");
+    s_host_detach = 1;
 }
 
 /* ------------------------------------------------------------------ */
@@ -203,34 +206,55 @@ static void aqua_rpmsg_unbind(struct rpmsg_endpoint *ept)
 
 static int aqua_rpmsg_app(struct rpmsg_device *rdev, void *priv)
 {
-    int rc;
-    struct rpmsg_endpoint lept = {0};
-    s_shutdown = 0;
+    int rc = 0;
+    struct rpmsg_endpoint lept;
 
-    AQUA_I("正在创建 endpoint '%s' ...", AQUA_RPMSG_SERVICE);
-    rc = rpmsg_create_ept(&lept, rdev,
-                          AQUA_RPMSG_SERVICE,
-                          0, RPMSG_ADDR_ANY,
-                          aqua_rpmsg_cb, aqua_rpmsg_unbind);
-    if (rc)
+    /*
+     * 外层：远端收到 remoteproc STOP 才结束；
+     * 内层之间：Linux 关闭 char dev 只会触发 detach，拆掉 ept 后立刻再 announce，
+     * 这样 aqua_rpmsgd 的 ioctl+open / reset() 不会把辅助核永久性下线。
+     */
+    for (;;)
     {
-        AQUA_E("rpmsg_create_ept '%s' 失败 rc=%d", AQUA_RPMSG_SERVICE, rc);
-        return -1;
-    }
-    AQUA_I("endpoint 创建成功，等待 Linux 端连接");
-
-    while (1)
-    {
-        platform_poll(priv);
-        if (s_shutdown || rproc_get_stop_flag())
+        if (rproc_get_stop_flag())
         {
             rproc_clear_stop_flag();
+            AQUA_I("remoteproc STOP：退出 RPMsg 重连循环");
             break;
         }
+
+        memset(&lept, 0, sizeof lept);
+        s_host_detach = 0;
+
+        AQUA_I("正在创建 endpoint '%s' ...", AQUA_RPMSG_SERVICE);
+        rc = rpmsg_create_ept(&lept, rdev,
+                              AQUA_RPMSG_SERVICE,
+                              0, RPMSG_ADDR_ANY,
+                              aqua_rpmsg_cb, aqua_rpmsg_unbind);
+        if (rc)
+        {
+            AQUA_E("rpmsg_create_ept '%s' 失败 rc=%d", AQUA_RPMSG_SERVICE, rc);
+            return -1;
+        }
+        AQUA_I("endpoint 已就绪，等待 Linux 连接/收发");
+
+        while (!s_host_detach && !rproc_get_stop_flag())
+            platform_poll(priv);
+
+        rpmsg_destroy_ept(&lept);
+
+        if (rproc_get_stop_flag())
+        {
+            rproc_clear_stop_flag();
+            AQUA_I("remoteproc STOP：销毁 ept 后退出 RPMsg");
+            break;
+        }
+
+        AQUA_I("本轮 RPMsg 会话结束（通常为 Linux reset/重连）；即将重新 announce '%s'",
+               AQUA_RPMSG_SERVICE);
     }
 
-    rpmsg_destroy_ept(&lept);
-    AQUA_I("退出 RPMsg 应用");
+    AQUA_I("RPMsg 应用主循环退出");
     return rc;
 }
 

@@ -74,25 +74,37 @@ static int ms_until_deadline(const struct timespec *deadline)
 /* ------------------------------------------------------------------ */
 
 // #region agent log
-static void agent_dbg_rpmsg_xfer(ssize_t wr, ssize_t rr, uint32_t tmo_ms)
+static FILE *agent_dbg_open_log(void)
+{
+    FILE *fp = fopen("/home/user/.cursor/debug-a3c220.log", "a");
+    if (!fp)
+        fp = fopen("/tmp/debug-a3c220.ndjson", "a");
+    return fp;
+}
+
+static void agent_dbg_rpmsg_xfer(ssize_t wr, ssize_t rr, uint32_t tmo_ms, const char *phase)
 {
     struct timespec ts;
     long long ms;
+    long long errno_hint = (wr < 0) ? (long long)(-wr) : 0LL;
+
+    if (!phase)
+        phase = "xfer";
 
     if (clock_gettime(CLOCK_REALTIME, &ts) != 0)
         return;
     ms = (long long)ts.tv_sec * 1000LL + ts.tv_nsec / 1000000LL;
 
-    FILE *fp = fopen("/home/user/.cursor/debug-a3c220.log", "a");
+    FILE *fp = agent_dbg_open_log();
     if (!fp)
         return;
     fprintf(fp,
             "{\"sessionId\":\"a3c220\",\"timestamp\":%lld,"
-            "\"location\":\"aqua_backend_rpmsg.c:op_xfer\","
-            "\"message\":\"xfer_IO\","
-            "\"hypothesisId\":\"H_ETIMEDOUT_rpmsg_read\","
-            "\"data\":{\"write_ret\":%zd,\"read_ret\":%zd,\"timeout_ms\":%u},\"runId\":\"diag\"}\n",
-            ms, wr, rr, (unsigned)tmo_ms);
+            "\"location\":\"aqua_backend_rpmsg.c\",\"message\":\"%s\","
+            "\"hypothesisId\":\"H_disconnect_kills_firmware_enomem\","
+            "\"data\":{\"write_ret\":%zd,\"read_ret\":%zd,\"timeout_ms\":%u,"
+            "\"neg_errno_hint\":%lld},\"runId\":\"diag\"}\n",
+            ms, phase, wr, rr, (unsigned)tmo_ms, errno_hint);
     fclose(fp);
 }
 // #endregion
@@ -149,6 +161,24 @@ static ssize_t read_exact(int fd, void *buf, size_t want, uint32_t timeout_ms)
     return (ssize_t)got;
 }
 
+/* virtio-rpmsg 部分栈在上游未读走 RX 时长时间不给 POLLOUT；排空前读一下可解冻 TX。 */
+static void rpmsg_try_discard_readable(int fd)
+{
+    uint8_t scratch[512];
+
+    for (unsigned k = 0; k < 128u; k++)
+    {
+        ssize_t r = read(fd, scratch, sizeof scratch);
+        if (r > 0)
+            continue;
+        if (r == 0)
+            break;
+        if (errno == EINTR)
+            continue;
+        break;
+    }
+}
+
 static ssize_t write_all_timeout(int fd, const void *buf, size_t want, uint32_t timeout_ms)
 {
     if (timeout_ms == 0) timeout_ms = DEFAULT_RSP_TIMEOUT_MS;
@@ -178,7 +208,11 @@ static ssize_t write_all_timeout(int fd, const void *buf, size_t want, uint32_t 
         int wait = ms_until_deadline(&deadline);
         if (wait <= 0)
             return -ETIMEDOUT;
-        struct pollfd po = { .fd = fd, .events = POLLOUT };
+        /*
+         * 单等 POLLOUT 在个别内核/virtio 组合上会误超时：
+         * 同时监听 POLLIN；若可读则排空，避免因未消费的入站 SKB 卡住发送。
+         */
+        struct pollfd po = { .fd = fd, .events = (short)(POLLIN | POLLOUT) };
         int           pr = poll(&po, 1, wait);
         if (pr == 0)
             return -ETIMEDOUT;
@@ -188,6 +222,10 @@ static ssize_t write_all_timeout(int fd, const void *buf, size_t want, uint32_t 
                 continue;
             return -errno;
         }
+        if (po.revents & (POLLERR | POLLHUP | POLLNVAL))
+            return -EIO;
+        if (po.revents & POLLIN)
+            rpmsg_try_discard_readable(fd);
     }
     return (ssize_t)done;
 }
@@ -203,24 +241,31 @@ static int rpmsg_dev_on_primary_virtio(const char *rpmsg_d_name)
     return strstr(target, "virtio0") != NULL;
 }
 
-static int rpmsg_pick_latest_dev(const char *service_name, char *out, size_t out_len)
+/*
+ * 当前 sysfs 中与 service 同名、且优先 virtio0 的 rpmsg%d 最大编号（与原先 pick_latest 规则一致）。
+ * 无匹配返回 -1。
+ */
+static int rpmsg_aqua_sysfs_max_id(const char *service_name)
 {
-    DIR *dir = opendir("/sys/class/rpmsg");
+    DIR           *dir = opendir("/sys/class/rpmsg");
+    struct dirent *de;
+    int            best_id    = -1;
+    int            best_v0_id = -1;
+
     if (!dir) return -1;
 
-    int best_id    = -1;
-    int best_v0_id = -1;
-    struct dirent *de;
     while ((de = readdir(dir)) != NULL)
     {
-        int id;
-        char extra;
+        int   id;
+        char  extra;
+        char  path[320], name[64] = {0};
+        FILE *fp;
+
         if (sscanf(de->d_name, "rpmsg%d%c", &id, &extra) != 1)
             continue;
 
-        char path[320], name[64] = {0};
         snprintf(path, sizeof path, "/sys/class/rpmsg/%s/name", de->d_name);
-        FILE *fp = fopen(path, "r");
+        fp = fopen(path, "r");
         if (!fp) continue;
         if (fgets(name, sizeof name, fp) == NULL)
         {
@@ -239,7 +284,13 @@ static int rpmsg_pick_latest_dev(const char *service_name, char *out, size_t out
     }
     closedir(dir);
 
-    int pick = (best_v0_id >= 0) ? best_v0_id : best_id;
+    return (best_v0_id >= 0) ? best_v0_id : best_id;
+}
+
+static int rpmsg_pick_latest_dev(const char *service_name, char *out, size_t out_len)
+{
+    int pick = rpmsg_aqua_sysfs_max_id(service_name);
+
     if (pick < 0) return -1;
     snprintf(out, out_len, "/dev/rpmsg%d", pick);
     return 0;
@@ -247,9 +298,11 @@ static int rpmsg_pick_latest_dev(const char *service_name, char *out, size_t out
 
 static int rpmsg_open_inner(aqua_backend_rpmsg_ctx_t *c)
 {
-    int ctrl = -1, dev = -1;
-    struct rpmsg_endpoint_info ept;
-    char selected_dev[64];
+    int                          ctrl = -1, dev = -1;
+    struct rpmsg_endpoint_info   ept;
+    int                          id_before;
+    int                          chosen_id = -1;
+    unsigned                     w;
 
     ctrl = open(c->ctrl_path, O_RDWR);
     if (ctrl < 0)
@@ -264,6 +317,9 @@ static int rpmsg_open_inner(aqua_backend_rpmsg_ctx_t *c)
     ept.src = 0;
     ept.dst = 0xFFFFFFFFu;          /* "any"，让内核去匹配裸机核 ann ouncing 出来的 endpoint */
 
+    /* 须在 ioctl 之前采样：CREATE_EPT 返回时新端点往往已在 sysfs，之后再读 max 会把「新建 id」算进 before，导致永远无法 id_now>id_before */
+    id_before = rpmsg_aqua_sysfs_max_id(c->service_name);
+
     /* RPMSG_CREATE_EPT_IOCTL 在裸机核 announce 服务名之后才会成功；
      * 如果远端还没就绪，这里会返回 ENODEV。我们只重试一次内核默认的等待。 */
     if (ioctl(ctrl, RPMSG_CREATE_EPT_IOCTL, &ept) < 0)
@@ -275,9 +331,48 @@ static int rpmsg_open_inner(aqua_backend_rpmsg_ctx_t *c)
         return -1;
     }
 
-    if (rpmsg_pick_latest_dev(c->service_name, selected_dev, sizeof selected_dev) == 0)
+    /*
+     * IOCTL 返回后新建的 /dev/rpmsgN 可能晚一拍才出现在 sysfs；
+     * 若立刻按「当前 max」open，会误绑旧 aqua-spi 节点 → write EAGAIN + POLLOUT 超时 -110。
+     * 已用上面的 id_before（ioctl 前快照）比较 ioctl 后的 max，直到更大再 open。
+     */
+    for (w = 0; w < 3000u; w += 20u)
     {
-        snprintf(c->resolved_device_path, sizeof c->resolved_device_path, "%s", selected_dev);
+        int id_now = rpmsg_aqua_sysfs_max_id(c->service_name);
+        if (id_now > id_before || (id_before < 0 && id_now >= 0))
+        {
+            chosen_id = id_now;
+            break;
+        }
+        {
+            struct timespec sl = { 0, 20L * 1000L * 1000L };
+            (void)nanosleep(&sl, NULL);
+        }
+    }
+
+    if (chosen_id >= 0)
+    {
+        snprintf(c->resolved_device_path, sizeof c->resolved_device_path,
+                 "/dev/rpmsg%d", chosen_id);
+        c->device_path = c->resolved_device_path;
+        if (c->log)
+            c->log(LOG_INFO,
+                   "RPMSG 选用 ioctl 后新建的 /dev/rpmsg%d（ioctl 前 sysfs max id=%d）",
+                   chosen_id, id_before);
+    }
+    else
+    {
+        if (c->log)
+            c->log(LOG_WARNING,
+                   "RPMSG 3s 内 sysfs max id 未递增 (before=%d)，退回 pick_latest（可能误绑旧节点）",
+                   id_before);
+        if (rpmsg_pick_latest_dev(c->service_name, c->resolved_device_path,
+                                  sizeof c->resolved_device_path) != 0)
+        {
+            if (c->log) c->log(LOG_ERR, "无法解析 %s 对应的 /dev/rpmsgN", c->service_name);
+            close(ctrl);
+            return -1;
+        }
         c->device_path = c->resolved_device_path;
     }
 
@@ -319,12 +414,15 @@ static int op_xfer(void *_c,
     aqua_backend_rpmsg_ctx_t *c = _c;
     if (c->rpmsg_fd < 0) return -EIO;
 
+    rpmsg_try_discard_readable(c->rpmsg_fd);
+
     ssize_t w = write_all_timeout(c->rpmsg_fd, cmd_frame, SPI_FRAME_LEN, c->timeout_ms);
     if (w != (ssize_t)SPI_FRAME_LEN)
     {
         c->io_err_count++;
-        if (c->log) c->log(LOG_ERR, "rpmsg write 失败: %zd", w);
-        agent_dbg_rpmsg_xfer(w, -1, c->timeout_ms);
+        if (c->log) c->log(LOG_ERR, "rpmsg xfer: write 不完整/失败 ret=%zd（期待 %u 字节）",
+                           w, SPI_FRAME_LEN);
+        agent_dbg_rpmsg_xfer(w, -1, c->timeout_ms, "xfer_write_fail");
         return (int)((w < 0) ? w : -EIO);
     }
 
@@ -332,11 +430,12 @@ static int op_xfer(void *_c,
     if (r != (ssize_t)SPI_FRAME_LEN)
     {
         c->io_err_count++;
-        if (c->log) c->log(LOG_ERR, "rpmsg read 失败: %zd", r);
-        agent_dbg_rpmsg_xfer(w, r, c->timeout_ms);
+        if (c->log) c->log(LOG_ERR, "rpmsg xfer: read 不完整/失败 ret=%zd（期待 %u 字节）",
+                           r, SPI_FRAME_LEN);
+        agent_dbg_rpmsg_xfer(w, r, c->timeout_ms, "xfer_read_fail");
         return (int)((r < 0) ? r : -EIO);
     }
-    agent_dbg_rpmsg_xfer(w, r, c->timeout_ms);
+    agent_dbg_rpmsg_xfer(w, r, c->timeout_ms, "xfer_ok");
     return 0;
 }
 
