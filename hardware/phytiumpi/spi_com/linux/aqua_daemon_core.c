@@ -108,6 +108,24 @@ static int do_send_cmd(uint8_t dev, uint8_t cmd,
     if (rc != 0)
     {
         s->stats.spidev_io_err_count++;     /* 字段名沿用，语义=后端 IO 错误 */
+
+        /* rpmsg virtio 写路径在资源紧张时返回 -ENOMEM；若仍累计 consecutive_err 并
+         * reset()，会反复 RPMSG_CREATE_EPT，/dev/rpmsgN 暴增，进一步耗尽缓冲（见现场
+         * ret=-12 与 rpmsg384+）。此类错误不得触发 auto-reset。 */
+        if (be->kind == AQUA_BACKEND_RPMSG && rc == -ENOMEM)
+        {
+            s->stats.consecutive_err_count = 0;
+            LOGD("backend(%s) xfer 失败 rc=%d (ENOMEM)", be->name, rc);
+            static int rpmsg_enomem_warned;
+            if (!rpmsg_enomem_warned)
+            {
+                rpmsg_enomem_warned = 1;
+                LOGW("RPMsg xfer ENOMEM(-12)：不再 auto-reset（避免新建 endpoint 耗尽资源）。"
+                     " 请先冷启动或检查裸机固件是否含「Linux 断连后仍驻留 / 可重连」补丁。");
+            }
+            return rc;
+        }
+
         s->stats.consecutive_err_count++;
         LOGD("backend(%s) xfer 失败 rc=%d", be->name, rc);
         if (s->stats.consecutive_err_count >= s->cfg->max_consec_err)

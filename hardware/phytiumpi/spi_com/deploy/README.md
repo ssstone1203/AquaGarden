@@ -103,9 +103,11 @@ sudo /opt/aqua/spi_com/deploy/scripts/switch_to_v2.sh
 | 现象 | 排查 |
 | --- | --- |
 | `systemctl status aqua-rpmsgd` 报 `cannot open /dev/rpmsg_ctrl0` | 远程核没起来 → `cat /sys/class/remoteproc/remoteproc0/state`，应为 `running`；若是 `offline` 则看 `dmesg \| tail -50`。 |
+| **`dmesg`：`can't start rproc homo_rproc: -4`、`Boot failed: -4`；或对 `state` 写 `start` 时 shell 卡住** | **勿手搓连写 start**（易触发 BSP 自动重试，阻塞 sysfs）。先：`sudo sh -c 'echo disabled > /sys/class/remoteproc/remoteproc0/recovery'`，再 `sudo reboot`。开机后用 **`sudo systemctl restart aqua-openamp-load.service`**（或 **`sudo ./deploy/scripts/switch_to_v2.sh`**），不要用无 `timeout` 的裸 `echo start`。`-4` 多与 **PSCI / 核电源状态与 sysfs `offline` 不一致**有关，整机冷启动最常恢复。 |
 | 远程核 `failed to load firmware: ENOMEM` | DTB 没含 reserved-memory → 按 §3.3 切到 v3-openamp DTB；fallback：`install_openamp_overlay.sh apply`（极少需要）。 |
 | `/dev/rpmsg0` 没出现但 remoteproc=running | rpmsg_char.ko 没加载或 driver_override 没设：`bash ~/open-amp/set_env.sh` 走一遍模拟，看哪步失败；或重启 `aqua-openamp-load.service`。 |
 | daemon 启动后 `连续 5 次错，重置 backend` | SPI 物理层接错 / 速率太高 / RA6E2 没烧固件。先切到 v1 用示波器验证。 |
+| journal：`rpmsg xfer … ret=-12`（即 **`-ENOMEM`**）且 `/dev/rpmsg` 编号暴涨 | **旧逻辑在 ENOMEM 上仍 `reset()` → 反复 `CREATE_EPT`**，雪上加霜。换 **新版本 `aqua_rpmsgd`（RPMsg ENOMEM 不触发 auto-reset）** + **冷启动** 清理节点；裸机 **`openamp_spi_core0.elf`** 须为 **Linux 断连后不整机下线的重连版本**。 |
 | 切回 v1 后 `/dev/spidev0.0` 没出现 | spidev overlay 没挂回去 → `install_spidev_overlay.sh apply`。 |
 
 更详细的内核侧步骤：

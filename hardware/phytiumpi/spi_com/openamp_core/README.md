@@ -109,6 +109,18 @@ systemctl stop aqua-rpmsgd
 echo stop > /sys/class/remoteproc/remoteproc0/state
 ```
 
+**若 `echo start` 卡住且 `dmesg` 刷屏 `can't start homo_rproc: -4`：**
+先关闭内核自动重试并优先走 systemd 封装好的脚本（带 `timeout`、`recovery disabled`、offline 也会先 `stop`）：
+
+```bash
+sudo sh -c 'echo disabled > /sys/class/remoteproc/remoteproc0/recovery' 2>/dev/null || true
+sudo reboot   # 清理 PSCI 拧巴状态后再试
+# 开机后：
+sudo systemctl restart aqua-openamp-load.service
+```
+
+详见 `../deploy/README.md` §4 故障排查表。
+
 ---
 
 ## 5. 调试技巧

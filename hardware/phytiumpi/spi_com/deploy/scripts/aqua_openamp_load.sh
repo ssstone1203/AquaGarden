@@ -8,7 +8,8 @@ FW_AQUA=openamp_spi_core0.elf
 
 log() { echo "[aqua-openamp-load] $*"; }
 
-# Disable BSP auto-recovery (can wedge on boot failure)
+# Disable BSP auto-recovery — enabled 时内核可能在 -4/PSCI 失败后狂重试，
+#  sysfs 上 echo start 会一直阻塞，且 dmesg 被 Boot failed 刷屏。
 echo disabled >"$RP/recovery" 2>/dev/null || true
 
 cur=$(cat "$RP/state" 2>/dev/null || echo unknown)
@@ -25,16 +26,19 @@ running:*)
     log "running but fw=$cur_fw -> stop + swap + start"
     timeout 3 sh -c "echo stop >$RP/state" 2>/dev/null \
         || log "stop timed out or failed (BSP quirk)"
-    sleep 0.2
+    sleep 2
     echo "$FW_AQUA" >"$RP/firmware"
-    timeout 5 sh -c "echo start >$RP/state" 2>/dev/null \
-        || { log "start failed; try reboot"; exit 1; }
+    timeout 20 sh -c "echo start >$RP/state" 2>/dev/null \
+        || { log "start failed; dmesg tail:"; dmesg -T | tail -n 30; log "若见 can't start ...: -4 → 常见为 PSCI 状态与 sysfs 不一致，请 sudo reboot 后再试"; exit 1; }
     ;;
 offline:*|crashed:*|suspended:*)
-    log "state=$cur -> write firmware + start"
+    log "state=$cur -> stop(best-effort)+firmware+start (调和 PSCI ALREADY_ON / offline 假象)"
+    timeout 3 sh -c "echo stop >$RP/state" 2>/dev/null \
+        || true
+    sleep 2
     echo "$FW_AQUA" >"$RP/firmware"
-    timeout 5 sh -c "echo start >$RP/state" 2>/dev/null \
-        || { log "start failed; try reboot"; exit 1; }
+    timeout 20 sh -c "echo start >$RP/state" 2>/dev/null \
+        || { log "start failed; dmesg tail:"; dmesg -T | tail -n 30; log "若见 can't start homo_rproc: -4 → 先整机 reboot；勿快速连写 start（会触发驱动重试风暴）"; exit 1; }
     ;;
 *)
     log "unknown state=$cur; not touching remoteproc" >&2

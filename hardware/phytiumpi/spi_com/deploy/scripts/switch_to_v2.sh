@@ -63,3 +63,5 @@ echo
 echo "[OK] 已切换到 v2 (rpmsg)。验证："
 echo "     /opt/aqua/bin/aqua_spi_cli sys ping"
 echo "     /opt/aqua/bin/aqua_spi_cli stats   # 看 backend 是否走 rpmsg"
+echo "[TIP] v1↔v2 热切换后若 journal 出现 write ret=-12（ENOMEM）：先 sudo reboot，"
+echo "      再只执行本脚本 + 验证，避免 rpmsg/virtio 残留状态。"

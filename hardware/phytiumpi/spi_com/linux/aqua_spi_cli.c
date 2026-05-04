@@ -217,7 +217,9 @@ static int send_cmd(uint8_t dev, uint8_t cmd,
 
     if (rsp.rc < 0)
     {
-        fprintf(stderr, "SPI 失败 rc=%d\n", rsp.rc);
+        int e = -rsp.rc;
+        fprintf(stderr, "SPI 失败 rc=%d (%s)\n", rsp.rc,
+                (e > 0) ? strerror(e) : "???");
         return 1;
     }
     printf("RSP: status=%s type=%s ack_seq=%u flags=0x%02X len=%u uptime=%u ms\n",
