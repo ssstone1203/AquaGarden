@@ -144,7 +144,8 @@ static int do_send_cmd(uint8_t dev, uint8_t cmd,
         if (v == -((int)SPI_STATUS_BAD_SOF)) s->stats.rx_sof_err_count++;
         else if (v == -((int)SPI_STATUS_CRC_ERR)) s->stats.rx_crc_err_count++;
         s->stats.consecutive_err_count++;
-        LOGD("RSP 校验失败 v=%d (seq=%u dev=0x%02X cmd=0x%02X)", v, seq, dev, cmd);
+        LOGD("RSP 校验失败 v=%d (seq=%u dev=0x%02X cmd=0x%02X) 前4B=%02X%02X%02X%02X",
+             v, seq, dev, cmd, rx[0], rx[1], rx[2], rx[3]);
         if (s->stats.consecutive_err_count >= s->cfg->max_consec_err)
         {
             LOGW("连续 %u 次帧错，重置 backend(%s)...",

@@ -64,7 +64,7 @@
 │ │  └────────────────────────────────────────────────────────────┘ │ │
 │ └────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────┘
-                              │ SPI Bus (Mode 0, 1 MHz, 8-bit, MSB)
+                              │ SPI Bus (Mode 1, 1 MHz, 8-bit, MSB)
                               │ 64B CMD / 64B RSP（CMD + NOP_READ 两次事务）
                               ▼
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -128,7 +128,7 @@
 
 | 配置项 | 选择 | 理由 |
 |-------|------|------|
-| SPI 模式 | **Mode 0**（CPOL=0, CPHA=0） | 与 v1 一致；RA6E2 FSP 默认即此模式；裸机核 FSPIM 用 `FSPIM_CPOL_LOW` + `FSPIM_CPHA_1_EDGE` 配置 |
+| SPI 模式 | **Mode 1**（CPOL=0, CPHA=1） | 与 v1 一致；RA6E2 FSP 的 SPI Slave 不支持 CPHA=0；裸机核 FSPIM 用 `FSPIM_CPOL_LOW` + `FSPIM_CPHA_2_EDGE` 配置 |
 | 通信速率 | **1 MHz**（首发），可调 4 MHz | 64 字节单帧 0.5 ms，对 250 ms 周期空载 < 1%；飞腾派排针无屏蔽，1 MHz 给信号完整性留够裕度。SDK `FSPI_DEFAULT_SCLK = 5 MHz` 太高，必须显式设 1 MHz |
 | 数据位宽 | **8 bit**（`FSPIM_1_BYTE`） | 协议按字节流设计；与 RA6E2 双 DMAC 1-Byte 配置一致；避免 16-bit 模式的 endian/对齐 bug |
 | 传输方式 | **Polling（`TRANS_WAY_POLL`）→ Interrupt 升级路径** | v2 首发用 polling 简化裸机核（64 B / 1 MHz = 0.5 ms 阻塞，对 250 ms 周期可忽略）；后续如要降低 CPU 占用，改 `TRANS_WAY_INTERRUPT`，回调里给信号量再唤醒 RPMsg 端口任务 |
@@ -175,8 +175,8 @@ int aqua_spi_init(void)
     cfg = *FSpimLookupConfig(AQUA_SPI_ID);
     cfg.work_mode    = FSPIM_DEV_MASTER_MODE;
     cfg.slave_dev_id = FSPIM_SLAVE_DEV_0;          /* CSN0 */
-    cfg.cpol         = FSPIM_CPOL_LOW;             /* Mode 0 */
-    cfg.cpha         = FSPIM_CPHA_1_EDGE;
+    cfg.cpol         = FSPIM_CPOL_LOW;             /* Mode 1 */
+    cfg.cpha         = FSPIM_CPHA_2_EDGE;
     cfg.n_bytes      = FSPIM_1_BYTE;
     cfg.sclk_hz      = AQUA_SPI_SCLK_HZ;
     cfg.trans_way    = TRANS_WAY_POLL;

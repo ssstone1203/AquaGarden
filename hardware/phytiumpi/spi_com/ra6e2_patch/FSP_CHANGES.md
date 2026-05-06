@@ -75,20 +75,23 @@
 
 > 如果你不想启动 RASC，本仓库已直接把 `configuration.xml` 里那两处 `module.driver.transfer.size.size_2_byte` 改成 `size_1_byte`，并同步把 `ra_gen/Communicate_Task.c` 里两处 `TRANSFER_SIZE_2_BYTE` 改成 `TRANSFER_SIZE_1_BYTE`。Keil 直接 Build 就能用。
 
-### 2.2 确认 SPI 模式仍为 Mode 0 + Slave
+### 2.2 确认 SPI 模式为 Mode 1 + Slave
 
 `g_com_spi` 节点 Properties：
 
 | 属性 | 期望值 |
 |------|--------|
 | Operating Mode | **Slave** |
-| Clock Phase    | **Data Sampling on Odd Edge** (CPHA = 0) |
+| Clock Phase    | **Data Sampling on Even Edge** (CPHA = 1) |
 | Clock Polarity | **Low when idle** (CPOL = 0) |
 | Bit Order      | **MSB First** |
 | Mode Fault Error | Disable |
 | SSL Select     | **SSL0**（驱动层选择 SSL 槽位 0；该槽位的物理引脚由 §2.5 决定） |
 
-这些应当已经是当前值，仅作核对。
+这些应当已经是当前值，仅作核对。RA6E2 FSP 的 `R_SPI_Open()` 在 Slave
+模式下会拒绝 CPHA=0（`SPI_CLK_PHASE_EDGE_ODD`），否则 `g_com_spi.open()`
+返回 `FSP_ERR_UNSUPPORTED`，通信任务会卡在 `configASSERT`，外部表现为主机
+MOSI 正常但 MISO 不返回 `5A A5` 响应帧。
 
 ### 2.3 确认中断优先级
 

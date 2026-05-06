@@ -5,7 +5,7 @@
  *   - Polling 模式（FSPIM_TRANS_POLL）：64 B / 1 MHz = 0.5 ms，阻塞代价可忽略
  *   - 显式 FSpimSetChipSelection() 控 CS，每次 xfer 一次 CS 边沿，
  *     对应 RA6E2 端 DMAC 的 "帧结束 + 复位" 信号（抗错位）
- *   - SPI Mode 0：CPOL=0/CPHA=0（与 v1 spidev、RA6E2 FSP 一致）
+ *   - SPI Mode 1：CPOL=0/CPHA=1（RA6E2 FSP Slave 不支持 CPHA=0）
  *   - 8-bit 字宽（FSPIM_1_BYTE）
  *
  * 引脚：飞腾派 board/phytiumpi_firefly/fio_mux.c::FIOPadSetSpimMux(0)
@@ -45,7 +45,7 @@ int aqua_spi_master_init(void)
     cfg.work_mode    = FSPIM_DEV_MASTER_MODE;
     cfg.slave_dev_id = FSPIM_SLAVE_DEV_0;
     cfg.cpol         = FSPIM_CPOL_LOW;       /* CPOL=0 */
-    cfg.cpha         = FSPIM_CPHA_1_EDGE;    /* CPHA=0 → Mode 0 */
+    cfg.cpha         = FSPIM_CPHA_2_EDGE;    /* CPHA=1 → Mode 1 */
     cfg.n_bytes      = FSPIM_1_BYTE;         /* 8 bit/字 */
     cfg.sclk_hz      = AQUA_SPI_SCLK_HZ;     /* 1 MHz 默认 */
     cfg.trans_way    = TRANS_WAY_POLL;
@@ -60,7 +60,7 @@ int aqua_spi_master_init(void)
     }
 
     s_ready = 1;
-    AQUA_I("FSPI%u inited @ %u Hz, Mode 0, 8-bit, POLL", AQUA_SPI_ID, AQUA_SPI_SCLK_HZ);
+    AQUA_I("FSPI%u inited @ %u Hz, Mode 1, 8-bit, POLL", AQUA_SPI_ID, AQUA_SPI_SCLK_HZ);
     return 0;
 }
 

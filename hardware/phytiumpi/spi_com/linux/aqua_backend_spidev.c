@@ -42,10 +42,18 @@ static int spidev_open_inner(aqua_backend_spidev_ctx_t *c)
         return -1;
     }
     /*
-     * 重要：飞腾 spi-phytium 的 mode_bits 不含 SPI_CS_HIGH，
-     * 当 GPIO 作 CS 时 spidev 会自动合并 SPI_CS_HIGH，导致
-     * SPI_IOC_WR_MODE32 失败 (EINVAL)。Mode 0 是探测默认，跳过 mode ioctl。
+     * RA6E2 FSP 的 SPI Slave 不支持 CPHA=0，链路统一使用 Mode 1
+     * (CPOL=0, CPHA=1)。只写 8-bit mode，避免 WR_MODE32 上某些飞腾
+     * BSP 因 mode_bits 不含 SPI_CS_HIGH 而拒绝 GPIO-CS 派生位。
      */
+    uint8_t mode = SPI_CPHA;
+    if (ioctl(fd, SPI_IOC_WR_MODE, &mode) < 0)
+    {
+        if (c->log) c->log(LOG_ERR, "SPI_IOC_WR_MODE Mode 1 失败: %s",
+                           strerror(errno));
+        close(fd);
+        return -1;
+    }
 
     uint8_t bits = 8;
     if (ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bits) < 0)
@@ -63,7 +71,7 @@ static int spidev_open_inner(aqua_backend_spidev_ctx_t *c)
         close(fd);
         return -1;
     }
-    if (c->log) c->log(LOG_INFO, "已打开 %s @ %u Hz, 8-bit, Mode 0",
+    if (c->log) c->log(LOG_INFO, "已打开 %s @ %u Hz, 8-bit, Mode 1",
                        c->device_path, c->speed_hz);
     return fd;
 }
@@ -81,8 +89,10 @@ static int xfer_one(aqua_backend_spidev_ctx_t *c,
         .bits_per_word = 8,
         .cs_change     = 0,
     };
+    /* 标准 spidev：ioctl 成功返回 0，失败返回 -1 并置 errno。
+     * 部分厂商驱动可能返回正数；不得以「n < 1」判断失败（会把 0 误判成错）。 */
     int n = ioctl(c->fd, SPI_IOC_MESSAGE(1), &tr);
-    if (n < 1)
+    if (n < 0)
     {
         c->io_err_count++;
         if (c->log) c->log(LOG_ERR, "SPI_IOC_MESSAGE 失败: %s", strerror(errno));
@@ -123,7 +133,7 @@ static int op_xfer(void *_c,
     uint8_t nop[SPI_FRAME_LEN];
     if (spi_pack_cmd(nop, /*seq*/SPI_SEQ_IDLE,
                      SPI_DEV_SYSTEM, SPI_CMD_SYS_NOP,
-                     NULL, 0, 0) != 0)
+                     NULL, 0, SPI_CMD_FLAG_NEED_RSP) != 0)
         return -EINVAL;
     rc = xfer_one(c, nop, rsp_frame);
     return rc;

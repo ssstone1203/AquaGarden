@@ -26,13 +26,13 @@
 │                          ▼                                 │
 │   ┌──────────────────────────────────────────────────────┐ │
 │   │ aqua_spid（守护进程，单线程）                         │ │
-│   │ - 独占 /dev/spidev0.0 (1 MHz, Mode 0, 8-bit)          │ │
+│   │ - 独占 /dev/spidev0.0 (1 MHz, Mode 1, 8-bit)          │ │
 │   │ - 周期 250 ms 自动 SENSOR_POLL_ALL → 缓存最近快照     │ │
 │   │ - 处理 IPC：SEND_CMD / GET_SNAPSHOT / GET_STATS       │ │
 │   │ - 维护通信统计、连续错误自愈                           │ │
 │   └──────────────────────────────────────────────────────┘ │
 └──────────────────┼─────────────────────────────────────────┘
-                   │ SPI Bus (Mode 0, 1 MHz, 8-bit, MSB)
+                   │ SPI Bus (Mode 1, 1 MHz, 8-bit, MSB)
                    │ 64B CMD ↔ 64B RSP（CMD + NOP_READ 两次事务）
 ┌──────────────────┴─────────────────────────────────────────┐
 │ RA6E2（FreeRTOS + FSP）                                     │
@@ -61,7 +61,7 @@
 
 | 配置项 | 选择 | 理由 |
 |-------|------|------|
-| SPI 模式 | **Mode 0**（CPOL=0, CPHA=0） | RA6E2 现有 FSP 配置即此模式；飞腾 spidev 在 Mode 0 兼容性最好（直接跳过 `SPI_IOC_WR_MODE` 避免 EINVAL，详见 `spi0_scope_demo.c` 的注释）。 |
+| SPI 模式 | **Mode 1**（CPOL=0, CPHA=1） | RA6E2 FSP 的 SPI Slave 不支持 CPHA=0，`R_SPI_Open()` 会返回 `FSP_ERR_UNSUPPORTED`；因此主机 spidev 必须显式设置 `SPI_CPHA`，与 RA6E2 `SPI_CLK_PHASE_EDGE_EVEN` 对齐。 |
 | 通信速率 | 首发 **1 MHz**，可调到 **4 MHz** | 64 字节单事务在 1 MHz 下仅 0.5 ms，相对 250 ms 周期空载 < 1%；飞腾派排针无屏蔽，1 MHz 给信号完整性留够裕度；RA6E2 SPI1 + DMAC 在 4 MHz 内完全跟得上。 |
 | 数据位宽 | **8 bit** | 协议按字节流设计，避免 16/32-bit 模式下的 endian 混乱；与 `spi_codec.c` 字节级 helper 天然契合。 |
 | DMA / 中断 | RA6E2：**双 DMAC + EOT 中断**；飞腾：spidev 内部完成中断 | 从机无法控制时钟，CPU 轮询读 RDR 必丢字节，必须 DMAC。EOT 时由信号量唤醒任务，避免逐字节中断风暴。 |
@@ -75,7 +75,7 @@
 const spi_cfg_t g_com_spi_cfg = {
     .channel        = 1,                         /* SPI1 */
     .operating_mode = SPI_MODE_SLAVE,
-    .clk_phase      = SPI_CLK_PHASE_EDGE_ODD,    /* CPHA=0 */
+    .clk_phase      = SPI_CLK_PHASE_EDGE_EVEN,   /* CPHA=1 */
     .clk_polarity   = SPI_CLK_POLARITY_LOW,      /* CPOL=0 */
     .bit_order      = SPI_BIT_ORDER_MSB_FIRST,
     .p_transfer_tx  = &g_com_spi_tx,             /* DMAC0 */
@@ -501,6 +501,9 @@ for (;;) {
 | `0x06` | `STATUS_VER_MISMATCH` | CMD 帧 VER 不识别 |
 | `0x07` | `STATUS_BAD_SOF` | 帧头不对，疑似 SPI 错位 |
 | `0x80..0xFF` | 厂商扩展 | 留给业务层 |
+
+> **调试提示**：`aqua_spi_cli sys ping` 若出现 **`rc=-7`**，该值来自主机对 **RSP 帧**的 `spi_validate_frame()`，即上表 **`STATUS_BAD_SOF` (0x07)**，**不是**用 `strerror(7)` 读成的 Linux **E2BIG**。含义是 MISO 前两字节不是 `5A A5`：优先查接线/共地、RA6E2 固件是否在跑、以及 `ra6e2_patch/FSP_CHANGES.md` 里 TX/RX **DMAC 按 1 字节搬运**是否已落实。  
+> 另：标准 `spidev` 上 `SPI_IOC_MESSAGE` **成功时 ioctl 返回 0**，应用侧应使用 **`ret < 0`** 判定失败；用「`ret < 1`」会把成功误判为失败。
 
 ---
 

@@ -67,7 +67,7 @@ typedef struct
 typedef struct
 {
     uint32_t magic;                  /* AQUA_IPC_MAGIC */
-    int32_t  rc;                     /* 0=OK；< 0 = -errno 风格（详见 daemon 实现） */
+    int32_t  rc;                     /* 0=OK；<0 为 -errno 或 spi_validate 的 -spi_status_t（如 -7=BAD_SOF，勿用 strerror 误读） */
 
     /* 当 op == SEND_CMD 时：以下是从机回的 RSP 帧解码后字段 */
     uint8_t  status;                 /* spi_status_t */

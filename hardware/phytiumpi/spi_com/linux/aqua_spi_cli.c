@@ -121,6 +121,29 @@ static const char *status_name(uint8_t s)
     }
 }
 
+/* SEND_CMD 失败时 rsp.rc：负 errno，或 spi_validate_frame() 形的 -spi_status_t（与 strerror 命名空间部分重叠） */
+static const char *ipc_rc_explain(int32_t rc)
+{
+    if (rc >= 0) return "OK";
+    int e = -(int)rc;
+    switch (e)
+    {
+    case SPI_STATUS_CRC_ERR:
+        return "RSP 主机校验失败：CRC（或先于 CRC 的检查链）";
+    case SPI_STATUS_BAD_PAYLOAD_LEN:
+        return "RSP 主机校验失败：LEN 越界";
+    case SPI_STATUS_VER_MISMATCH:
+        return "RSP 主机校验失败：VER 与 SPI_PROTO_VERSION 不一致";
+    case SPI_STATUS_BAD_SOF:
+        return "RSP 主机校验失败：帧头非 5A A5（从机未响应、MISO/共地、或从机侧 SPI/DMAC 配置与方案不一致）";
+    default:
+        break;
+    }
+    if (e > 0 && e < 4096)
+        return strerror(e);
+    return "???";
+}
+
 static const char *rsp_type_name(uint8_t t)
 {
     switch (t)
@@ -217,9 +240,7 @@ static int send_cmd(uint8_t dev, uint8_t cmd,
 
     if (rsp.rc < 0)
     {
-        int e = -rsp.rc;
-        fprintf(stderr, "SPI 失败 rc=%d (%s)\n", rsp.rc,
-                (e > 0) ? strerror(e) : "???");
+        fprintf(stderr, "SPI 失败 rc=%d — %s\n", rsp.rc, ipc_rc_explain(rsp.rc));
         return 1;
     }
     printf("RSP: status=%s type=%s ack_seq=%u flags=0x%02X len=%u uptime=%u ms\n",
