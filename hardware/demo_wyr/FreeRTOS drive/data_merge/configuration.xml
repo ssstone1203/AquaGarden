@@ -380,7 +380,7 @@
       <property id="module.driver.spi.tei_ipl" value="board.icu.common.irq.priority12"/>
       <property id="module.driver.spi.eri_ipl" value="board.icu.common.irq.priority12"/>
       <property id="module.driver.spi.operating_mode" value="module.driver.spi.operating_mode.mode_slave"/>
-      <property id="module.driver.spi.clk_phase" value="module.driver.spi.clk_phase.clk_phase_edge_odd"/>
+      <property id="module.driver.spi.clk_phase" value="module.driver.spi.clk_phase.clk_phase_edge_even"/>
       <property id="module.driver.spi.clk_polarity" value="module.driver.spi.clk_polarity.clk_polarity_low"/>
       <property id="module.driver.spi.mode_fault" value="module.driver.spi.mode_fault.mode_fault_error_disable"/>
       <property id="module.driver.spi.bit_order" value="module.driver.spi.bit_order.bit_order_msb_first"/>

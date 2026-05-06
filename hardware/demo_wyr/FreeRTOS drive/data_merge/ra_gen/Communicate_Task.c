@@ -271,7 +271,7 @@ const spi_cfg_t g_com_spi_cfg =
 
     .operating_mode      = SPI_MODE_SLAVE,
 
-    .clk_phase           = SPI_CLK_PHASE_EDGE_ODD,
+    .clk_phase           = SPI_CLK_PHASE_EDGE_EVEN,
     .clk_polarity        = SPI_CLK_POLARITY_LOW,
 
     .mode_fault          = SPI_MODE_FAULT_ERROR_DISABLE,

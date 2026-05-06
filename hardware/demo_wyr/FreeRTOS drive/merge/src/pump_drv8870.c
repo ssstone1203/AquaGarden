@@ -100,21 +100,22 @@ void pump_drv8870_set_power(uint8_t power_percent)
         return;
     }
 
-    if (power_percent > 100U)
+    if (power_percent >= 100U)
     {
-        power_percent = 100U;
+        pump_drv8870_run_forward_dc();
+        return;
     }
 
     uint32_t const period = pump_period_counts();
 
     /*
-     * FSP dutyCycleSet（本配置 saw-wave / periodic）：GTIOC B 在计数 0→比较 区间为低，比较→周期末 为高。
-     * DRV8870：IN1=1 时 IN2 低=正转、IN2 高=制动 → 比较值越大，IN2 低的时间越长，转速越高。
+     * 实测：本板 GPT GTIOC 与原先假设相反，linear(pct) 会使力度表现为 (100-pct)%；改用 period - linear(pct)。
      */
-    uint32_t const in2_low_counts = (uint32_t) (((uint64_t) period * (uint32_t) power_percent) / 100U);
+    uint32_t const duty_compare = period -
+        (uint32_t) (((uint64_t) period * (uint32_t) power_percent) / 100U);
 
     (void) g_ioport.p_api->pinWrite(&g_ioport_ctrl, PUMP_IN1_PIN, BSP_IO_LEVEL_HIGH);
-    (void) g_pump_timer.p_api->dutyCycleSet(g_pump_timer.p_ctrl, in2_low_counts, PUMP_PWM_PIN);
+    (void) g_pump_timer.p_api->dutyCycleSet(g_pump_timer.p_ctrl, duty_compare, PUMP_PWM_PIN);
     (void) g_pump_timer.p_api->start(g_pump_timer.p_ctrl);
     pump_drv8870_after_drive_asserted();
 }
