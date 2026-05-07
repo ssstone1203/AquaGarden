@@ -114,7 +114,7 @@ public class AquaController {
 
     @PostMapping("/api/aqua/pump/stop")
     public ResponseEntity<Object> pumpStop() throws Exception {
-        AquaBridgeService.BridgeResponse response = bridgeService.pumpManual(0, 0);
+        AquaBridgeService.BridgeResponse response = bridgeService.pumpStop();
         return bridgeResponse(response);
     }
 

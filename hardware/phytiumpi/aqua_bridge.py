@@ -11,6 +11,7 @@ Phytium Pi Aqua Bridge (minimal)
   - POST /api/pump/pwm     {"pwm": 60}
   - POST /api/pump/auto
   - POST /api/pump/manual  {"on": 1, "pwm": 70}
+  - POST /api/pump/stop    # aqua_spi_cli pump stop（关泵并保持手动 0%，勿用 manual 0 0）
   - POST /api/pump/pulse   {"seconds": 5}
 
 其中 pulse 会执行：
@@ -191,6 +192,17 @@ def pump_manual():
             _pump_pwm = pwm
             _pump_manual_on = on == 1
     return _json_bridge_result(r, {"on": on, "pwm": pwm})
+
+
+@app.post("/api/pump/stop")
+def pump_stop():
+    global _pump_pwm, _pump_manual_on
+    r = _run_cli(["pump", "stop"])
+    if r.ok:
+        with _state_lock:
+            _pump_pwm = 0
+            _pump_manual_on = True
+    return _json_bridge_result(r)
 
 
 @app.post("/api/pump/pulse")

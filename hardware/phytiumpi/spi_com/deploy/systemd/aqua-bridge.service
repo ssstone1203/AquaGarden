@@ -1,0 +1,19 @@
+[Unit]
+Description=AquaGarden Python Bridge (Phytium Pi)
+After=network-online.target aqua-rpmsgd.service aqua-spid.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/aqua
+Environment=AQUA_SPI_CLI=/opt/aqua/bin/aqua_spi_cli
+Environment=AQUA_BRIDGE_HOST=0.0.0.0
+Environment=AQUA_BRIDGE_PORT=18080
+ExecStart=/opt/aqua/venv-bridge/bin/python /opt/aqua/bin/aqua_bridge.py
+Restart=always
+RestartSec=2
+SyslogIdentifier=aqua_bridge
+
+[Install]
+WantedBy=multi-user.target
