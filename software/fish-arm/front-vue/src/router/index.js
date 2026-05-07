@@ -6,8 +6,6 @@ import RegisterView from '@/views/RegisterView.vue'
 import CamerasView from '@/views/CamerasView.vue'
 import HistoryView from '@/views/HistoryView.vue'
 import RobotView from '@/views/RobotView.vue'
-import AlertsView from '@/views/AlertsView.vue'
-import SettingsView from '@/views/SettingsView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { guest: true } },
@@ -21,8 +19,6 @@ const routes = [
       { path: 'cameras', name: 'cameras', component: CamerasView, meta: { nav: 'cameras', title: '视频监控', subtitle: '实时查看水族箱内部情况' } },
       { path: 'history', name: 'history', component: HistoryView, meta: { nav: 'history', title: '历史数据', subtitle: '查看和分析历史监控数据' } },
       { path: 'robot', name: 'robot', component: RobotView, meta: { nav: 'robot', title: '机械臂控制', subtitle: '实时控制机械臂进行各种操作' } },
-      { path: 'alerts', name: 'alerts', component: AlertsView, meta: { nav: 'alerts', title: '警报设置', subtitle: '配置传感器阈值和报警通知' } },
-      { path: 'settings', name: 'settings', component: SettingsView, meta: { nav: 'settings', title: '系统设置', subtitle: '管理系统配置和设备参数' } },
     ],
   },
 ]

@@ -10,15 +10,15 @@
       </div>
 
       <div class="primary-task-grid">
-        <button class="primary-task-btn task-loosen" :disabled="busy" @click="sendTask('loosen')">
+        <button class="primary-task-btn task-loosen" :disabled="busy || railPending" @click="sendTask('loosen')">
           <i class="fas fa-seedling"></i>
           <span>松土</span>
         </button>
-        <button class="primary-task-btn task-feed" :disabled="busy" @click="sendTask('feed')">
+        <button class="primary-task-btn task-feed" :disabled="busy || railPending" @click="sendTask('feed')">
           <i class="fas fa-utensils"></i>
           <span>喂食</span>
         </button>
-        <button class="primary-task-btn task-prune" :disabled="busy" @click="sendTask('prune')">
+        <button class="primary-task-btn task-prune" :disabled="busy || railPending" @click="sendTask('prune')">
           <i class="fas fa-cut"></i>
           <span>裁剪黄色叶子</span>
         </button>
@@ -38,7 +38,22 @@
           <button class="rail-btn" @click="setRailTarget(0)">回到 0</button>
           <input v-model.number="railTarget" class="rail-input" type="number" min="0" max="4000" step="10" />
           <button class="rail-btn" @click="setRailTarget(4000)">到 4000</button>
-          <button class="rail-btn rail-btn-primary" :disabled="busy" @click="moveRail">移动滑轨</button>
+          <button class="rail-btn rail-btn-primary" :disabled="busy || railPending" @click="moveRail">移动滑轨</button>
+        </div>
+      </div>
+
+      <div class="pump-panel">
+        <div class="rail-title">
+          <span><i class="fas fa-tint"></i> 水泵控制</span>
+          <b>PWM：{{ pumpPwm }}%</b>
+        </div>
+        <input v-model.number="pumpPwm" class="rail-range" type="range" min="0" max="100" step="1" />
+        <div class="rail-row">
+          <input v-model.number="pumpPwm" class="rail-input" type="number" min="0" max="100" step="1" />
+          <button class="rail-btn rail-btn-primary" :disabled="pumpBusy" @click="pumpStart">开泵</button>
+          <button class="rail-btn" :disabled="pumpBusy" @click="pumpStop">关泵</button>
+          <button class="rail-btn" :disabled="pumpBusy" @click="pumpAuto">自动模式</button>
+          <button class="rail-btn" :disabled="pumpBusy" @click="pumpApplyPwm">更新PWM</button>
         </div>
       </div>
     </div>
@@ -56,7 +71,15 @@
           </div>
         </div>
         <div class="camera-body">
-          <img :key="camSrc" :src="camSrc" alt="Robot Camera" class="camera-img" @load="cameraError = ''" @error="cameraError = '机械臂相机画面加载失败，请检查树莓派 Bridge 视频流'" />
+          <img
+            :key="camSrc"
+            :src="camSrc"
+            alt="Robot Camera"
+            class="camera-img"
+            decoding="async"
+            @load="cameraError = ''"
+            @error="cameraError = '机械臂相机画面加载失败，请检查树莓派 Bridge 视频流'"
+          />
           <div v-if="cameraError" class="camera-error">
             <i class="fas fa-video-slash"></i>
             <span>{{ cameraError }}</span>
@@ -198,10 +221,43 @@ const railTarget = ref(0)
 const railPosition = ref(null)
 const cameraState = reactive({ hasRgb: false, hasDepth: false, ageSec: null })
 const servoPulse = ref({ 1: 220, 2: 489, 3: 130, 4: 842, 5: 836, 6: 509 })
+const pumpPwm = ref(80)
+const pumpBusy = ref(false)
+
+/** 滑轨移动请求进行中（与 busy 分离，避免与服务端 busy 不同步时连点） */
+const railPending = ref(false)
+
+/** 控制类请求超时（毫秒） */
+const RAIL_HTTP_MS = 90_000
+const TASK_HTTP_MS = 120_000
+const HOME_HTTP_MS = 90_000
+const STATUS_HTTP_MS = 15_000
+const RAIL_DEBOUNCE_MS = 350
+
+function withTimeout(ms) {
+  const ctrl = new AbortController()
+  const tid = setTimeout(() => ctrl.abort(), ms)
+  return { signal: ctrl.signal, cancel: () => clearTimeout(tid) }
+}
+
+async function fetchWithTimeout(url, init, timeoutMs) {
+  const { signal, cancel } = withTimeout(timeoutMs)
+  try {
+    return await fetch(url, { ...init, signal })
+  } catch (e) {
+    if (e?.name === 'AbortError') throw new Error('请求超时，请检查 Bridge 与网络')
+    throw e
+  } finally {
+    cancel()
+  }
+}
 const camSrc = computed(() => apiUrl(`/api/aqua/video/${cameraMode.value}`) + `?t=${cameraReloadKey.value}`)
 const railPositionText = computed(() => railPosition.value == null ? '--' : String(railPosition.value))
 
 let statusTimer = null
+let railDebounceTimer = null
+let statusInFlight = false
+let statusPollMs = 1500
 
 function addLog(msg, type = 'info') {
   const time = new Date().toLocaleTimeString('zh-CN')
@@ -226,13 +282,64 @@ function setRailTarget(value) {
   railTarget.value = Math.max(0, Math.min(4000, Number(value) || 0))
 }
 
+function setPumpPwm(value) {
+  pumpPwm.value = Math.max(0, Math.min(100, Number(value) || 0))
+}
+
+async function callPumpApi(path, payload, successMsg) {
+  if (pumpBusy.value) return
+  setPumpPwm(pumpPwm.value)
+  pumpBusy.value = true
+  try {
+    const r = await fetchWithTimeout(
+      apiUrl(path),
+      {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: payload ? JSON.stringify(payload) : undefined,
+      },
+      TASK_HTTP_MS,
+    )
+    const d = await r.json().catch(() => ({}))
+    if (!r.ok || d.ok === false) {
+      throw new Error(d.message || `水泵控制失败 HTTP ${r.status}`)
+    }
+    addLog(successMsg, 'task')
+  } catch (e) {
+    addLog(e.message || '水泵控制失败', 'error')
+  } finally {
+    pumpBusy.value = false
+  }
+}
+
+async function pumpStart() {
+  await callPumpApi('/api/aqua/pump/start', { pwm: pumpPwm.value }, `开泵，PWM=${pumpPwm.value}%`)
+}
+
+async function pumpApplyPwm() {
+  await callPumpApi('/api/aqua/pump/pwm', { pwm: pumpPwm.value }, `更新水泵 PWM=${pumpPwm.value}%`)
+}
+
+async function pumpStop() {
+  await callPumpApi('/api/aqua/pump/stop', {}, '关泵')
+}
+
+async function pumpAuto() {
+  await callPumpApi('/api/aqua/pump/auto', {}, '切换为水泵自动模式')
+}
+
 async function armHome() {
+  if (busy.value || railPending.value) {
+    addLog('机械臂或滑轨正在动作，请稍后再试回零', 'warn')
+    return
+  }
   addLog('请求机械臂回初始位姿', 'system')
   try {
-    const r = await fetch(apiUrl('/api/aqua/arm/home'), {
-      method: 'POST',
-      headers: authHeaders(),
-    })
+    const r = await fetchWithTimeout(
+      apiUrl('/api/aqua/arm/home'),
+      { method: 'POST', headers: authHeaders() },
+      HOME_HTTP_MS,
+    )
     const d = await r.json().catch(() => ({}))
     if (!r.ok || d.ok === false) {
       throw new Error(d.message || `回初始位姿失败 HTTP ${r.status}`)
@@ -247,15 +354,17 @@ async function armHome() {
 }
 
 async function sendTask(taskName) {
+  if (busy.value || railPending.value) return
   const labels = { feed: '自动喂食', loosen: '松土', prune: '裁剪黄色叶子' }
   addLog(`触发任务: ${labels[taskName] ?? taskName}`, 'task')
   currentTask.value = labels[taskName] ?? taskName
   busy.value = true
   try {
-    const r = await fetch(apiUrl(`/api/aqua/tasks/${taskName}`), {
-      method: 'POST',
-      headers: authHeaders(),
-    })
+    const r = await fetchWithTimeout(
+      apiUrl(`/api/aqua/tasks/${taskName}`),
+      { method: 'POST', headers: authHeaders() },
+      TASK_HTTP_MS,
+    )
     const d = await r.json().catch(() => ({}))
     if (!r.ok || d.ok === false) {
       throw new Error(d.message || `任务启动失败 HTTP ${r.status}`)
@@ -271,37 +380,57 @@ async function sendTask(taskName) {
 async function stopTask() {
   addLog('请求停止当前任务', 'warn')
   try {
-    const r = await fetch(apiUrl('/api/aqua/tasks/stop'), {
-      method: 'POST',
-      headers: authHeaders(),
-    })
+    const r = await fetchWithTimeout(
+      apiUrl('/api/aqua/tasks/stop'),
+      { method: 'POST', headers: authHeaders() },
+      TASK_HTTP_MS,
+    )
     const d = await r.json().catch(() => ({}))
     if (!r.ok || d.ok === false) {
       throw new Error(d.message || `停止失败 HTTP ${r.status}`)
     }
     currentTask.value = '停止中'
     phase.value = 'stopping'
+    fetchStatus()
   } catch (e) {
     addLog(e.message || '停止任务失败', 'error')
   }
 }
 
-async function moveRail() {
+function moveRail() {
+  if (busy.value || railPending.value) return
+  clearTimeout(railDebounceTimer)
+  railDebounceTimer = setTimeout(() => {
+    railDebounceTimer = null
+    executeMoveRail()
+  }, RAIL_DEBOUNCE_MS)
+}
+
+async function executeMoveRail() {
+  if (busy.value || railPending.value) return
   setRailTarget(railTarget.value)
+  railPending.value = true
   addLog(`滑轨移动到 ${railTarget.value}`, 'robot')
   try {
-    let r = await fetch(apiUrl('/api/aqua/rail/position'), {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ position: railTarget.value }),
-    })
-    // 兼容旧后端：仅实现了 /api/aqua/rail/move
-    if (r.status === 404) {
-      r = await fetch(apiUrl('/api/aqua/rail/move'), {
+    let r = await fetchWithTimeout(
+      apiUrl('/api/aqua/rail/position'),
+      {
         method: 'POST',
-        headers: authHeaders(),
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ position: railTarget.value }),
-      })
+      },
+      RAIL_HTTP_MS,
+    )
+    if (r.status === 404) {
+      r = await fetchWithTimeout(
+        apiUrl('/api/aqua/rail/move'),
+        {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ position: railTarget.value }),
+        },
+        RAIL_HTTP_MS,
+      )
     }
     const d = await r.json().catch(() => ({}))
     if (!r.ok || d.ok === false) {
@@ -311,12 +440,16 @@ async function moveRail() {
     fetchStatus()
   } catch (e) {
     addLog(e.message || '滑轨移动失败', 'error')
+  } finally {
+    railPending.value = false
   }
 }
 
 async function fetchStatus() {
+  if (statusInFlight) return
+  statusInFlight = true
   try {
-    const r = await fetch(apiUrl('/api/aqua/status'), { headers: authHeaders() })
+    const r = await fetchWithTimeout(apiUrl('/api/aqua/status'), { headers: authHeaders() }, STATUS_HTTP_MS)
     if (r.ok) {
       const d = await r.json()
       const pulses = d.servoPulse
@@ -342,6 +475,18 @@ async function fetchStatus() {
       }
     }
   } catch { connected.value = false }
+  finally { statusInFlight = false }
+}
+
+function restartStatusTimer() {
+  if (statusTimer) clearInterval(statusTimer)
+  statusTimer = setInterval(fetchStatus, statusPollMs)
+}
+
+function onPageVisibility() {
+  statusPollMs = document.hidden ? 4500 : 1500
+  restartStatusTimer()
+  if (!document.hidden) fetchStatus()
 }
 
 function formatUptime(seconds) {
@@ -356,11 +501,14 @@ onMounted(() => {
   addLog('机械臂控制台已加载', 'system')
   addLog('已切换为绝对位置控制模式（禁用点按增量移动）', 'system')
   fetchStatus()
-  statusTimer = setInterval(fetchStatus, 1500)
+  restartStatusTimer()
+  document.addEventListener('visibilitychange', onPageVisibility)
 })
 
 onUnmounted(() => {
+  document.removeEventListener('visibilitychange', onPageVisibility)
   if (statusTimer) clearInterval(statusTimer)
+  clearTimeout(railDebounceTimer)
 })
 </script>
 
@@ -374,6 +522,7 @@ onUnmounted(() => {
     "left right";
   height: calc(100vh - 120px);
   min-height: 600px;
+  align-items:stretch;
 }
 
 .quick-panel {
@@ -481,6 +630,7 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 16px;
   min-width: 0;
+  height:100%;
 }
 
 .camera-panel, .control-panel, .terminal-panel {

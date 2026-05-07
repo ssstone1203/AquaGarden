@@ -54,10 +54,6 @@
         <button type="button" class="header-icon-btn" title="用户" @click="logout">
           <i class="fas fa-user-circle"></i>
         </button>
-        <button type="button" class="header-icon-btn header-icon-btn--bell" title="通知">
-          <i class="fas fa-bell"></i>
-          <span class="notif-dot"></span>
-        </button>
       </div>
     </header>
 
@@ -84,22 +80,17 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { apiUrl, authHeaders } from '@/api/http'
 
 const router = useRouter()
 const currentRoute = useRoute()
 const timeText = ref('--:--:--')
 const dateText = ref('')
 
-const displayName = computed(() => localStorage.getItem('username') || '管理员')
-
 const routeTitles = {
   dashboard: { title: 'Smart Aquarium Dashboard', subtitle: '智能水族箱仪表板' },
   cameras: { title: 'Video Monitoring', subtitle: '视频监控' },
   robot: { title: 'Robot Arm Control', subtitle: '机械臂控制' },
   history: { title: 'History Records', subtitle: '历史数据记录' },
-  alerts: { title: 'Alert Settings', subtitle: '警报设置' },
-  settings: { title: 'System Settings', subtitle: '系统设置' },
 }
 
 const pageTitle = computed(() => {
