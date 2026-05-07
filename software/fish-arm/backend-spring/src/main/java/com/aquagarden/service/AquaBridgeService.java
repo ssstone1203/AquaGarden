@@ -78,6 +78,33 @@ public class AquaBridgeService {
         return request("POST", "/api/rail/position", body);
     }
 
+    /**
+     * 水泵短时运行（秒），由树莓派 AquaGarden Bridge 执行；未实现时通常返回 404。
+     */
+    public BridgeResponse pumpPulse(int seconds) throws IOException, InterruptedException {
+        String body = objectMapper.writeValueAsString(Map.of("seconds", seconds));
+        return request("POST", "/api/pump/pulse", body);
+    }
+
+    public BridgeResponse pumpStart(int pwm) throws IOException, InterruptedException {
+        String body = objectMapper.writeValueAsString(Map.of("pwm", pwm));
+        return request("POST", "/api/pump/start", body);
+    }
+
+    public BridgeResponse pumpPwm(int pwm) throws IOException, InterruptedException {
+        String body = objectMapper.writeValueAsString(Map.of("pwm", pwm));
+        return request("POST", "/api/pump/pwm", body);
+    }
+
+    public BridgeResponse pumpAuto() throws IOException, InterruptedException {
+        return request("POST", "/api/pump/auto", null);
+    }
+
+    public BridgeResponse pumpManual(int on, int pwm) throws IOException, InterruptedException {
+        String body = objectMapper.writeValueAsString(Map.of("on", on, "pwm", pwm));
+        return request("POST", "/api/pump/manual", body);
+    }
+
     public void streamVideo(String mode, OutputStream outputStream) throws IOException {
         String path = "depth".equals(mode) ? "/video/depth.mjpg" : "/video/rgb.mjpg";
         URLConnection connection = new URL(baseUrl + path).openConnection();

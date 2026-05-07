@@ -6,19 +6,25 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class SystemStateService {
 
+    /**
+     * 无硬件数据时的稳定演示快照（与常见室内水族场景一致，不再注入随机抖动）。
+     */
+    public static final SensorSnapshot DEMO_SNAPSHOT = new SensorSnapshot(24.5, 26.0, 58.0, 76.0, 62.0);
+
     private final AtomicReference<String> mode = new AtomicReference<>("demo");
     private final AtomicReference<Map<String, Integer>> robotPosition = new AtomicReference<>(basePosition());
-    private final Random random = new Random();
 
     /** 最近一次由硬件桥接脚本推送的真实传感器快照，null 表示尚未收到真实数据 */
     private final AtomicReference<SensorSnapshot> latestReal = new AtomicReference<>(null);
+    /** 最近一次收到硬件快照的时间戳（毫秒） */
+    private final AtomicLong latestRealTs = new AtomicLong(0L);
 
     private static Map<String, Integer> basePosition() {
         Map<String, Integer> m = new HashMap<>();
@@ -39,23 +45,29 @@ public class SystemStateService {
      */
     public void updateFromHardware(SensorSnapshot snapshot) {
         latestReal.set(snapshot);
+        latestRealTs.set(System.currentTimeMillis());
     }
 
-    /** 有真实数据时返回真实值，否则返回带随机扰动的模拟值（演示 / 未接硬件时使用）。 */
+    public void updateFromHardware(SensorSnapshot snapshot, long timestampMs) {
+        latestReal.set(snapshot);
+        latestRealTs.set(timestampMs > 0 ? timestampMs : System.currentTimeMillis());
+    }
+
+    public boolean hasHardwareSnapshot() {
+        return latestReal.get() != null;
+    }
+
+    public long latestHardwareTimestamp() {
+        return latestRealTs.get();
+    }
+
+    /** 有真实数据时返回真实值，否则返回稳定的演示快照（避免页面数字无意义跳动）。 */
     public SensorSnapshot readSensorsWithNoise() {
         SensorSnapshot real = latestReal.get();
         if (real != null) {
             return real;
         }
-        // 模拟数据范围与硬件传感器实际量程匹配：
-        // DS18B20 水温：推荐范围 18-32°C；SHT30 空气温度：15-35°C；空气湿度：30-80%RH
-        // WQM11S WQI：良好水质通常 60-90；土壤湿度 ADC：40-80%
-        double waterTemp   = round(24.0 + random.nextDouble() * 2 - 1, 1);
-        double airTemp     = round(26.0 + random.nextDouble() * 4 - 2, 1);
-        double airHumidity = round(55.0 + random.nextDouble() * 10 - 5, 1);
-        double wqi         = round(72.0 + random.nextDouble() * 12 - 6, 0);
-        double soilMoisture = round(62.0 + random.nextDouble() * 10 - 5, 1);
-        return new SensorSnapshot(waterTemp, airTemp, airHumidity, wqi, soilMoisture);
+        return DEMO_SNAPSHOT;
     }
 
     private static double round(double v, int decimals) {
@@ -98,10 +110,11 @@ public class SystemStateService {
 
     /** 模拟舵机角度（6路，0-180°），每次调用产生微小随机抖动以体现"运行中"状态。 */
     public int[] getServoAngles() {
+        java.util.Random rnd = new java.util.Random();
         int[] base = {90, 45, 120, 60, 90, 30};
         int[] result = new int[base.length];
         for (int i = 0; i < base.length; i++) {
-            result[i] = Math.max(0, Math.min(180, base[i] + (int)(random.nextDouble() * 4 - 2)));
+            result[i] = Math.max(0, Math.min(180, base[i] + (int)(rnd.nextDouble() * 4 - 2)));
         }
         return result;
     }

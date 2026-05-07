@@ -5,16 +5,20 @@ serial_bridge.py — MCU UART → Spring Boot 桥接脚本
 解析后 POST 到 /api/sensors/ingest，后端前端轮询 /api/sensors 即可得到真实数据。
 鱼缸 USB 摄像头默认使用索引 1，本脚本会用 OpenCV 抓帧并 POST 到
 /api/video/tank/ingest，前端摄像头页通过 /api/video/tank 展示实时画面。
+独立的 YOLO 等推理进程可将检测框 POST 至 /api/video/tank/detections（JSON），
+后端在 MJPEG 流上叠加矩形框。
 如果同一串口也混入 JPEG 数据，本脚本仍会按 FF D8 ... FF D9 提取图片帧上传。
 
 依赖：
-    pip install pyserial requests opencv-python
+    pip install pyserial requests opencv-python ultralytics
 
 用法：
     python serial_bridge.py --port COM3 --backend http://localhost:8090
     python serial_bridge.py --port /dev/ttyUSB0 --backend http://127.0.0.1:8090
     python serial_bridge.py --port COM3 --backend http://localhost:8090 --max-jpeg-bytes 1048576
     python serial_bridge.py --port COM3 --backend http://localhost:8090 --tank-camera-index 1
+    python serial_bridge.py --port COM3 --backend http://localhost:8090 --no-yolo
+    python serial_bridge.py --port COM3 --backend http://localhost:8090 --yolo-weights E:/path/best.pt --yolo-device cpu
 
 MCU 上行帧格式（每 250 ms 一帧，Modbus CRC-16）：
   [0]    0x55          同步头 0
@@ -59,9 +63,14 @@ import struct
 import threading
 import time
 from dataclasses import dataclass
+from pathlib import Path
 
 import requests
 import serial
+
+# 仓库根：software/fish-arm/serial_bridge.py → parents[2] == AquaGarden
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_DEFAULT_YOLO_WEIGHTS = _REPO_ROOT / "model" / "yolo_fish" / "runs" / "yolo11n_fish" / "weights" / "best.pt"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -69,6 +78,8 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 log = logging.getLogger("bridge")
+
+_yolo_predict_lock = threading.Lock()
 
 SYNC0 = 0x55
 SYNC1 = 0xAA
@@ -303,12 +314,84 @@ def post_tank_frame(backend: str, frame: bytes, timeout: float = 5.0) -> tuple[b
         return False, str(e)
 
 
+def post_tank_detections(
+    backend: str, detections: list[dict], timeout: float = 2.0
+) -> tuple[bool, str]:
+    url = backend.rstrip("/") + "/api/video/tank/detections"
+    try:
+        r = requests.post(url, json={"detections": detections}, timeout=timeout)
+        if r.ok:
+            return True, f"HTTP {r.status_code}"
+        detail = r.text.strip()
+        if len(detail) > 200:
+            detail = detail[:200] + "..."
+        return False, f"HTTP {r.status_code} {detail or '(empty body)'}"
+    except requests.RequestException as e:
+        return False, str(e)
+
+
+def run_yolo_on_bgr_frame(model, frame, conf: float, device: str | None) -> list[dict]:
+    """与 VideoController 约定一致：label + 归一化左上 xy + wh + score。"""
+    h, w = frame.shape[:2]
+    if w <= 0 or h <= 0:
+        return []
+    kw: dict = {"conf": conf, "verbose": False, "imgsz": 640}
+    if device:
+        kw["device"] = device
+    results = model.predict(frame, **kw)
+    dets: list[dict] = []
+    for r in results:
+        if r.boxes is None or len(r.boxes) == 0:
+            continue
+        nm = getattr(r, "names", None) or {}
+        for box in r.boxes:
+            x1, y1, x2, y2 = box.xyxy[0].tolist()
+            cls_id = int(box.cls[0])
+            score = float(box.conf[0])
+            label = nm.get(cls_id, str(cls_id)) if isinstance(nm, dict) else str(cls_id)
+            dets.append(
+                {
+                    "label": label,
+                    "x": max(0.0, min(1.0, x1 / w)),
+                    "y": max(0.0, min(1.0, y1 / h)),
+                    "width": max(0.0, min(1.0, (x2 - x1) / w)),
+                    "height": max(0.0, min(1.0, (y2 - y1) / h)),
+                    "score": score,
+                }
+            )
+    return dets
+
+
+def maybe_infer_tank_and_post(
+    backend: str,
+    yolo_model,
+    frame_bgr,
+    conf: float,
+    device: str | None,
+    verbose: bool,
+) -> None:
+    if yolo_model is None or frame_bgr is None:
+        return
+    try:
+        with _yolo_predict_lock:
+            dets = run_yolo_on_bgr_frame(yolo_model, frame_bgr, conf, device)
+        ok, reason = post_tank_detections(backend, dets, timeout=2.0)
+        if not ok and verbose:
+            log.warning("检测框上报失败：%s", reason)
+    except Exception as e:
+        if verbose:
+            log.warning("YOLO 推理或上报异常：%s", e)
+
+
 def run_tank_usb_camera(
     backend: str,
     camera_index: int,
     fps: float,
     verbose: bool,
     stop_event: threading.Event,
+    yolo_model=None,
+    yolo_conf: float = 0.25,
+    yolo_device: str | None = None,
 ) -> None:
     try:
         import cv2
@@ -358,6 +441,11 @@ def run_tank_usb_camera(
                     log.info("鱼缸 USB 摄像头帧推送成功：%d bytes", len(payload))
                     last_log_at = now
 
+                if posted:
+                    maybe_infer_tank_and_post(
+                        backend, yolo_model, frame, yolo_conf, yolo_device, verbose
+                    )
+
                 stop_event.wait(interval)
         finally:
             cap.release()
@@ -365,7 +453,16 @@ def run_tank_usb_camera(
         stop_event.wait(1.0)
 
 
-def run(port: str, baud: int, backend: str, verbose: bool, max_jpeg_bytes: int) -> None:
+def run(
+    port: str,
+    baud: int,
+    backend: str,
+    verbose: bool,
+    max_jpeg_bytes: int,
+    yolo_model=None,
+    yolo_conf: float = 0.25,
+    yolo_device: str | None = None,
+) -> None:
     log.info("串口：%s @ %d 波特，后端：%s", port, baud, backend)
     with serial.Serial(port, baud, timeout=1.0) as ser:
         log.info("串口已打开，开始监听…")
@@ -386,6 +483,18 @@ def run(port: str, baud: int, backend: str, verbose: bool, max_jpeg_bytes: int) 
                     log.warning("鱼缸摄像头帧推送失败：%s，大小=%d bytes", reason, len(packet.data))
                 elif verbose:
                     log.info("鱼缸摄像头帧推送成功：%d bytes", len(packet.data))
+                if ok and yolo_model is not None:
+                    try:
+                        import numpy as np
+                        import cv2
+
+                        arr = np.frombuffer(packet.data, dtype=np.uint8)
+                        img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+                        maybe_infer_tank_and_post(
+                            backend, yolo_model, img, yolo_conf, yolo_device, verbose
+                        )
+                    except ImportError:
+                        log.warning("YOLO 串口 JPEG 路径需要 numpy；pip install numpy opencv-python")
                 continue
 
             frame = packet.data
@@ -427,13 +536,53 @@ def main() -> None:
     parser.add_argument("--max-jpeg-bytes", type=int, default=DEFAULT_MAX_JPEG_BYTES, help="单张 JPEG 最大字节数")
     parser.add_argument("--tank-camera-index", type=int, default=DEFAULT_TANK_CAMERA_INDEX, help="鱼缸 USB 摄像头索引；设为 -1 可禁用")
     parser.add_argument("--tank-camera-fps", type=float, default=DEFAULT_CAMERA_FPS, help="鱼缸 USB 摄像头推流 FPS")
+    parser.add_argument(
+        "--no-yolo",
+        action="store_true",
+        help="禁用鱼缸 YOLO 检测（不加载模型、不 POST /api/video/tank/detections）",
+    )
+    parser.add_argument(
+        "--yolo-weights",
+        default=str(_DEFAULT_YOLO_WEIGHTS),
+        help="YOLO .pt 权重路径；默认使用仓库 model/yolo_fish/.../best.pt",
+    )
+    parser.add_argument("--yolo-conf", type=float, default=0.25, help="检测置信度阈值")
+    parser.add_argument(
+        "--yolo-device",
+        default="",
+        help="推理设备：cpu、0、cuda:0 等；留空则由 Ultralytics 自动选择",
+    )
     args = parser.parse_args()
+
+    yolo_model = None
+    yolo_device = args.yolo_device.strip() or None
+    if not args.no_yolo:
+        wpath = Path(args.yolo_weights)
+        if wpath.is_file():
+            try:
+                from ultralytics import YOLO
+
+                yolo_model = YOLO(str(wpath.resolve()))
+                log.info("鱼缸 YOLO 已加载：%s", wpath)
+            except ImportError:
+                log.error("未安装 ultralytics，无法做鱼缸检测。请执行：pip install ultralytics")
+        else:
+            log.warning("未找到 YOLO 权重（已跳过检测）：%s", wpath)
 
     stop_event = threading.Event()
     if args.tank_camera_index >= 0:
         camera_thread = threading.Thread(
             target=run_tank_usb_camera,
-            args=(args.backend, args.tank_camera_index, args.tank_camera_fps, args.verbose, stop_event),
+            args=(
+                args.backend,
+                args.tank_camera_index,
+                args.tank_camera_fps,
+                args.verbose,
+                stop_event,
+                yolo_model,
+                args.yolo_conf,
+                yolo_device,
+            ),
             name="tank-usb-camera",
             daemon=True,
         )
@@ -441,7 +590,16 @@ def main() -> None:
 
     while True:
         try:
-            run(args.port, args.baud, args.backend, args.verbose, args.max_jpeg_bytes)
+            run(
+                args.port,
+                args.baud,
+                args.backend,
+                args.verbose,
+                args.max_jpeg_bytes,
+                yolo_model,
+                args.yolo_conf,
+                yolo_device,
+            )
         except serial.SerialException as e:
             log.error("串口错误：%s，5 秒后重试…", e)
             time.sleep(5)

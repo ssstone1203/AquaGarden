@@ -84,6 +84,40 @@ public class AquaController {
         return moveRail(body);
     }
 
+    @PostMapping("/api/aqua/pump/start")
+    public ResponseEntity<Object> pumpStart(@RequestBody Map<String, Object> body) throws Exception {
+        int pwm = parsePwm(body.get("pwm"));
+        AquaBridgeService.BridgeResponse response = bridgeService.pumpStart(pwm);
+        return bridgeResponse(response);
+    }
+
+    @PostMapping("/api/aqua/pump/pwm")
+    public ResponseEntity<Object> pumpPwm(@RequestBody Map<String, Object> body) throws Exception {
+        int pwm = parsePwm(body.get("pwm"));
+        AquaBridgeService.BridgeResponse response = bridgeService.pumpPwm(pwm);
+        return bridgeResponse(response);
+    }
+
+    @PostMapping("/api/aqua/pump/auto")
+    public ResponseEntity<Object> pumpAuto() throws Exception {
+        AquaBridgeService.BridgeResponse response = bridgeService.pumpAuto();
+        return bridgeResponse(response);
+    }
+
+    @PostMapping("/api/aqua/pump/manual")
+    public ResponseEntity<Object> pumpManual(@RequestBody Map<String, Object> body) throws Exception {
+        int on = parseOn(body.get("on"));
+        int pwm = parsePwm(body.get("pwm"));
+        AquaBridgeService.BridgeResponse response = bridgeService.pumpManual(on, pwm);
+        return bridgeResponse(response);
+    }
+
+    @PostMapping("/api/aqua/pump/stop")
+    public ResponseEntity<Object> pumpStop() throws Exception {
+        AquaBridgeService.BridgeResponse response = bridgeService.pumpManual(0, 0);
+        return bridgeResponse(response);
+    }
+
     @GetMapping(value = "/api/aqua/video/{mode}", produces = "multipart/x-mixed-replace; boundary=" + BOUNDARY)
     public ResponseEntity<StreamingResponseBody> video(@PathVariable String mode) {
         if (!VIDEO_MODES.contains(mode)) {
@@ -123,6 +157,40 @@ public class AquaController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "position must be 0..4000");
         }
         return position;
+    }
+
+    private static int parsePwm(Object value) {
+        int pwm;
+        if (value instanceof Number n) {
+            pwm = n.intValue();
+        } else {
+            try {
+                pwm = Integer.parseInt(String.valueOf(value));
+            } catch (NumberFormatException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "pwm must be 0..100");
+            }
+        }
+        if (pwm < 0 || pwm > 100) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "pwm must be 0..100");
+        }
+        return pwm;
+    }
+
+    private static int parseOn(Object value) {
+        int on;
+        if (value instanceof Number n) {
+            on = n.intValue();
+        } else {
+            try {
+                on = Integer.parseInt(String.valueOf(value));
+            } catch (NumberFormatException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "on must be 0 or 1");
+            }
+        }
+        if (on != 0 && on != 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "on must be 0 or 1");
+        }
+        return on;
     }
 
     private static void writeFallbackVideo(String mode, java.io.OutputStream outputStream) throws IOException {

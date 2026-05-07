@@ -1,6 +1,7 @@
 package com.aquagarden.config;
 
 import com.aquagarden.security.JwtAuthFilter;
+import com.aquagarden.security.SecurityWhitelist;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -35,15 +36,7 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/register", "/api/login").permitAll()
-                        .requestMatchers("/api/users").permitAll()
-                        .requestMatchers("/api/video/**").permitAll()
-                        .requestMatchers("/api/aqua/video/**").permitAll()
-                        .requestMatchers("/api/sensors/ingest").permitAll()
-                        .requestMatchers("/api/sensors/history").permitAll()
-                        .requestMatchers("/api/robot/status").permitAll()
-                        .requestMatchers("/ws/**").permitAll()
-                        .requestMatchers("/error").permitAll()
+                        .requestMatchers(SecurityWhitelist.PUBLIC_ENDPOINTS).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

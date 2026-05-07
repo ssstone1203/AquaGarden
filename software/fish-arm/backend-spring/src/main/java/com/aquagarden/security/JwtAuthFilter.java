@@ -72,16 +72,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     private static boolean isSkipped(String uri) {
-        return uri.startsWith("/api/register")
-                || uri.startsWith("/api/login")
-                || uri.startsWith("/api/users")
-                || uri.startsWith("/api/sensors/ingest")
-                || uri.startsWith("/api/sensors/history")
-                || uri.startsWith("/api/robot/status")
-                || uri.startsWith("/api/video/")
-                || uri.startsWith("/api/aqua/video/")
-                || uri.startsWith("/ws/")
-                || uri.startsWith("/error");
+        return SecurityWhitelist.isJwtSkipped(uri);
     }
 
     private static void writeUnauthorized(HttpServletResponse response, String detail) throws IOException {

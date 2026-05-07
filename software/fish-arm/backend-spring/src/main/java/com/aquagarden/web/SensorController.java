@@ -4,14 +4,20 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -24,20 +30,95 @@ import com.aquagarden.websocket.LogWebSocketHandler;
 
 @RestController
 public class SensorController {
+    private static final Logger log = LoggerFactory.getLogger(SensorController.class);
 
     private final SystemStateService systemStateService;
     private final LogWebSocketHandler wsHandler;
     private final SensorReadingRepository readingRepo;
     private final SensorReadingRetentionService retentionService;
+    private final String deviceUploadToken;
 
     public SensorController(SystemStateService systemStateService,
                             LogWebSocketHandler wsHandler,
                             SensorReadingRepository readingRepo,
-                            SensorReadingRetentionService retentionService) {
+                            SensorReadingRetentionService retentionService,
+                            @Value("${aquagarden.device-upload.token:}") String deviceUploadToken) {
         this.systemStateService = systemStateService;
         this.wsHandler          = wsHandler;
         this.readingRepo        = readingRepo;
         this.retentionService   = retentionService;
+        this.deviceUploadToken  = deviceUploadToken == null ? "" : deviceUploadToken;
+    }
+
+    /**
+     * 最小可用接口：前端按 sensorId 获取最新单路传感器值。
+     * 数据来源：由飞腾派桥接脚本通过 POST /api/sensors/ingest 上报到后端内存快照。
+     * 支持 sensorId:
+     *   temp-01          -> water_temp
+     *   air-temp-01      -> air_temp
+     *   humidity-01      -> air_humidity
+     *   wqi-01           -> wqi
+     *   soil-moisture-01 -> soil_moisture
+     */
+    @GetMapping("/api/sensor/latest")
+    public Map<String, Object> latest(@RequestParam String sensorId) {
+        SensorSnapshot s = systemStateService.readSensorsWithNoise();
+        long ts = systemStateService.hasHardwareSnapshot()
+                ? systemStateService.latestHardwareTimestamp()
+                : System.currentTimeMillis();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("sensorId", sensorId);
+        switch (sensorId) {
+            case "temp-01" -> {
+                data.put("value", s.waterTemp());
+                data.put("unit", "C");
+            }
+            case "air-temp-01" -> {
+                data.put("value", s.airTemp());
+                data.put("unit", "C");
+            }
+            case "humidity-01" -> {
+                data.put("value", s.airHumidity());
+                data.put("unit", "%RH");
+            }
+            case "wqi-01" -> {
+                data.put("value", s.wqi());
+                data.put("unit", "index");
+            }
+            case "soil-moisture-01" -> {
+                data.put("value", s.soilMoisture());
+                data.put("unit", "%");
+            }
+            default -> {
+                return Map.of(
+                        "code", 400,
+                        "msg", "unknown sensorId: " + sensorId,
+                        "data", Map.of(
+                                "sensorId", sensorId,
+                                "value", null,
+                                "unit", "",
+                                "ts", ts
+                        )
+                );
+            }
+        }
+        data.put("ts", ts);
+
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("code", 0);
+        resp.put("msg", "ok");
+        resp.put("data", data);
+        return resp;
+    }
+
+    @GetMapping("/api/debug/whoami")
+    public Map<String, Object> whoami() {
+        return Map.of(
+                "service", "spring-boot-aquagarden",
+                "port", "8090",
+                "ts", System.currentTimeMillis()
+        );
     }
 
     /**
@@ -52,12 +133,14 @@ public class SensorController {
     @GetMapping("/api/sensors")
     public Map<String, Object> sensors() {
         SensorSnapshot s = systemStateService.readSensorsWithNoise();
+        String source = systemStateService.hasHardwareSnapshot() ? "hardware" : "demo";
         return Map.of(
                 "water_temp",    s.waterTemp(),
                 "air_temp",      s.airTemp(),
                 "air_humidity",  s.airHumidity(),
                 "wqi",           s.wqi(),
-                "soil_moisture", s.soilMoisture()
+                "soil_moisture", s.soilMoisture(),
+                "source",        source
         );
     }
 
@@ -150,5 +233,129 @@ public class SensorController {
         retentionService.enforceMaxRecordWindow();
 
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 飞腾派设备上报单路传感器数据接口（局域网 + 设备令牌鉴权）。
+     * Header:
+     *   X-Device-Token: <token>
+     * Body:
+     * {
+     *   "deviceId": "phytium-01",
+     *   "sensorId": "temp-01",
+     *   "value": 26.37,
+     *   "unit": "C",
+     *   "ts": 1715082000000
+     * }
+     */
+    @PostMapping("/api/sensor/upload")
+    public ResponseEntity<Map<String, Object>> upload(
+            @RequestHeader(value = "X-Device-Token", required = false) String token,
+            @RequestBody Map<String, Object> body) {
+        log.info("upload token recv='{}', expected='{}'",
+                maskToken(token), maskToken(deviceUploadToken));
+        if (deviceUploadToken.isBlank()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                    "code", 503,
+                    "msg", "device upload token is not configured",
+                    "data", Map.of()
+            ));
+        }
+        if (token == null || !deviceUploadToken.equals(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "code", 401,
+                    "msg", "invalid device token",
+                    "data", Map.of()
+            ));
+        }
+
+        String sensorId = String.valueOf(body.getOrDefault("sensorId", ""));
+        if (sensorId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "code", 400,
+                    "msg", "sensorId is required",
+                    "data", Map.of()
+            ));
+        }
+
+        Object valueObj = body.get("value");
+        if (!(valueObj instanceof Number)) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "code", 400,
+                    "msg", "value must be numeric",
+                    "data", Map.of()
+            ));
+        }
+        double value = ((Number) valueObj).doubleValue();
+        long ts = parseLongOrDefault(body.get("ts"), System.currentTimeMillis());
+
+        SensorSnapshot current = systemStateService.readSensorsWithNoise();
+        double waterTemp = current.waterTemp();
+        double airTemp = current.airTemp();
+        double airHumidity = current.airHumidity();
+        double wqi = current.wqi();
+        double soilMoisture = current.soilMoisture();
+
+        switch (sensorId) {
+            case "temp-01" -> waterTemp = value;
+            case "air-temp-01" -> airTemp = value;
+            case "humidity-01" -> airHumidity = value;
+            case "wqi-01" -> wqi = value;
+            case "soil-moisture-01" -> soilMoisture = value;
+            default -> {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "code", 400,
+                        "msg", "unknown sensorId: " + sensorId,
+                        "data", Map.of("sensorId", sensorId)
+                ));
+            }
+        }
+
+        SensorSnapshot snap = new SensorSnapshot(waterTemp, airTemp, airHumidity, wqi, soilMoisture);
+        systemStateService.updateFromHardware(snap, ts);
+        wsHandler.broadcastSensorData(snap);
+        readingRepo.save(new SensorReading(
+                Instant.ofEpochMilli(ts), waterTemp, airTemp, airHumidity, wqi, soilMoisture
+        ));
+        retentionService.enforceMaxRecordWindow();
+
+        return ResponseEntity.ok(Map.of(
+                "code", 0,
+                "msg", "ok",
+                "data", Map.of(
+                        "deviceId", String.valueOf(body.getOrDefault("deviceId", "")),
+                        "sensorId", sensorId,
+                        "value", value,
+                        "ts", ts
+                )
+        ));
+    }
+
+    private static String maskToken(String token) {
+        if (token == null) {
+            return "<null>";
+        }
+        if (token.isBlank()) {
+            return "<blank>";
+        }
+        int n = token.length();
+        if (n <= 4) {
+            return "***";
+        }
+        return token.substring(0, 2) + "***" + token.substring(n - 2);
+    }
+
+    private static long parseLongOrDefault(Object value, long defaultValue) {
+        if (value instanceof Number n) {
+            return n.longValue();
+        }
+        if (value instanceof String s) {
+            try {
+                return Long.parseLong(s);
+            } catch (NumberFormatException ignored) {
+                return defaultValue;
+            }
+        }
+        return defaultValue;
     }
 }
