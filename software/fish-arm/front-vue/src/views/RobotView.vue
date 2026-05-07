@@ -291,12 +291,13 @@ async function callPumpApi(path, payload, successMsg) {
   setPumpPwm(pumpPwm.value)
   pumpBusy.value = true
   try {
+    const body = payload ? JSON.stringify(payload) : undefined
     const r = await fetchWithTimeout(
       apiUrl(path),
       {
         method: 'POST',
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: payload ? JSON.stringify(payload) : undefined,
+        body,
       },
       TASK_HTTP_MS,
     )
@@ -472,6 +473,10 @@ async function fetchStatus() {
         cameraState.hasRgb = Boolean(d.camera.hasRgb)
         cameraState.hasDepth = Boolean(d.camera.hasDepth)
         cameraState.ageSec = d.camera.ageSec ?? null
+      }
+      // Bridge 在手动模式下返回 UI 语义 pwm；自动模式为 null，避免轮询把滑块拽成 0 或与硬件反向值混淆
+      if (d.pump && d.pump.manualOn === true && typeof d.pump.pwm === 'number') {
+        setPumpPwm(d.pump.pwm)
       }
     }
   } catch { connected.value = false }
