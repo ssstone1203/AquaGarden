@@ -32,6 +32,8 @@ venv/
 *.bak
 *.DBK
 *.plg
+*.class
+*.jar
 
 # Keil GUI 个人布局（每台机器不同）
 *.uvguix.*
