@@ -156,6 +156,41 @@ Vite dev server proxies `/api` → `localhost:8090` and `/ws` → `localhost:809
 | RGB light | GPIO/PWM | 3-color LED |
 | Mechanical arm | PWM ×6 | Servo motors (4 for arm, 2 for end-effector) |
 
+## AI Agent Skills
+
+This project uses Claude Code Skills — reusable behavior packs that teach AI agents specialized workflows. Skills are auto-discovered from `~/.agents/skills/` (global) and `.claude/skills/` (project). Codex also reads these skills; invoke them by name via `/skill-name`.
+
+### Global Skills (all projects, `~/.agents/skills/`)
+
+| Skill | Source | Purpose |
+|---|---|---|
+| **using-superpowers** | obra/superpowers (40.9K ⭐) | Structured dev lifecycle: brainstorm → write-plan → execute-plan → code-review → merge. Use for any feature work. Invoke with `/superpowers:brainstorm`, `/superpowers:write-plan`, `/superpowers:execute-plan`. |
+| **planning-with-files-zh** | OthmanAdi/planning-with-files (13.4K ⭐) | Persistent task planning in Markdown (task_plan.md, findings.md, progress.md). Prevents context loss on long tasks. Chinese edition. Invoke with `/planning-with-files:plan`. |
+| **frontend-design** | anthropics/skills (official) | Forces a deliberate aesthetic direction before writing UI code. Bans generic AI fonts/gradients. Activates automatically on frontend tasks. |
+| **typescript-best-practices** | spardutti/claude-skills | TypeScript 5.x type design, generics, discriminated unions. Applied to Vue 3 frontend code. |
+| **testing-best-practices** | spardutti/claude-skills | Arrange-Act-Assert, factory fixtures, test isolation, mock boundaries. Applied to both backend (JUnit 5) and frontend (Vitest). |
+| **security-practices** | spardutti/claude-skills | OWASP Top 10 prevention: SQL injection, XSS, CSRF, JWT hardening, input validation. Applied to Spring Boot controllers and auth code. |
+| **docker-best-practices** | spardutti/claude-skills | Multi-stage builds, layer caching, non-root user, security hardening. |
+| **skill-creator** | Claude Code built-in | Meta-skill: guides you step-by-step to create a new custom skill. Invoke with `/skill-creator`. |
+
+### Project Skills (`.claude/skills/`)
+
+| Skill | Purpose |
+|---|---|
+| **codex-task-writer** | Converts feature requests into structured Codex task files under `ai-tasks/` (spec.md, plan.md, checklist.md). |
+| **codex-reviewer** | Reviews Codex-implemented code against the active ai-task spec. Returns a structured pass/needs-changes/unclear report. |
+
+### When Skills Activate
+
+- **Automatic**: Claude/Codex detects the task (e.g., writing a Vue component → `frontend-design` + `typescript-best-practices`)
+- **Manual**: Type `/skill-name` (e.g., `/codex-task-writer`, `/testing-best-practices`)
+- **Superpowers chain**: `/superpowers:brainstorm` → `/superpowers:write-plan` → `/superpowers:execute-plan` → `/superpowers:code-review`
+
+### Important
+- Do NOT install more than 10-12 skills total — beyond that, trigger accuracy drops below 50%.
+- All installed skills passed security review (Safe / Low Risk by skills.sh).
+- Skills are agent-agnostic: they work with Claude Code, Codex, Cursor, and Gemini CLI.
+
 ## Note on `software/ruisa/`
 
 This is a separate project (arm control + AI chat agent) with its own Spring Boot gateway (port 8080) that proxies to a Python FastAPI backend (port 8000) and a Vue frontend. When working on `fish-arm`, do not modify `ruisa/` unless explicitly asked.
