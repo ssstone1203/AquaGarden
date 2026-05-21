@@ -52,7 +52,7 @@ public class SensorController {
 
     /**
      * 最小可用接口：前端按 sensorId 获取最新单路传感器值。
-     * 数据来源：由飞腾派桥接脚本通过 POST /api/sensors/ingest 上报到后端内存快照。
+     * 数据来源：由设备端桥接脚本通过 POST /api/sensors/ingest 上报到后端内存快照。
      * 支持 sensorId:
      *   temp-01          -> water_temp
      *   air-temp-01      -> air_temp
@@ -236,7 +236,7 @@ public class SensorController {
     }
 
     /**
-     * 飞腾派设备上报单路传感器数据接口（局域网 + 设备令牌鉴权）。
+     * 设备端上报单路传感器数据接口（局域网 + 设备令牌鉴权）。
      * Header:
      *   X-Device-Token: <token>
      * Body:

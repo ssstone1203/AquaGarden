@@ -70,7 +70,7 @@ import serial
 
 # 仓库根：software/fish-arm/serial_bridge.py → parents[2] == AquaGarden
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_DEFAULT_YOLO_WEIGHTS = _REPO_ROOT / "model" / "yolo_fish" / "runs" / "yolo11n_fish" / "weights" / "best.pt"
+_DEFAULT_YOLO_WEIGHTS = _REPO_ROOT / "model" / "yolo_fish" / "runs" / "yolo11n_fish_new" / "weights" / "best.pt"
 
 logging.basicConfig(
     level=logging.INFO,

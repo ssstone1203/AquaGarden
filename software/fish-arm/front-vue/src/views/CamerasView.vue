@@ -14,16 +14,28 @@
           </div>
         </div>
         <div id="robotVideo" class="video-container">
-          <img :src="robotSrcBusted" alt="机械臂摄像头" decoding="async" fetchpriority="high" />
+          <img
+            :src="robotSrcBusted"
+            alt="机械臂摄像头"
+            decoding="async"
+            fetchpriority="high"
+            @load="robotImgError = ''"
+            @error="handleRobotImgError"
+          />
           <div class="video-overlay">
             <div class="video-info-top">
-              <div class="rec-indicator"><div class="rec-dot"></div>LIVE</div>
+              <div :class="['rec-indicator', robotHealthy ? '' : 'offline']"><div class="rec-dot"></div>{{ robotHealthy ? 'LIVE' : 'OFFLINE' }}</div>
               <div class="camera-name">CAM-01</div>
             </div>
             <div class="video-info-bottom">
               <div class="video-stat"><i class="fas fa-robot"></i>机械臂 RGB</div>
-              <div class="video-stat"><i class="fas fa-tachometer-alt"></i>MJPEG</div>
+              <div class="video-stat"><i class="fas fa-tachometer-alt"></i>{{ robotHealthy ? 'MJPEG' : '等待 Bridge' }}</div>
+              <div v-if="robotStatusHint" class="video-stat video-stat-warn"><i class="fas fa-info-circle"></i>状态待确认</div>
             </div>
+          </div>
+          <div v-if="robotMessage" class="video-diagnostic">
+            <i class="fas fa-video-slash"></i>
+            <span>{{ robotMessage }}</span>
           </div>
         </div>
       </div>
@@ -40,16 +52,27 @@
           </div>
         </div>
         <div id="tankVideo" class="video-container">
-          <img :src="tankSrcBusted" alt="鱼缸摄像头" decoding="async" fetchpriority="low" />
+          <img
+            :src="tankSrcBusted"
+            alt="鱼缸摄像头"
+            decoding="async"
+            fetchpriority="low"
+            @load="tankImgError = ''"
+            @error="tankImgError = '鱼缸视频流加载失败'"
+          />
           <div class="video-overlay">
             <div class="video-info-top">
-              <div class="rec-indicator"><div class="rec-dot"></div>LIVE</div>
+              <div :class="['rec-indicator', tankHealthy ? '' : 'offline']"><div class="rec-dot"></div>{{ tankHealthy ? 'LIVE' : 'WAIT' }}</div>
               <div class="camera-name">CAM-02</div>
             </div>
             <div class="video-info-bottom">
               <div class="video-stat"><i class="fas fa-project-diagram"></i>检测由后端叠加</div>
-              <div class="video-stat"><i class="fas fa-tachometer-alt"></i>MJPEG</div>
+              <div class="video-stat"><i class="fas fa-tachometer-alt"></i>{{ tankHealthy ? 'MJPEG' : '等待帧' }}</div>
             </div>
+          </div>
+          <div v-if="tankMessage" class="video-diagnostic">
+            <i class="fas fa-plug"></i>
+            <span>{{ tankMessage }}</span>
           </div>
         </div>
       </div>
@@ -92,7 +115,7 @@
       </p>
       <p class="det-small">
         也可自写进程按相同 JSON 格式 POST；坐标 <code>x,y,width,height</code> 为相对宽高的 0~1；需先通过桥接
-        <code>/api/video/tank/ingest</code> 或 USB 抓流持续推 JPEG，否则无画面。
+        <code>/api/video/tank/ingest</code> 或 USB 抓流持续推 JPEG，否则画面会停留在等待状态。
       </p>
       <pre class="det-json">{{ detectionExample }}</pre>
     </div>
@@ -100,15 +123,27 @@
 </template>
 
 <script setup>
-import { computed, onUnmounted, ref } from 'vue'
-import { apiUrl } from '@/api/http'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { apiUrl, authHeaders } from '@/api/http'
 
 import '@/assets/styles/cameras-page.css'
 
 const robotKey = ref(0)
 const tankKey = ref(0)
+const robotImgError = ref('')
+const tankImgError = ref('')
+const aquaStatus = reactive({ connected: false, hasRgb: false, rgbError: '', lastError: '' })
+const tankStatus = reactive({ hasFrame: false, seq: 0, bytes: 0, updatedAt: 0, detectionCount: 0 })
+const robotUseDirectBridge = ref(false)
 
-const robotSrcBusted = computed(() => `${apiUrl('/api/aqua/video/rgb')}?v=${robotKey.value}`)
+const robotDirectBridgeUrl = computed(() => {
+  const base = import.meta.env.VITE_AQUA_BRIDGE_BASE || 'http://10.116.177.50:18080'
+  return `${base.replace(/\/$/, '')}/video/rgb.mjpg`
+})
+const robotSrcBusted = computed(() => {
+  const src = robotUseDirectBridge.value ? robotDirectBridgeUrl.value : apiUrl('/api/aqua/video/rgb')
+  return `${src}?v=${robotKey.value}`
+})
 const tankSrcBusted = computed(() => `${apiUrl('/api/video/tank')}?v=${tankKey.value}`)
 
 const detectionUrl = apiUrl('/api/video/tank/detections')
@@ -118,6 +153,28 @@ const detectionExample = `{
   ]
 }`
 
+const robotStreamOk = computed(() => !robotImgError.value)
+const robotHealthy = computed(() => robotStreamOk.value && (!aquaStatus.connected || aquaStatus.hasRgb))
+const tankHealthy = computed(() => tankStatus.hasFrame && !tankImgError.value)
+
+const robotMessage = computed(() => {
+  if (robotImgError.value) return `${robotImgError.value}：请检查 Spring Boot 后端和 /api/aqua/video/rgb`
+  return ''
+})
+
+const robotStatusHint = computed(() => {
+  if (robotImgError.value) return ''
+  if (!aquaStatus.connected) return aquaStatus.lastError || '树莓派 Bridge 未连接；请确认树莓派服务已启动，且 application.properties 中 aquagarden.bridge.base-url 地址正确'
+  if (!aquaStatus.hasRgb) return aquaStatus.rgbError || '树莓派 Bridge 返回 RGB 摄像头未就绪；请检查树莓派相机接口状态'
+  return ''
+})
+
+const tankMessage = computed(() => {
+  if (tankImgError.value) return `${tankImgError.value}：请检查 Spring Boot 后端 /api/video/tank`
+  if (!tankStatus.hasFrame) return '后端还没有收到鱼缸 JPEG 帧；请运行 serial_bridge.py，并确认 --tank-camera-index 与摄像头实际编号一致'
+  return ''
+})
+
 const tlCanvas = ref(null)
 const tlIntervalMs = ref(2000)
 const tlRunning = ref(false)
@@ -126,13 +183,28 @@ const tlStatus = ref('')
 let tlLoopTimer = null
 let mediaRecorder = null
 let recordedChunks = []
+let statusTimer = null
 
 function bustRobot() {
   robotKey.value = Date.now()
+  robotImgError.value = ''
+  robotUseDirectBridge.value = false
+  updateStatuses()
+}
+
+function handleRobotImgError() {
+  if (!robotUseDirectBridge.value) {
+    robotUseDirectBridge.value = true
+    robotKey.value = Date.now()
+    return
+  }
+  robotImgError.value = '机械臂视频流加载失败'
 }
 
 function bustTank() {
   tankKey.value = Date.now()
+  tankImgError.value = ''
+  updateStatuses()
 }
 
 function toggleFullscreen(which) {
@@ -165,6 +237,45 @@ async function drawSnapshotToCanvas() {
   ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height)
   bmp.close()
   return true
+}
+
+async function updateAquaStatus() {
+  try {
+    const r = await fetch(apiUrl('/api/aqua/status'), { headers: authHeaders() })
+    if (!r.ok) throw new Error(`HTTP ${r.status}`)
+    const d = await r.json()
+    aquaStatus.connected = Boolean(d.connected ?? d.ok)
+    aquaStatus.lastError = d.lastError ? String(d.lastError) : ''
+    const camera = d.camera || {}
+    aquaStatus.hasRgb = Boolean(camera.hasRgb)
+    aquaStatus.rgbError = camera.rgb?.lastError ? String(camera.rgb.lastError) : ''
+  } catch (e) {
+    aquaStatus.connected = false
+    aquaStatus.hasRgb = false
+    aquaStatus.lastError = `无法获取 Aqua Bridge 状态：${e.message || e}`
+  }
+}
+
+async function updateTankStatus() {
+  try {
+    const r = await fetch(apiUrl('/api/video/tank/status'))
+    if (!r.ok) throw new Error(`HTTP ${r.status}`)
+    const d = await r.json()
+    tankStatus.hasFrame = Boolean(d.hasFrame)
+    tankStatus.seq = Number(d.seq ?? 0)
+    tankStatus.bytes = Number(d.bytes ?? 0)
+    tankStatus.updatedAt = Number(d.updatedAt ?? 0)
+    tankStatus.detectionCount = Number(d.detectionCount ?? 0)
+  } catch {
+    tankStatus.hasFrame = false
+    tankStatus.bytes = 0
+    tankStatus.detectionCount = 0
+  }
+}
+
+function updateStatuses() {
+  updateAquaStatus()
+  updateTankStatus()
 }
 
 async function startTimelapse() {
@@ -216,8 +327,14 @@ function stopTimelapse() {
   mediaRecorder = null
 }
 
+onMounted(() => {
+  updateStatuses()
+  statusTimer = setInterval(updateStatuses, 2500)
+})
+
 onUnmounted(() => {
   if (tlLoopTimer) clearInterval(tlLoopTimer)
+  if (statusTimer) clearInterval(statusTimer)
   if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop()
 })
 </script>

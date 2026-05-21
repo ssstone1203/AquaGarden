@@ -14,10 +14,16 @@
               alt="Robot Arm Camera"
               decoding="async"
               fetchpriority="high"
+              @load="robotVideoError = ''"
+              @error="handleRobotVideoError"
             />
-            <div class="vbadge vbadge-live"><i class="fas fa-circle"></i> Live</div>
+            <div class="vbadge vbadge-live"><i class="fas fa-circle"></i> {{ robotVideoReady ? 'Live' : 'Wait' }}</div>
             <div class="vbadge vbadge-cam"><i class="fas fa-video"></i></div>
-            <div class="vbadge vbadge-res">RGB</div>
+            <div class="vbadge vbadge-res">{{ robotVideoReady ? 'RGB' : 'Bridge' }}</div>
+            <div v-if="robotVideoMessage" class="video-waiting">
+              <i class="fas fa-video-slash"></i>
+              <span>{{ robotVideoMessage }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -34,13 +40,15 @@
               alt="Tank Camera"
               decoding="async"
               fetchpriority="low"
+              @load="tankVideoError = ''"
+              @error="tankVideoError = '鱼缸视频流加载失败'"
             />
-            <div class="vbadge vbadge-live"><i class="fas fa-circle"></i> Live</div>
+            <div class="vbadge vbadge-live"><i class="fas fa-circle"></i> {{ tankVideoReady ? 'Live' : 'Wait' }}</div>
             <div class="vbadge vbadge-cam"><i class="fas fa-video"></i></div>
             <div class="vbadge vbadge-res">{{ tankStatus.hasFrame ? 'USB 实时' : '等待鱼缸帧' }}{{ tankStatus.detectionCount ? ` · ${tankStatus.detectionCount} 检测` : '' }}</div>
-            <div v-if="!tankStatus.hasFrame" class="video-waiting">
+            <div v-if="tankVideoMessage" class="video-waiting">
               <i class="fas fa-plug"></i>
-              <span>后端还没有收到鱼缸摄像头帧</span>
+              <span>{{ tankVideoMessage }}</span>
             </div>
           </div>
         </div>
@@ -350,12 +358,42 @@ const waterTempFSub = computed(() => {
   return `/${waterTempF.value}°F`
 })
 
-const robotCameraSrc = apiUrl('/api/aqua/video/rgb')
+const robotUseDirectBridge = ref(false)
+const robotDirectBridgeUrl = computed(() => {
+  const base = import.meta.env.VITE_AQUA_BRIDGE_BASE || 'http://10.116.177.50:18080'
+  return `${base.replace(/\/$/, '')}/video/rgb.mjpg`
+})
+const robotCameraSrc = computed(() => robotUseDirectBridge.value ? robotDirectBridgeUrl.value : apiUrl('/api/aqua/video/rgb'))
 const tankCameraSrc = apiUrl('/api/video/tank')
 const tankStatus = reactive({ hasFrame: false, seq: 0, bytes: 0, updatedAt: 0, detectionCount: 0 })
+const aquaStatus = reactive({ connected: false, hasRgb: false, rgbError: '', lastError: '' })
+const robotVideoError = ref('')
+const tankVideoError = ref('')
 
 const dashboardVideoRow = ref(null)
 const showLiveVideos = ref(true)
+
+const robotVideoReady = computed(() => !robotVideoError.value && (!aquaStatus.connected || aquaStatus.hasRgb))
+const tankVideoReady = computed(() => tankStatus.hasFrame && !tankVideoError.value)
+const robotVideoMessage = computed(() => {
+  if (!showLiveVideos.value) return ''
+  if (robotVideoError.value) return `${robotVideoError.value}，请检查 /api/aqua/video/rgb`
+  return ''
+})
+const tankVideoMessage = computed(() => {
+  if (!showLiveVideos.value) return ''
+  if (tankVideoError.value) return `${tankVideoError.value}，请检查 /api/video/tank`
+  if (!tankStatus.hasFrame) return '后端还没有收到鱼缸摄像头帧'
+  return ''
+})
+
+function handleRobotVideoError() {
+  if (!robotUseDirectBridge.value) {
+    robotUseDirectBridge.value = true
+    return
+  }
+  robotVideoError.value = '机械臂视频流加载失败'
+}
 
 /** 与后端 SystemStateService.DEMO_SNAPSHOT 一致，用于首次请求失败时的可读默认展示 */
 const STABLE_DEFAULTS = {
@@ -553,6 +591,21 @@ async function updateVideoStatus() {
   } catch {
     tankStatus.hasFrame = false
     tankStatus.detectionCount = 0
+  }
+
+  try {
+    const r = await fetch(apiUrl('/api/aqua/status'), { headers: authHeaders() })
+    if (!r.ok) throw new Error(`HTTP ${r.status}`)
+    const d = await r.json()
+    const camera = d.camera || {}
+    aquaStatus.connected = Boolean(d.connected ?? d.ok)
+    aquaStatus.hasRgb = Boolean(camera.hasRgb)
+    aquaStatus.rgbError = camera.rgb?.lastError ? String(camera.rgb.lastError) : ''
+    aquaStatus.lastError = d.lastError ? String(d.lastError) : ''
+  } catch (e) {
+    aquaStatus.connected = false
+    aquaStatus.hasRgb = false
+    aquaStatus.lastError = `无法获取 Aqua Bridge 状态：${e.message || e}`
   }
 }
 

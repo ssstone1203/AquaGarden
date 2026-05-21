@@ -29,7 +29,7 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from flask import Flask, jsonify, request
+from flask import Flask, Response, jsonify, request, stream_with_context
 
 app = Flask(__name__)
 
@@ -38,6 +38,13 @@ HOST = os.getenv("AQUA_BRIDGE_HOST", "0.0.0.0")
 PORT = int(os.getenv("AQUA_BRIDGE_PORT", "18080"))
 CMD_TIMEOUT_SEC = float(os.getenv("AQUA_BRIDGE_CMD_TIMEOUT_SEC", "8"))
 DEFAULT_PUMP_PWM_UI = max(0, min(100, int(os.getenv("AQUA_BRIDGE_DEFAULT_PUMP_PWM", "80"))))
+RGB_CAMERA_INDEX = int(os.getenv("AQUA_BRIDGE_RGB_CAMERA_INDEX", "0"))
+DEPTH_CAMERA_INDEX = int(os.getenv("AQUA_BRIDGE_DEPTH_CAMERA_INDEX", "-1"))
+CAMERA_WIDTH = int(os.getenv("AQUA_BRIDGE_CAMERA_WIDTH", "640"))
+CAMERA_HEIGHT = int(os.getenv("AQUA_BRIDGE_CAMERA_HEIGHT", "480"))
+CAMERA_FPS = float(os.getenv("AQUA_BRIDGE_CAMERA_FPS", "10"))
+CAMERA_JPEG_QUALITY = max(30, min(95, int(os.getenv("AQUA_BRIDGE_CAMERA_JPEG_QUALITY", "80"))))
+MJPEG_BOUNDARY = "frame"
 
 _state_lock = threading.Lock()
 # 与前端滑块一致：0=关、100=最大；SPI 侧占空比由 _ui_pwm_to_spi_percent 换算
@@ -46,6 +53,10 @@ _pump_manual_on = False
 _last_error = ""
 _busy = False
 _started_at = time.time()
+_camera_state: dict[str, dict[str, Any]] = {
+    "rgb": {"ok": False, "lastFrameAt": 0.0, "lastError": ""},
+    "depth": {"ok": False, "lastFrameAt": 0.0, "lastError": "depth camera disabled"},
+}
 
 
 @dataclass
@@ -67,6 +78,29 @@ def _clear_error() -> None:
     global _last_error
     with _state_lock:
         _last_error = ""
+
+
+def _set_camera_state(mode: str, ok: bool, error: str = "") -> None:
+    with _state_lock:
+        st = _camera_state.setdefault(mode, {"ok": False, "lastFrameAt": 0.0, "lastError": ""})
+        st["ok"] = ok
+        if ok:
+            st["lastFrameAt"] = time.time()
+            st["lastError"] = ""
+        else:
+            st["lastError"] = error
+
+
+def _camera_status(mode: str) -> dict[str, Any]:
+    with _state_lock:
+        st = dict(_camera_state.get(mode, {}))
+    last_frame_at = float(st.get("lastFrameAt") or 0.0)
+    return {
+        "ok": bool(st.get("ok")),
+        "lastFrameAt": int(last_frame_at * 1000) if last_frame_at else 0,
+        "ageSec": round(time.time() - last_frame_at, 1) if last_frame_at else None,
+        "lastError": st.get("lastError") or "",
+    }
 
 
 def _run_cli(args: list[str], timeout: float | None = None) -> CmdResult:
@@ -137,9 +171,113 @@ def _json_bridge_result(r: CmdResult, extra: dict[str, Any] | None = None, fail_
     return jsonify(payload), fail_http
 
 
+def _load_cv2():
+    try:
+        import cv2  # type: ignore
+        import numpy as np  # type: ignore
+
+        return cv2, np, None
+    except Exception as e:
+        return None, None, str(e)
+
+
+def _placeholder_jpeg(mode: str, message: str) -> bytes | None:
+    cv2, np, err = _load_cv2()
+    if cv2 is None or np is None:
+        _set_camera_state(mode, False, f"opencv/numpy unavailable: {err}")
+        return None
+
+    img = np.zeros((360, 640, 3), dtype=np.uint8)
+    img[:, :] = (35, 24, 15)
+    cv2.putText(img, "Aqua Bridge Camera", (28, 62), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (230, 245, 255), 2)
+    cv2.putText(img, mode.upper(), (28, 108), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (80, 220, 255), 2)
+    cv2.putText(img, message[:58], (28, 156), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (120, 180, 255), 1)
+    cv2.putText(img, time.strftime("%H:%M:%S"), (28, 206), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (180, 190, 200), 1)
+    ok, buf = cv2.imencode(".jpg", img, [int(cv2.IMWRITE_JPEG_QUALITY), CAMERA_JPEG_QUALITY])
+    return buf.tobytes() if ok else None
+
+
+def _mjpeg_part(jpeg: bytes) -> bytes:
+    return (
+        b"--" + MJPEG_BOUNDARY.encode("ascii")
+        + b"\r\nContent-Type: image/jpeg\r\nContent-Length: "
+        + str(len(jpeg)).encode("ascii")
+        + b"\r\n\r\n"
+        + jpeg
+        + b"\r\n"
+    )
+
+
+def _camera_index_for_mode(mode: str) -> int:
+    return DEPTH_CAMERA_INDEX if mode == "depth" else RGB_CAMERA_INDEX
+
+
+def _camera_stream(mode: str):
+    cv2, _np, err = _load_cv2()
+    if cv2 is None:
+        _set_camera_state(mode, False, f"opencv unavailable: {err}")
+        jpeg = _placeholder_jpeg(mode, "Install opencv-python to enable camera streaming")
+        if jpeg is None:
+            yield b""
+            return
+        while True:
+            yield _mjpeg_part(jpeg)
+            time.sleep(1.0)
+
+    camera_index = _camera_index_for_mode(mode)
+    if camera_index < 0:
+        msg = f"{mode} camera disabled: set AQUA_BRIDGE_{mode.upper()}_CAMERA_INDEX"
+        _set_camera_state(mode, False, msg)
+        jpeg = _placeholder_jpeg(mode, msg)
+        while jpeg is not None:
+            yield _mjpeg_part(jpeg)
+            time.sleep(1.0)
+            jpeg = _placeholder_jpeg(mode, msg)
+        return
+
+    interval = 1.0 / max(CAMERA_FPS, 0.1)
+    while True:
+        cap = cv2.VideoCapture(camera_index)
+        if not cap.isOpened():
+            cap.release()
+            msg = f"cannot open camera index={camera_index}"
+            _set_camera_state(mode, False, msg)
+            jpeg = _placeholder_jpeg(mode, msg)
+            if jpeg is not None:
+                yield _mjpeg_part(jpeg)
+            time.sleep(2.0)
+            continue
+
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        try:
+            while True:
+                ok, frame = cap.read()
+                if not ok or frame is None:
+                    _set_camera_state(mode, False, f"camera read failed index={camera_index}")
+                    break
+                ok, buf = cv2.imencode(
+                    ".jpg",
+                    frame,
+                    [int(cv2.IMWRITE_JPEG_QUALITY), CAMERA_JPEG_QUALITY],
+                )
+                if not ok:
+                    _set_camera_state(mode, False, "jpeg encode failed")
+                    time.sleep(interval)
+                    continue
+                _set_camera_state(mode, True)
+                yield _mjpeg_part(buf.tobytes())
+                time.sleep(interval)
+        finally:
+            cap.release()
+
+
 @app.get("/api/status")
 def status():
     ping = _run_cli(["sys", "ping"], timeout=3.0)
+    rgb_status = _camera_status("rgb")
+    depth_status = _camera_status("depth")
     with _state_lock:
         uptime_sec = int(time.time() - _started_at)
         return jsonify(
@@ -151,7 +289,12 @@ def status():
                 "phase": "idle",
                 "railPosition": None,
                 "servoPulse": None,
-                "camera": {"hasRgb": False, "hasDepth": False},
+                "camera": {
+                    "hasRgb": rgb_status["ok"],
+                    "hasDepth": depth_status["ok"],
+                    "rgb": rgb_status,
+                    "depth": depth_status,
+                },
                 "lastError": _last_error if _last_error else (None if ping.ok else (ping.err or ping.out)),
                 "uptimeSec": uptime_sec,
                 "pump": {
@@ -161,6 +304,17 @@ def status():
                 },
             }
         )
+
+
+@app.get("/video/<mode>.mjpg")
+def video_stream(mode: str):
+    if mode not in ("rgb", "depth"):
+        return _json_error(f"unknown video mode: {mode}", 404)
+    return Response(
+        stream_with_context(_camera_stream(mode)),
+        mimetype=f"multipart/x-mixed-replace; boundary={MJPEG_BOUNDARY}",
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @app.post("/api/pump/start")
@@ -313,4 +467,4 @@ def rail_not_implemented():
 
 
 if __name__ == "__main__":
-    app.run(host=HOST, port=PORT, debug=False)
+    app.run(host=HOST, port=PORT, debug=False, threaded=True)
