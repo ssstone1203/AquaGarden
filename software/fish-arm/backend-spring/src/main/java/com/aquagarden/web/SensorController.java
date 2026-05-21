@@ -37,17 +37,20 @@ public class SensorController {
     private final SensorReadingRepository readingRepo;
     private final SensorReadingRetentionService retentionService;
     private final String deviceUploadToken;
+    private final long realtimeMaxAgeMs;
 
     public SensorController(SystemStateService systemStateService,
                             LogWebSocketHandler wsHandler,
                             SensorReadingRepository readingRepo,
                             SensorReadingRetentionService retentionService,
-                            @Value("${aquagarden.device-upload.token:}") String deviceUploadToken) {
+                            @Value("${aquagarden.device-upload.token:}") String deviceUploadToken,
+                            @Value("${aquagarden.sensors.realtime-max-age-ms:10000}") long realtimeMaxAgeMs) {
         this.systemStateService = systemStateService;
         this.wsHandler          = wsHandler;
         this.readingRepo        = readingRepo;
         this.retentionService   = retentionService;
         this.deviceUploadToken  = deviceUploadToken == null ? "" : deviceUploadToken;
+        this.realtimeMaxAgeMs   = realtimeMaxAgeMs > 0 ? realtimeMaxAgeMs : 10000L;
     }
 
     /**
@@ -132,15 +135,19 @@ public class SensorController {
      */
     @GetMapping("/api/sensors")
     public Map<String, Object> sensors() {
-        SensorSnapshot s = systemStateService.readSensorsWithNoise();
-        String source = systemStateService.hasHardwareSnapshot() ? "hardware" : "demo";
+        boolean fresh = systemStateService.hasFreshHardwareSnapshot(realtimeMaxAgeMs);
+        SensorSnapshot s = systemStateService.readFreshSensorsOrDemo(realtimeMaxAgeMs);
+        long hardwareTs = systemStateService.latestHardwareTimestamp();
         return Map.of(
                 "water_temp",    s.waterTemp(),
                 "air_temp",      s.airTemp(),
                 "air_humidity",  s.airHumidity(),
                 "wqi",           s.wqi(),
                 "soil_moisture", s.soilMoisture(),
-                "source",        source
+                "source",        fresh ? "hardware" : "demo",
+                "realtime",      fresh,
+                "hardwareTs",    hardwareTs,
+                "ageMs",         fresh && hardwareTs > 0 ? System.currentTimeMillis() - hardwareTs : -1
         );
     }
 

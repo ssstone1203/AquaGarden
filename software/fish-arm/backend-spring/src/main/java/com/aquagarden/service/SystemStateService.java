@@ -57,6 +57,13 @@ public class SystemStateService {
         return latestReal.get() != null;
     }
 
+    public boolean hasFreshHardwareSnapshot(long maxAgeMillis) {
+        long ts = latestRealTs.get();
+        return latestReal.get() != null
+                && ts > 0
+                && System.currentTimeMillis() - ts <= Math.max(0L, maxAgeMillis);
+    }
+
     public long latestHardwareTimestamp() {
         return latestRealTs.get();
     }
@@ -65,6 +72,14 @@ public class SystemStateService {
     public SensorSnapshot readSensorsWithNoise() {
         SensorSnapshot real = latestReal.get();
         if (real != null) {
+            return real;
+        }
+        return DEMO_SNAPSHOT;
+    }
+
+    public SensorSnapshot readFreshSensorsOrDemo(long maxAgeMillis) {
+        SensorSnapshot real = latestReal.get();
+        if (real != null && hasFreshHardwareSnapshot(maxAgeMillis)) {
             return real;
         }
         return DEMO_SNAPSHOT;

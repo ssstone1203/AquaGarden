@@ -22,6 +22,7 @@ public final class SecurityWhitelist {
             "/api/debug/whoami",
             "/api/sensor/latest",
             "/api/sensor/upload",
+            "/api/sensors",
             "/api/sensors/ingest",
             "/api/sensors/history",
             "/api/robot/status",

@@ -610,4 +610,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    from aqua_system import run_serial
+
+    run_serial()

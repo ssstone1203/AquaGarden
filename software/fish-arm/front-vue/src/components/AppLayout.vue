@@ -16,18 +16,11 @@
           <div class="nav-zh">仪表板</div>
         </div>
       </router-link>
-      <router-link to="/cameras" class="nav-item" active-class="active">
-        <div class="nav-icon"><i class="fas fa-video"></i></div>
-        <div class="nav-labels">
-          <div class="nav-en">Video</div>
-          <div class="nav-zh">视频监控</div>
-        </div>
-      </router-link>
       <router-link to="/robot" class="nav-item" active-class="active">
-        <div class="nav-icon"><i class="fas fa-robot"></i></div>
+        <div class="nav-icon"><i class="fas fa-sliders-h"></i></div>
         <div class="nav-labels">
-          <div class="nav-en">Robot Arm</div>
-          <div class="nav-zh">机器臂</div>
+          <div class="nav-en">Control</div>
+          <div class="nav-zh">系统控制</div>
         </div>
       </router-link>
       <router-link to="/history" class="nav-item" active-class="active">
@@ -88,8 +81,7 @@ const dateText = ref('')
 
 const routeTitles = {
   dashboard: { title: 'Smart Aquarium Dashboard', subtitle: '智能水族箱仪表板' },
-  cameras: { title: 'Video Monitoring', subtitle: '视频监控' },
-  robot: { title: 'Robot Arm Control', subtitle: '机械臂控制' },
+  robot: { title: 'System Control', subtitle: '系统控制台' },
   history: { title: 'History Records', subtitle: '历史数据记录' },
 }
 

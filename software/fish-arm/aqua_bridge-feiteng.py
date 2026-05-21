@@ -467,4 +467,6 @@ def rail_not_implemented():
 
 
 if __name__ == "__main__":
-    app.run(host=HOST, port=PORT, debug=False, threaded=True)
+    from aqua_system import run_bridge
+
+    run_bridge()

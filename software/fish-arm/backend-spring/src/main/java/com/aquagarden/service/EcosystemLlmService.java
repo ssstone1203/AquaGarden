@@ -176,6 +176,7 @@ public class EcosystemLlmService {
                 .timeout(Duration.ofSeconds(60))
                 .header("Content-Type", "application/json")
                 .header("x-api-key", apiKey)
+                .header("Authorization", "Bearer " + apiKey)
                 .header("anthropic-version", anthropicVersion)
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();

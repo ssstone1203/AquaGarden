@@ -3,7 +3,6 @@ import AppLayout from '@/components/AppLayout.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
-import CamerasView from '@/views/CamerasView.vue'
 import HistoryView from '@/views/HistoryView.vue'
 import RobotView from '@/views/RobotView.vue'
 
@@ -16,9 +15,8 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       { path: '', name: 'dashboard', component: DashboardView, meta: { nav: 'dashboard', title: '控制面板', subtitle: '实时监控您的水族箱状态' } },
-      { path: 'cameras', name: 'cameras', component: CamerasView, meta: { nav: 'cameras', title: '视频监控', subtitle: '实时查看水族箱内部情况' } },
       { path: 'history', name: 'history', component: HistoryView, meta: { nav: 'history', title: '历史数据', subtitle: '查看和分析历史监控数据' } },
-      { path: 'robot', name: 'robot', component: RobotView, meta: { nav: 'robot', title: '机械臂控制', subtitle: '实时控制机械臂进行各种操作' } },
+      { path: 'robot', name: 'robot', component: RobotView, meta: { nav: 'robot', title: '系统控制', subtitle: '机械臂任务、滑轨、水泵与终端状态' } },
     ],
   },
 ]

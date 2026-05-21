@@ -1,182 +1,92 @@
 <template>
   <div class="robot-page">
-    <div class="quick-panel">
-      <div class="quick-header">
-        <div>
-          <h3><i class="fas fa-robot"></i> 机械臂快捷操作</h3>
-          <p>常用任务和滑轨移动放在顶部，执行前请确认相机画面和 Bridge 状态。</p>
-        </div>
-        <span :class="['quick-status', connected ? 'online' : 'offline']">{{ connected ? 'Bridge 在线' : 'Bridge 离线' }}</span>
-      </div>
-
-      <div class="primary-task-grid">
-        <button class="primary-task-btn task-loosen" :disabled="busy || railPending" @click="sendTask('loosen')">
-          <i class="fas fa-seedling"></i>
-          <span>松土</span>
-        </button>
-        <button class="primary-task-btn task-feed" :disabled="busy || railPending" @click="sendTask('feed')">
-          <i class="fas fa-utensils"></i>
-          <span>喂食</span>
-        </button>
-        <button class="primary-task-btn task-prune" :disabled="busy || railPending" @click="sendTask('prune')">
-          <i class="fas fa-cut"></i>
-          <span>裁剪黄色叶子</span>
-        </button>
-        <button class="primary-task-btn task-stop" @click="stopTask">
-          <i class="fas fa-hand-paper"></i>
-          <span>停止</span>
-        </button>
-      </div>
-
-      <div class="rail-panel rail-panel-top">
-        <div class="rail-title">
-          <span><i class="fas fa-arrows-alt-h"></i> 滑轨移动（0-4000）</span>
-          <b>当前位置：{{ railPositionText }}</b>
-        </div>
-        <input v-model.number="railTarget" class="rail-range" type="range" min="0" max="4000" step="10" />
-        <div class="rail-row">
-          <button class="rail-btn" @click="setRailTarget(0)">回到 0</button>
-          <input v-model.number="railTarget" class="rail-input" type="number" min="0" max="4000" step="10" />
-          <button class="rail-btn" @click="setRailTarget(4000)">到 4000</button>
-          <button class="rail-btn rail-btn-primary" :disabled="busy || railPending" @click="moveRail">移动滑轨</button>
-        </div>
-      </div>
-
-      <div class="pump-panel">
-        <div class="rail-title">
-          <span><i class="fas fa-tint"></i> 水泵控制</span>
-          <b>PWM：{{ pumpPwm }}%</b>
-        </div>
-        <input v-model.number="pumpPwm" class="rail-range" type="range" min="0" max="100" step="1" />
-        <div class="rail-row">
-          <input v-model.number="pumpPwm" class="rail-input" type="number" min="0" max="100" step="1" />
-          <button class="rail-btn rail-btn-primary" :disabled="pumpBusy" @click="pumpStart">开泵</button>
-          <button class="rail-btn" :disabled="pumpBusy" @click="pumpStop">关泵</button>
-          <button class="rail-btn" :disabled="pumpBusy" @click="pumpAuto">自动模式</button>
-          <button class="rail-btn" :disabled="pumpBusy" @click="pumpApplyPwm">更新PWM</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 左侧面板：摄像头 + 控制按钮 -->
     <div class="robot-left">
-      <!-- 摄像头区域 -->
-      <div class="camera-panel">
-        <div class="panel-header">
-          <span><i class="fas fa-video"></i> 机械臂视角</span>
-          <div class="camera-header-actions">
-            <button type="button" :class="['mode-btn', cameraMode === 'rgb' ? 'active' : '']" @click="setCameraMode('rgb')">RGB</button>
-            <button type="button" :class="['mode-btn', cameraMode === 'depth' ? 'active' : '']" @click="setCameraMode('depth')">深度图</button>
-            <span class="badge-live"><span class="live-dot"></span>Live</span>
+      <section class="control-panel arm-panel">
+        <div class="panel-header control-panel-header">
+          <div>
+            <span><i class="fas fa-robot"></i> 机械臂与滑轨</span>
+            <small>喂食、裁剪、松土和滑轨绝对位置控制</small>
           </div>
-        </div>
-        <div class="camera-body">
-          <img
-            :key="camSrc"
-            :src="camSrc"
-            alt="Robot Camera"
-            class="camera-img"
-            decoding="async"
-            @load="cameraError = ''"
-            @error="cameraError = '机械臂相机画面加载失败，请检查树莓派 Bridge 视频流'"
-          />
-          <div v-if="cameraError" class="camera-error">
-            <i class="fas fa-video-slash"></i>
-            <span>{{ cameraError }}</span>
-            <small>当前地址：{{ camSrc }}</small>
-          </div>
-          <div class="cam-overlay-info">
-            <span>{{ cameraMode === 'rgb' ? 'RGB' : 'Depth' }}</span>
-            <span>J1:{{ servoAngles[0] }}</span>
-            <span>J2:{{ servoAngles[1] }}</span>
-            <span>J3:{{ servoAngles[2] }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 控制区域 -->
-      <div class="control-panel">
-        <div class="panel-header">
-          <span><i class="fas fa-crosshairs"></i> 绝对位置控制</span>
-          <span class="kbd-hint">已禁用点按增量移动，仅保留绝对位置下发</span>
+          <span :class="['quick-status', connected ? 'online' : 'offline']">{{ connected ? 'Bridge 在线' : 'Bridge 离线' }}</span>
         </div>
 
-        <div class="control-body">
-          <div class="move-disabled-box">
-            <i class="fas fa-ban"></i>
-            <span>方向点按移动已关闭</span>
-            <small>请使用上方滑轨绝对位置控制（0-4000）</small>
-          </div>
-
-          <!-- 位置显示 -->
-          <div class="pos-bar">
-            <span class="pos-item"><b>X</b> {{ posX }}</span>
-            <span class="pos-item"><b>Y</b> {{ posY }}</span>
-            <span class="pos-item"><b>Z</b> {{ posZ }}</span>
-          </div>
-
+        <div class="arm-actions">
+          <button class="primary-task-btn task-feed" :disabled="busy || railPending" @click="sendTask('feed')">
+            <i class="fas fa-utensils"></i>
+            <span>喂食</span>
+          </button>
+          <button class="primary-task-btn task-prune" :disabled="busy || railPending" @click="sendTask('prune')">
+            <i class="fas fa-cut"></i>
+            <span>裁剪黄色叶子</span>
+          </button>
+          <button class="primary-task-btn task-loosen" :disabled="busy || railPending" @click="sendTask('loosen')">
+            <i class="fas fa-seedling"></i>
+            <span>松土</span>
+          </button>
+          <button class="primary-task-btn task-stop" @click="stopTask">
+            <i class="fas fa-hand-paper"></i>
+            <span>停止</span>
+          </button>
         </div>
-      </div>
+
+        <div class="rail-control-block">
+          <div class="rail-title">
+            <span><i class="fas fa-arrows-alt-h"></i> 滑轨移动（0-4000）</span>
+            <b>当前位置：{{ railPositionText }}</b>
+          </div>
+          <div class="rail-row rail-row-direct">
+            <button class="rail-btn" @click="setRailTarget(0)">回到 0</button>
+            <input v-model.number="railTarget" class="rail-input rail-input-large" type="number" min="0" max="4000" step="10" />
+            <button class="rail-btn" @click="setRailTarget(4000)">到 4000</button>
+            <button class="rail-btn rail-btn-primary" :disabled="busy || railPending" @click="moveRail">移动滑轨</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="control-panel pump-panel">
+        <div class="panel-header control-panel-header">
+          <div>
+            <span><i class="fas fa-tint"></i> 水泵控制</span>
+            <small>手动启停、PWM 调节和自动模式</small>
+          </div>
+          <b class="pump-readout">{{ pumpPwm }}%</b>
+        </div>
+        <div class="pump-body">
+          <input v-model.number="pumpPwm" class="pump-range" type="range" min="0" max="100" step="1" />
+          <div class="rail-row">
+            <input v-model.number="pumpPwm" class="rail-input rail-input-large" type="number" min="0" max="100" step="1" />
+            <button class="rail-btn rail-btn-primary" :disabled="pumpBusy" @click="pumpStart">开泵</button>
+            <button class="rail-btn" :disabled="pumpBusy" @click="pumpApplyPwm">更新 PWM</button>
+            <button class="rail-btn" :disabled="pumpBusy" @click="pumpAuto">自动模式</button>
+            <button class="rail-btn rail-btn-danger" :disabled="pumpBusy" @click="pumpStop">关泵</button>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <!-- 右侧面板：终端状态 -->
     <div class="robot-right">
       <div class="terminal-panel">
         <div class="panel-header terminal-header">
-          <span><i class="fas fa-terminal"></i> 机械臂状态终端</span>
+          <span><i class="fas fa-terminal"></i> 终端运行状态</span>
           <div class="terminal-status-row">
             <span :class="['status-dot', connected ? 'dot-connected' : 'dot-disconnected']"></span>
             <span class="status-text">{{ connected ? '已连接' : '断开' }}</span>
           </div>
         </div>
 
-        <!-- 舵机角度可视化 -->
-        <div class="servo-section">
-          <div class="servo-title">舵机角度</div>
-          <div class="servo-list">
-            <div v-for="(angle, i) in servoAngles" :key="i" class="servo-row">
-              <span class="servo-label">J{{ i + 1 }}</span>
-              <div class="servo-bar-bg">
-                <div class="servo-bar-fill" :style="{ width: (angle / 180 * 100) + '%' }"></div>
-              </div>
-              <span class="servo-val">{{ angle }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 当前任务 & 信息 -->
-        <div class="info-section">
-          <div class="info-row">
-            <span class="info-label"><i class="fas fa-tasks"></i> 当前任务</span>
-            <span class="info-val">{{ currentTask }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label"><i class="fas fa-project-diagram"></i> 当前阶段</span>
-            <span class="info-val">{{ phase }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label"><i class="fas fa-arrows-alt-h"></i> 滑轨位置</span>
-            <span class="info-val">{{ railPositionText }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label"><i class="fas fa-camera"></i> 相机</span>
-            <span class="info-val">RGB:{{ cameraState.hasRgb ? 'OK' : '--' }} / D:{{ cameraState.hasDepth ? 'OK' : '--' }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label"><i class="fas fa-clock"></i> 运行时长</span>
-            <span class="info-val">{{ uptime }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label"><i class="fas fa-map-marker-alt"></i> 末端位置</span>
-            <span class="info-val">X:{{ posX }} Y:{{ posY }} Z:{{ posZ }}</span>
-          </div>
+        <div class="terminal-status-grid">
+          <div><span>当前任务</span><b>{{ currentTask }}</b></div>
+          <div><span>阶段</span><b>{{ phase }}</b></div>
+          <div><span>滑轨</span><b>{{ railPositionText }}</b></div>
+          <div><span>运行</span><b>{{ uptime }}</b></div>
+          <div><span>RGB</span><b>{{ cameraState.hasRgb ? 'OK' : '--' }}</b></div>
+          <div><span>Depth</span><b>{{ cameraState.hasDepth ? 'OK' : '--' }}</b></div>
           <div v-if="lastError" class="info-row info-row-error">
             <span class="info-label"><i class="fas fa-exclamation-triangle"></i> 错误</span>
             <span class="info-val">{{ lastError }}</span>
           </div>
         </div>
 
-        <!-- 日志终端 -->
         <div class="log-section">
           <div class="log-section-title">
             <i class="fas fa-stream"></i> 运行日志
@@ -197,15 +107,8 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { apiUrl, authHeaders, logout } from '@/api/http'
+import { apiUrl, authHeaders } from '@/api/http'
 
-const router = useRouter()
-
-const posX = ref(0)
-const posY = ref(0)
-const posZ = ref(0)
-const servoAngles = ref([90, 45, 120, 60, 90, 30])
 const connected = ref(true)
 const currentTask = ref('待命')
 const phase = ref('idle')
@@ -214,13 +117,9 @@ const lastError = ref('')
 const uptime = ref('00:00:00')
 const logs = ref([])
 const logContainer = ref(null)
-const cameraMode = ref('rgb')
-const cameraError = ref('')
-const cameraReloadKey = ref(Date.now())
 const railTarget = ref(0)
 const railPosition = ref(null)
 const cameraState = reactive({ hasRgb: false, hasDepth: false, ageSec: null })
-const servoPulse = ref({ 1: 220, 2: 489, 3: 130, 4: 842, 5: 836, 6: 509 })
 const pumpPwm = ref(80)
 const pumpBusy = ref(false)
 
@@ -230,7 +129,6 @@ const railPending = ref(false)
 /** 控制类请求超时（毫秒） */
 const RAIL_HTTP_MS = 90_000
 const TASK_HTTP_MS = 120_000
-const HOME_HTTP_MS = 90_000
 const STATUS_HTTP_MS = 15_000
 const RAIL_DEBOUNCE_MS = 350
 
@@ -251,7 +149,6 @@ async function fetchWithTimeout(url, init, timeoutMs) {
     cancel()
   }
 }
-const camSrc = computed(() => apiUrl(`/api/aqua/video/${cameraMode.value}`) + `?t=${cameraReloadKey.value}`)
 const railPositionText = computed(() => railPosition.value == null ? '--' : String(railPosition.value))
 
 let statusTimer = null
@@ -269,14 +166,6 @@ function addLog(msg, type = 'info') {
 }
 
 function clearLogs() { logs.value = [] }
-
-function setCameraMode(mode) {
-  if (cameraMode.value === mode) return
-  cameraMode.value = mode
-  cameraReloadKey.value = Date.now()
-  cameraError.value = ''
-  addLog(`切换机械臂相机：${mode === 'rgb' ? 'RGB' : '深度图'}`, 'system')
-}
 
 function setRailTarget(value) {
   railTarget.value = Math.max(0, Math.min(4000, Number(value) || 0))
@@ -327,31 +216,6 @@ async function pumpStop() {
 
 async function pumpAuto() {
   await callPumpApi('/api/aqua/pump/auto', {}, '切换为水泵自动模式')
-}
-
-async function armHome() {
-  if (busy.value || railPending.value) {
-    addLog('机械臂或滑轨正在动作，请稍后再试回零', 'warn')
-    return
-  }
-  addLog('请求机械臂回初始位姿', 'system')
-  try {
-    const r = await fetchWithTimeout(
-      apiUrl('/api/aqua/arm/home'),
-      { method: 'POST', headers: authHeaders() },
-      HOME_HTTP_MS,
-    )
-    const d = await r.json().catch(() => ({}))
-    if (!r.ok || d.ok === false) {
-      throw new Error(d.message || `回初始位姿失败 HTTP ${r.status}`)
-    }
-    posX.value = 0
-    posY.value = 0
-    posZ.value = 0
-    fetchStatus()
-  } catch (e) {
-    addLog(e.message || '机械臂回初始位姿失败', 'error')
-  }
 }
 
 async function sendTask(taskName) {
@@ -453,13 +317,6 @@ async function fetchStatus() {
     const r = await fetchWithTimeout(apiUrl('/api/aqua/status'), { headers: authHeaders() }, STATUS_HTTP_MS)
     if (r.ok) {
       const d = await r.json()
-      const pulses = d.servoPulse
-      if (pulses && typeof pulses === 'object') {
-        servoPulse.value = { ...servoPulse.value, ...pulses }
-        servoAngles.value = [1, 2, 3, 4, 5, 6].map(i => Number(pulses[String(i)] ?? servoAngles.value[i - 1]))
-      } else if (Array.isArray(d.servoAngles)) {
-        servoAngles.value = d.servoAngles
-      }
       connected.value = d.connected ?? d.ok ?? true
       busy.value = Boolean(d.busy)
       currentTask.value = d.currentTask ?? '待命'
@@ -520,51 +377,12 @@ onUnmounted(() => {
 <style scoped>
 .robot-page {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: minmax(520px, 1fr) 390px;
   gap: 20px;
-  grid-template-areas:
-    "quick quick"
-    "left right";
+  grid-template-areas: "left right";
   height: calc(100vh - 120px);
   min-height: 600px;
-  align-items:stretch;
-}
-
-.quick-panel {
-  grid-area: quick;
-  background: var(--bg-card);
-  border-radius: 14px;
-  box-shadow: var(--shadow-md);
-  padding: 16px 18px;
-  display: grid;
-  grid-template-columns: minmax(360px, 1fr) minmax(360px, 1.1fr);
-  gap: 16px;
   align-items: stretch;
-}
-
-.quick-header {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.quick-header h3 {
-  margin: 0 0 4px;
-  font-size: 18px;
-  color: var(--text-primary);
-}
-
-.quick-header h3 i {
-  color: var(--primary-color);
-  margin-right: 8px;
-}
-
-.quick-header p {
-  margin: 0;
-  font-size: 12px;
-  color: var(--text-secondary);
 }
 
 .quick-status {
@@ -585,10 +403,11 @@ onUnmounted(() => {
   background: rgba(239,68,68,0.12);
 }
 
-.primary-task-grid {
+.arm-actions {
   display: grid;
   grid-template-columns: repeat(4, minmax(110px, 1fr));
-  gap: 10px;
+  gap: 12px;
+  padding: 18px;
 }
 
 .primary-task-btn {
@@ -638,38 +457,11 @@ onUnmounted(() => {
   height:100%;
 }
 
-.camera-panel, .control-panel, .terminal-panel {
+.control-panel, .terminal-panel {
   background: var(--bg-card);
   border-radius: 14px;
   box-shadow: var(--shadow-md);
   overflow: hidden;
-}
-
-.camera-error {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 20px;
-  text-align: center;
-  color: rgba(255,255,255,0.9);
-  background: rgba(15,23,42,0.78);
-  font-size: 13px;
-  z-index: 2;
-}
-
-.camera-error i {
-  font-size: 24px;
-  color: #f87171;
-}
-
-.camera-error small {
-  color: rgba(255,255,255,0.62);
-  word-break: break-all;
-  font-family: monospace;
 }
 
 .panel-header {
@@ -685,130 +477,29 @@ onUnmounted(() => {
 .panel-header i { color: var(--primary-color); margin-right: 6px; }
 .kbd-hint { font-size: 11px; color: var(--text-secondary); font-weight: 400; }
 
-.camera-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.control-panel-header {
+  min-height: 62px;
 }
 
-.mode-btn {
-  border: 1px solid rgba(139,92,246,0.25);
-  background: var(--bg-main);
-  color: var(--text-secondary);
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.18s;
-}
-
-.mode-btn.active,
-.mode-btn:hover {
-  background: var(--primary-color);
-  color: #fff;
-  border-color: var(--primary-color);
-}
-
-.badge-live {
-  display: flex; align-items: center; gap: 5px;
-  background: rgba(239,68,68,0.12); color: #ef4444;
-  padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600;
-}
-.live-dot {
-  width: 6px; height: 6px; border-radius: 50%; background: #ef4444;
-  animation: pulse 1.4s infinite;
-}
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-.camera-body { position: relative; background: #000; aspect-ratio: 16/9; }
-.camera-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.cam-overlay-info {
-  position: absolute; bottom: 8px; left: 8px;
-  display: flex; gap: 6px;
-}
-.cam-overlay-info span {
-  background: rgba(0,0,0,0.65); color: #a5f3fc;
-  padding: 2px 7px; border-radius: 6px; font-size: 11px; font-family: monospace;
-}
-
-/* Control body */
-.control-body {
-  padding: 16px 20px;
+.control-panel-header > div {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-}
-
-.dir-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 56px);
-  grid-template-rows: repeat(3, 56px);
-  gap: 8px;
-  justify-content: center;
-}
-
-.dir-grid-lr {
-  grid-template-rows: 56px;
-}
-
-.move-disabled-box {
-  border: 1px dashed rgba(139,92,246,0.4);
-  background: rgba(139,92,246,0.08);
-  border-radius: 12px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 4px;
+}
+
+.control-panel-header small {
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 400;
 }
 
-.move-disabled-box i {
-  color: #ef4444;
-}
-
-.move-disabled-box small {
-  color: var(--text-secondary);
-}
-
-.dir-btn {
-  border: none;
-  background: var(--bg-main);
-  color: var(--text-primary);
+.rail-control-block,
+.pump-body {
+  margin: 0 18px 18px;
+  padding: 16px;
   border-radius: 12px;
-  cursor: pointer;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all 0.18s;
-  box-shadow: var(--shadow-sm);
-}
-.dir-btn:hover { background: var(--bg-gradient); color: #fff; transform: scale(1.06); }
-.dir-btn:active { transform: scale(0.94); }
-.dir-btn-left, .dir-btn-right { font-size: 13px; font-weight: 600; }
-.dir-btn-center { background: rgba(139,92,246,0.12); color: var(--primary-color); }
-
-.pos-bar {
-  display: flex; justify-content: center; gap: 20px;
-  background: var(--bg-main); border-radius: 10px; padding: 10px 16px;
-  font-size: 15px; font-family: monospace;
-}
-.pos-item b { color: var(--primary-color); margin-right: 4px; }
-
-.rail-panel {
-  background: var(--bg-main);
-  border-radius: 12px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.rail-panel-top {
   background: rgba(15,15,26,0.78);
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
 .rail-title,
@@ -816,6 +507,10 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.rail-row-direct .rail-input {
+  flex: 0 1 180px;
 }
 
 .rail-title {
@@ -834,9 +529,10 @@ onUnmounted(() => {
   font-family: monospace;
 }
 
-.rail-range {
+.pump-range {
   width: 100%;
-  accent-color: var(--primary-color);
+  margin: 4px 0 14px;
+  accent-color: #06b6d4;
 }
 
 .rail-input {
@@ -872,22 +568,32 @@ onUnmounted(() => {
   color: #fff;
 }
 
+.rail-btn-danger {
+  background: rgba(239,68,68,0.16);
+  color: #f87171;
+}
+
+.rail-btn-danger:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+.rail-input-large {
+  height: 38px;
+  font-size: 15px;
+}
+
 .rail-btn:disabled,
 .task-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
-.task-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.task-btn {
-  padding: 9px 4px; background: var(--bg-main); color: var(--text-primary);
-  border: none; border-radius: 10px; cursor: pointer; font-size: 12px;
-  display: flex; align-items: center; justify-content: center; gap: 5px;
-  transition: all 0.18s;
+.pump-readout {
+  font-family: monospace;
+  color: #67e8f9;
+  font-size: 20px;
 }
-.task-btn:hover { background: var(--primary-color); color: #fff; }
-.task-btn-stop { background: rgba(239,68,68,0.12); color: #ef4444; }
-.task-btn-stop:hover { background: #ef4444; color: #fff; }
 
 /* ---- Right Panel: Terminal ---- */
 .robot-right { grid-area: right; min-width: 0; }
@@ -904,18 +610,38 @@ onUnmounted(() => {
 .dot-disconnected { background: #ef4444; }
 .status-text { font-size: 12px; color: var(--text-secondary); }
 
-/* Servo section */
-.servo-section { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); }
-.servo-title { font-size: 11px; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.5px; margin-bottom: 10px; text-transform: uppercase; }
-.servo-list { display: flex; flex-direction: column; gap: 7px; }
-.servo-row { display: flex; align-items: center; gap: 8px; }
-.servo-label { font-size: 12px; color: var(--primary-color); font-weight: 700; width: 24px; font-family: monospace; }
-.servo-bar-bg { flex: 1; height: 6px; background: var(--bg-main); border-radius: 3px; overflow: hidden; }
-.servo-bar-fill { height: 100%; background: linear-gradient(90deg, #8b5cf6, #06b6d4); border-radius: 3px; transition: width 0.4s; }
-.servo-val { font-size: 11px; color: var(--text-secondary); font-family: monospace; width: 34px; text-align: right; }
+.terminal-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
 
-/* Info section */
-.info-section { padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; gap: 8px; }
+.terminal-status-grid > div {
+  min-width: 0;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(15,15,26,0.72);
+  border: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.terminal-status-grid span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.terminal-status-grid b {
+  color: var(--text-primary);
+  font-family: monospace;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .info-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
 .info-label { color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
 .info-label i { color: var(--primary-color); font-size: 12px; }
@@ -968,18 +694,16 @@ onUnmounted(() => {
   .robot-page {
     grid-template-columns: 1fr;
     grid-template-areas:
-      "quick"
       "left"
       "right";
     height: auto;
   }
-  .quick-panel { grid-template-columns: 1fr; }
-  .primary-task-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+  .arm-actions { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
   .terminal-panel { min-height: 500px; }
 }
 
 @media (max-width: 640px) {
-  .primary-task-grid { grid-template-columns: 1fr; }
+  .arm-actions { grid-template-columns: 1fr; }
   .rail-row { flex-wrap: wrap; }
   .rail-input { flex-basis: 100%; }
 }

@@ -5,11 +5,15 @@
       <div class="video-card">
         <div class="video-card-header">
           <span class="video-title">Robot Arm Camera <span class="video-title-cn">(机械臂摄像头)</span></span>
-          <button type="button" class="menu-btn"><i class="fas fa-ellipsis-h"></i></button>
+          <div class="camera-mode-switch">
+            <button type="button" :class="['camera-mode-btn', robotCameraMode === 'rgb' ? 'active' : '']" @click="setRobotCameraMode('rgb')">RGB</button>
+            <button type="button" :class="['camera-mode-btn', robotCameraMode === 'depth' ? 'active' : '']" @click="setRobotCameraMode('depth')">深度图</button>
+          </div>
         </div>
         <div class="video-body">
           <div class="video-area">
             <img
+              :key="robotCameraImgKey"
               :src="showLiveVideos ? robotCameraSrc : ''"
               alt="Robot Arm Camera"
               decoding="async"
@@ -19,7 +23,7 @@
             />
             <div class="vbadge vbadge-live"><i class="fas fa-circle"></i> {{ robotVideoReady ? 'Live' : 'Wait' }}</div>
             <div class="vbadge vbadge-cam"><i class="fas fa-video"></i></div>
-            <div class="vbadge vbadge-res">{{ robotVideoReady ? 'RGB' : 'Bridge' }}</div>
+            <div class="vbadge vbadge-res">{{ robotVideoReady ? robotCameraLabel : 'Bridge' }}</div>
             <div v-if="robotVideoMessage" class="video-waiting">
               <i class="fas fa-video-slash"></i>
               <span>{{ robotVideoMessage }}</span>
@@ -359,25 +363,36 @@ const waterTempFSub = computed(() => {
 })
 
 const robotUseDirectBridge = ref(false)
+const robotCameraMode = ref('rgb')
+const robotCameraKey = ref(Date.now())
 const robotDirectBridgeUrl = computed(() => {
   const base = import.meta.env.VITE_AQUA_BRIDGE_BASE || 'http://10.116.177.50:18080'
-  return `${base.replace(/\/$/, '')}/video/rgb.mjpg`
+  return `${base.replace(/\/$/, '')}/video/${robotCameraMode.value}.mjpg`
 })
-const robotCameraSrc = computed(() => robotUseDirectBridge.value ? robotDirectBridgeUrl.value : apiUrl('/api/aqua/video/rgb'))
+const robotCameraSrc = computed(() => {
+  const src = robotUseDirectBridge.value ? robotDirectBridgeUrl.value : apiUrl(`/api/aqua/video/${robotCameraMode.value}`)
+  return `${src}${src.includes('?') ? '&' : '?'}v=${robotCameraKey.value}`
+})
+const robotCameraImgKey = computed(() => `${robotCameraMode.value}-${robotCameraKey.value}`)
+const robotCameraLabel = computed(() => robotCameraMode.value === 'depth' ? 'Depth' : 'RGB')
 const tankCameraSrc = apiUrl('/api/video/tank')
 const tankStatus = reactive({ hasFrame: false, seq: 0, bytes: 0, updatedAt: 0, detectionCount: 0 })
-const aquaStatus = reactive({ connected: false, hasRgb: false, rgbError: '', lastError: '' })
+const aquaStatus = reactive({ connected: false, hasRgb: false, hasDepth: false, rgbError: '', depthError: '', lastError: '' })
 const robotVideoError = ref('')
 const tankVideoError = ref('')
 
 const dashboardVideoRow = ref(null)
 const showLiveVideos = ref(true)
 
-const robotVideoReady = computed(() => !robotVideoError.value && (!aquaStatus.connected || aquaStatus.hasRgb))
+const robotVideoReady = computed(() => {
+  if (robotVideoError.value) return false
+  if (!aquaStatus.connected) return true
+  return robotCameraMode.value === 'depth' ? aquaStatus.hasDepth : aquaStatus.hasRgb
+})
 const tankVideoReady = computed(() => tankStatus.hasFrame && !tankVideoError.value)
 const robotVideoMessage = computed(() => {
   if (!showLiveVideos.value) return ''
-  if (robotVideoError.value) return `${robotVideoError.value}，请检查 /api/aqua/video/rgb`
+  if (robotVideoError.value) return `${robotVideoError.value}，请检查 /api/aqua/video/${robotCameraMode.value}`
   return ''
 })
 const tankVideoMessage = computed(() => {
@@ -393,6 +408,15 @@ function handleRobotVideoError() {
     return
   }
   robotVideoError.value = '机械臂视频流加载失败'
+}
+
+function setRobotCameraMode(mode) {
+  if (!['rgb', 'depth'].includes(mode) || robotCameraMode.value === mode) return
+  robotCameraMode.value = mode
+  robotCameraKey.value = Date.now()
+  robotUseDirectBridge.value = false
+  robotVideoError.value = ''
+  updateVideoStatus()
 }
 
 /** 与后端 SystemStateService.DEMO_SNAPSHOT 一致，用于首次请求失败时的可读默认展示 */
@@ -487,7 +511,7 @@ const sensorBannerMessage = computed(() => {
     return '尚未收到有效传感器数据；请检查设备与网关连接，以下为界面占位或本地基线。'
   }
   if (sensorDataSource.value === 'demo') {
-    return '当前为演示基线或后端默认值（硬件未推送 /api/sensors/ingest 时）；连接 MCU 后将自动切换实时数据。'
+    return '当前无实时传感器数据，正在显示后端模拟基线；收到串口实时数据后会自动切换。'
   }
   if (sensorPollError.value) {
     return '最近一次 HTTP 拉取失败；以下为上次成功读数。WebSocket 仍可能推送更新。'
@@ -497,7 +521,7 @@ const sensorBannerMessage = computed(() => {
 
 const sensorFooterStatus = computed(() => {
   if (!sensorHasLiveReading.value) return '暂无数据'
-  if (sensorDataSource.value === 'demo') return '演示基线'
+  if (sensorDataSource.value === 'demo') return '模拟数据'
   if (sensorPollError.value) return 'HTTP 暂未更新（已保留读数）'
   return '实时'
 })
@@ -567,8 +591,7 @@ async function updateSensorData() {
         soilMoisture.value = String(d.soil_moisture)
         pushHistory(moistureHistory, d.soil_moisture)
       }
-    } else if (r.status === 401) {
-      setTimeout(() => logout(router), 2000)
+      return
     } else {
       sensorPollError.value = true
       if (!sensorsEverSucceeded) applyStableDisplayDefaults()
@@ -600,11 +623,14 @@ async function updateVideoStatus() {
     const camera = d.camera || {}
     aquaStatus.connected = Boolean(d.connected ?? d.ok)
     aquaStatus.hasRgb = Boolean(camera.hasRgb)
+    aquaStatus.hasDepth = Boolean(camera.hasDepth)
     aquaStatus.rgbError = camera.rgb?.lastError ? String(camera.rgb.lastError) : ''
+    aquaStatus.depthError = camera.depth?.lastError ? String(camera.depth.lastError) : ''
     aquaStatus.lastError = d.lastError ? String(d.lastError) : ''
   } catch (e) {
     aquaStatus.connected = false
     aquaStatus.hasRgb = false
+    aquaStatus.hasDepth = false
     aquaStatus.lastError = `无法获取 Aqua Bridge 状态：${e.message || e}`
   }
 }
@@ -1098,6 +1124,33 @@ onUnmounted(() => {
 .dot-warn {
   background: #fbbf24 !important;
   box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
+}
+
+.camera-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.66);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.camera-mode-btn {
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  padding: 0 10px;
+  cursor: pointer;
+  color: var(--text-secondary, #9ca3af);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.camera-mode-btn.active {
+  color: #fff;
+  background: #0ea5e9;
 }
 
 .video-waiting {
