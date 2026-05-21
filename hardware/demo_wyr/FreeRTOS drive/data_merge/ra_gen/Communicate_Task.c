@@ -315,7 +315,7 @@ extern uint32_t g_fsp_common_thread_count;
                         (const char *)"Com_Thread",
                         1024/4, // In words, not bytes
                         (void *) &Communicate_Task_parameters, //pvParameters
-                        1,
+                        2,
                         #if 1
                         (StackType_t *)&Communicate_Task_stack,
                         (StaticTask_t *)&Communicate_Task_memory

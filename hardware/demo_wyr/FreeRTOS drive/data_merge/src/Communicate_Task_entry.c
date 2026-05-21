@@ -21,6 +21,16 @@
  *   4) SCI0 UART 模块仍保留作日志通道：
  *        app_log_uart_init()         — 任务启动时已自动调用
  *        app_log_uart_write(buf,len) — 业务方任意时刻可调，写阻塞 ≤ 5 ms / byte
+ *
+ * ============================================================================
+ * 通信模式切换：
+ *   默认使用 SPI 通信（USE_UART_COMM 未定义）。
+ *   如需使用 UART 通信，请在编译前定义 USE_UART_COMM 宏：
+ *     #define USE_UART_COMM
+ *   UART 模式下：
+ *     - 每 250ms 自动发送传感器数据帧（格式见 serial_bridge.py）
+ *     - 接收水泵控制命令：启动/停止/设置力度
+ * ============================================================================
  */
 
 #include "Communicate_Task.h"
@@ -29,14 +39,331 @@
 #include "ds18b20.h"
 #include "sht30.h"
 
-#include "spi_protocol.h"
-#include "spi_codec.h"
-
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
-
+#include "queue.h"
 #include <string.h>
+
+/* 公共宏定义（两种通信模式共用） */
+#define HOST_ALARM_PRESSURE_HIGH_KG   (4.8F)
+
+/* 公共函数声明（两种通信模式共用） */
+void app_update_alarm_flags(void);
+
+/* ============================================================================
+ * 通信模式选择
+ * ============================================================================ */
+#define USE_UART_COMM
+#if defined(USE_UART_COMM)
+/* --------------------------------------------------------------------------
+ * UART 通信模式
+ * -------------------------------------------------------------------------- */
+#include "r_uart_api.h"
+
+/* FSP 在 ra_gen/Communicate_Task.c 中定义 */
+extern const uart_instance_t g_com_uart0;
+
+/* ------------------------------------------------------------------ */
+/* UART 帧格式定义（与 serial_bridge.py 保持一致）                     */
+/* ------------------------------------------------------------------ */
+
+#define UART_SYNC0             0x55U
+#define UART_SYNC1             0xAAU
+#define UART_VERSION           0x01U
+#define UART_HEADER_LEN        6U
+#define UART_PAYLOAD_LEN       30U
+#define UART_FRAME_LEN         (UART_HEADER_LEN + UART_PAYLOAD_LEN + 2U)
+#define UART_CRC_LEN           2U
+
+/* ------------------------------------------------------------------ */
+/* UART 下行命令：水泵控制                                            */
+/* ------------------------------------------------------------------ */
+
+#define UART_CMD_PUMP_STOP     0x01U
+#define UART_CMD_PUMP_START    0x02U
+#define UART_CMD_PUMP_SET_PWM  0x03U
+
+typedef struct
+{
+    uint8_t cmd;
+    uint8_t power;
+} uart_pump_cmd_t;
+
+/* ------------------------------------------------------------------ */
+/* UART 静态变量                                                      */
+/* ------------------------------------------------------------------ */
+
+static volatile uint8_t s_uart_opened;
+static volatile uint8_t s_uart_rx_buf[UART_FRAME_LEN];
+static volatile uint8_t s_uart_rx_idx;
+static volatile uint8_t s_uart_tx_seq;
+static SemaphoreHandle_t s_uart_rx_sem;
+static StaticSemaphore_t s_uart_rx_sem_buf;
+
+/* ------------------------------------------------------------------ */
+/* CRC16/Modbus 计算                                                 */
+/* ------------------------------------------------------------------ */
+
+static uint16_t uart_crc16_modbus(const uint8_t *data, uint16_t len)
+{
+    uint16_t crc = 0xFFFFU;
+    for (uint16_t i = 0; i < len; i++)
+    {
+        crc ^= data[i];
+        for (uint8_t b = 0; b < 8; b++)
+        {
+            crc = (crc & 1U) ? (uint16_t)((crc >> 1) ^ 0xA001U) : (uint16_t)(crc >> 1);
+        }
+    }
+    return crc;
+}
+
+/* ------------------------------------------------------------------ */
+/* UART 字节接收回调（中断上下文）                                    */
+/* ------------------------------------------------------------------ */
+
+void UART_Rx_Callback(uart_callback_args_t *p_args)
+{
+    if (p_args == NULL) return;
+
+    if (p_args->event == UART_EVENT_RX_CHAR)
+    {
+        uint8_t byte = (uint8_t)(p_args->data & 0xFFU);
+
+        if (s_uart_rx_idx == 0)
+        {
+            if (byte == UART_SYNC0)
+            {
+                s_uart_rx_buf[s_uart_rx_idx++] = byte;
+            }
+        }
+        else if (s_uart_rx_idx == 1)
+        {
+            if (byte == UART_SYNC1)
+            {
+                s_uart_rx_buf[s_uart_rx_idx++] = byte;
+            }
+            else
+            {
+                s_uart_rx_idx = 0;
+                if (byte == UART_SYNC0)
+                {
+                    s_uart_rx_buf[s_uart_rx_idx++] = byte;
+                }
+            }
+        }
+        else
+        {
+            s_uart_rx_buf[s_uart_rx_idx++] = byte;
+            if (s_uart_rx_idx >= UART_FRAME_LEN)
+            {
+                BaseType_t hp_woken = pdFALSE;
+                xSemaphoreGiveFromISR(s_uart_rx_sem, &hp_woken);
+                portYIELD_FROM_ISR(hp_woken);
+                s_uart_rx_idx = 0;
+            }
+        }
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* UART 初始化                                                       */
+/* ------------------------------------------------------------------ */
+
+static bool uart_comm_init(void)
+{
+    if (s_uart_opened) return true;
+
+    s_uart_rx_sem = xSemaphoreCreateBinaryStatic(&s_uart_rx_sem_buf);
+    if (s_uart_rx_sem == NULL) return false;
+
+    fsp_err_t err = g_com_uart0.p_api->open(&g_com_uart0_ctrl, &g_com_uart0_cfg);
+    if (err != FSP_SUCCESS) return false;
+
+    err = g_com_uart0.p_api->callbackSet(&g_com_uart0_ctrl, UART_Rx_Callback, NULL, NULL);
+    if (err != FSP_SUCCESS)
+    {
+        g_com_uart0.p_api->close(&g_com_uart0_ctrl);
+        return false;
+    }
+
+    s_uart_opened = 1U;
+    s_uart_rx_idx = 0;
+    s_uart_tx_seq = 0;
+    return true;
+}
+
+/* ------------------------------------------------------------------ */
+/* 发送 UART 传感器数据帧（上行）                                     */
+/* ------------------------------------------------------------------ */
+
+static bool uart_send_sensor_frame(void)
+{
+    uint8_t frame[UART_FRAME_LEN];
+
+    frame[0] = UART_SYNC0;
+    frame[1] = UART_SYNC1;
+    frame[2] = UART_VERSION;
+    frame[3] = s_uart_tx_seq++;
+
+    uint16_t payload_len_le = UART_PAYLOAD_LEN;
+    frame[4] = (uint8_t)(payload_len_le & 0xFFU);
+    frame[5] = (uint8_t)((payload_len_le >> 8) & 0xFFU);
+
+    int16_t air_temp_x10 = (int16_t)(int16_t)(g_sht30_temperature_c * 10.0F);
+    int16_t air_humi_x10 = (int16_t)(int16_t)(g_sht30_humidity_rh * 10.0F);
+    int16_t water_temp_x10 = (int16_t)(int16_t)(g_uwt_temperature_c * 10.0F);
+
+    frame[6]  = (uint8_t)((uint32_t)g_jscope_time_ms & 0xFFU);
+    frame[7]  = (uint8_t)((((uint32_t)g_jscope_time_ms) >> 8) & 0xFFU);
+    frame[8]  = (uint8_t)((((uint32_t)g_jscope_time_ms) >> 16) & 0xFFU);
+    frame[9]  = (uint8_t)((((uint32_t)g_jscope_time_ms) >> 24) & 0xFFU);
+
+    frame[10] = (uint8_t)((uint16_t)air_temp_x10 & 0xFFU);
+    frame[11] = (uint8_t)(((uint16_t)air_temp_x10 >> 8) & 0xFFU);
+
+    frame[12] = (uint8_t)((uint16_t)air_humi_x10 & 0xFFU);
+    frame[13] = (uint8_t)(((uint16_t)air_humi_x10 >> 8) & 0xFFU);
+
+    frame[14] = (uint8_t)((uint16_t)water_temp_x10 & 0xFFU);
+    frame[15] = (uint8_t)(((uint16_t)water_temp_x10 >> 8) & 0xFFU);
+
+    frame[16] = g_soil_moisture_percent;
+    frame[17] = g_wqs_info.wqs_info_wqi;
+    frame[18] = g_pump_actual_power_percent;
+    frame[19] = g_control_need_watering;
+
+    uint16_t p0_x100 = (uint16_t)(g_pressure_latest.pressure_kg[0] * 100.0F);
+    uint16_t p1_x100 = (uint16_t)(g_pressure_latest.pressure_kg[1] * 100.0F);
+    uint16_t p2_x100 = (uint16_t)(g_pressure_latest.pressure_kg[2] * 100.0F);
+
+    frame[20] = (uint8_t)(p0_x100 & 0xFFU);
+    frame[21] = (uint8_t)((p0_x100 >> 8) & 0xFFU);
+    frame[22] = (uint8_t)(p1_x100 & 0xFFU);
+    frame[23] = (uint8_t)((p1_x100 >> 8) & 0xFFU);
+    frame[24] = (uint8_t)(p2_x100 & 0xFFU);
+    frame[25] = (uint8_t)((p2_x100 >> 8) & 0xFFU);
+
+    frame[26] = (uint8_t)((uint32_t)g_alarm_flags & 0xFFU);
+    frame[27] = (uint8_t)(((uint32_t)g_alarm_flags >> 8) & 0xFFU);
+    frame[28] = (uint8_t)(((uint32_t)g_alarm_flags >> 16) & 0xFFU);
+    frame[29] = (uint8_t)(((uint32_t)g_alarm_flags >> 24) & 0xFFU);
+
+    frame[30] = (uint8_t)((uint16_t)g_air_retry_count & 0xFFU);
+    frame[31] = (uint8_t)(((uint16_t)g_air_retry_count >> 8) & 0xFFU);
+    frame[32] = (uint8_t)((uint16_t)g_wqs_retry_count & 0xFFU);
+    frame[33] = (uint8_t)(((uint16_t)g_wqs_retry_count >> 8) & 0xFFU);
+    frame[34] = (uint8_t)((uint16_t)g_uwt_retry_count & 0xFFU);
+    frame[35] = (uint8_t)(((uint16_t)g_uwt_retry_count >> 8) & 0xFFU);
+
+    uint16_t crc = uart_crc16_modbus(frame, UART_FRAME_LEN - UART_CRC_LEN);
+    frame[36] = (uint8_t)(crc & 0xFFU);
+    frame[37] = (uint8_t)((crc >> 8) & 0xFFU);
+
+    fsp_err_t err = g_com_uart0.p_api->write(&g_com_uart0_ctrl, frame, UART_FRAME_LEN);
+    return (err == FSP_SUCCESS);
+}
+
+/* ------------------------------------------------------------------ */
+/* 解析并执行 UART 下行命令                                           */
+/* ------------------------------------------------------------------ */
+
+static void uart_handle_pump_command(const uint8_t *frame)
+{
+    uint8_t cmd = frame[2];
+    uint8_t power = frame[3];
+
+    switch (cmd)
+    {
+    case UART_CMD_PUMP_STOP:
+        g_pump_manual_mode = 1U;
+        g_pump_manual_power_percent = 0U;
+        break;
+
+    case UART_CMD_PUMP_START:
+        g_pump_manual_mode = 1U;
+        if (power == 0U) power = 60U;
+        if (power > 100U) power = 100U;
+        g_pump_manual_power_percent = power;
+        g_pump_cycle_power_percent = power;
+        break;
+
+    case UART_CMD_PUMP_SET_PWM:
+        g_pump_manual_mode = 1U;
+        if (power > 100U) power = 100U;
+        g_pump_manual_power_percent = power;
+        g_pump_cycle_power_percent = power;
+        break;
+
+    default:
+        break;
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* UART 任务入口                                                     */
+/* ------------------------------------------------------------------ */
+
+void Communicate_Task_entry(void *pvParameters)
+{
+    FSP_PARAMETER_NOT_USED(pvParameters);
+
+    vTaskPrioritySet(NULL, 3U);
+
+    if (!uart_comm_init())
+    {
+        for (;;)
+        {
+            vTaskDelay(pdMS_TO_TICKS(1000U));
+        }
+    }
+
+    const TickType_t tx_period = pdMS_TO_TICKS(250U);
+    TickType_t last_tx_tick = xTaskGetTickCount();
+
+    for (;;)
+    {
+        if (xSemaphoreTake(s_uart_rx_sem, 0) == pdTRUE)
+        {
+            uint16_t crc = uart_crc16_modbus((const uint8_t *)s_uart_rx_buf, UART_FRAME_LEN - UART_CRC_LEN);
+            uint16_t recv_crc = (uint16_t)(((uint16_t)s_uart_rx_buf[UART_FRAME_LEN - 1] << 8) | s_uart_rx_buf[UART_FRAME_LEN - 2]);
+
+            if (crc == recv_crc)
+            {
+                uart_handle_pump_command((const uint8_t *)s_uart_rx_buf);
+            }
+        }
+
+        TickType_t now = xTaskGetTickCount();
+        if ((now - last_tx_tick) >= tx_period)
+        {
+            app_update_alarm_flags();
+            sensor_fusion_update_jscope_time();
+            (void)uart_send_sensor_frame();
+            last_tx_tick = now;
+        }
+
+        if (last_tx_tick > now)
+        {
+            last_tx_tick = now;
+        }
+    }
+}
+
+#else /* USE_UART_COMM */
+
+/* --------------------------------------------------------------------------
+ * SPI 通信模式（默认）
+ * -------------------------------------------------------------------------- */
+
+/* 应用层版本号 */
+#define APP_VER_MAJOR  1u
+#define APP_VER_MINOR  0u
+#define APP_VER_PATCH  0u
+
+#include "spi_protocol.h"
+#include "spi_codec.h"
 
 /* FSP 在 ra_gen/Communicate_Task.c 中定义 */
 extern const spi_instance_t  g_com_spi;
@@ -107,16 +434,6 @@ bool app_log_uart_write(const uint8_t *buf, uint16_t len)
 }
 
 /* ------------------------------------------------------------------ */
-/* 应用层版本号                                                       */
-/* ------------------------------------------------------------------ */
-
-#define APP_VER_MAJOR  1u
-#define APP_VER_MINOR  0u
-#define APP_VER_PATCH  0u
-
-#define HOST_ALARM_PRESSURE_HIGH_KG   (4.8F)
-
-/* ------------------------------------------------------------------ */
 /* 双缓冲帧 + 同步原语                                                */
 /* ------------------------------------------------------------------ */
 
@@ -125,6 +442,8 @@ static uint8_t s_tx_frame[SPI_FRAME_LEN] __attribute__((aligned(4)));
 static uint8_t s_rx_frame[SPI_FRAME_LEN] __attribute__((aligned(4)));
 
 static SemaphoreHandle_t s_spi_done_sem;
+/* FSP 默认 configSUPPORT_DYNAMIC_ALLOCATION=0，不可用 xSemaphoreCreateBinary() */
+static StaticSemaphore_t s_spi_done_sem_buf;
 static volatile spi_event_t s_last_event;
 
 /* ------------------------------------------------------------------ */
@@ -183,34 +502,6 @@ static uint8_t app_build_sensor_payload(uint8_t *p)
     spi_u16_put(&p[SPI_SENS_OFF_PUMP_CYCLE_DONE],    (uint16_t)g_pump_cycle_done_count);
 
     return SPI_SENSOR_PAYLOAD_LEN;
-}
-
-/* ------------------------------------------------------------------ */
-/* 告警位刷新（搬自原 host_update_alarm_flags）                       */
-/* ------------------------------------------------------------------ */
-
-static void app_update_alarm_flags(void)
-{
-    uint32_t alarm = 0u;
-
-    if (0u != g_soil_sensor_state)                                        alarm |= SENSOR_ALARM_SOIL_SENSOR_FAULT;
-    if (FSP_SUCCESS != g_pressure_last_err)                               alarm |= SENSOR_ALARM_PRESSURE_READ_FAIL;
-    if (FSP_SUCCESS != g_air_last_err)                                    alarm |= SENSOR_ALARM_AIR_READ_FAIL;
-    if (FSP_SUCCESS != g_wqs_last_err)                                    alarm |= SENSOR_ALARM_WQS_READ_FAIL;
-    if (FSP_SUCCESS != g_uwt_last_err)                                    alarm |= SENSOR_ALARM_UWT_READ_FAIL;
-    if ((FSP_SUCCESS == g_uwt_last_err) && (g_uwt_temperature_c >= g_ctrl_water_temp_high_c))
-                                                                          alarm |= SENSOR_ALARM_WATER_TEMP_HIGH;
-    if ((0u != g_wqs_last_read_ok) && (g_wqs_info.wqs_info_wqi <= g_ctrl_wqi_low_threshold))
-                                                                          alarm |= SENSOR_ALARM_WQI_LOW;
-    if ((g_pressure_latest.pressure_kg[0] >= HOST_ALARM_PRESSURE_HIGH_KG) ||
-        (g_pressure_latest.pressure_kg[1] >= HOST_ALARM_PRESSURE_HIGH_KG) ||
-        (g_pressure_latest.pressure_kg[2] >= HOST_ALARM_PRESSURE_HIGH_KG))
-                                                                          alarm |= SENSOR_ALARM_PRESSURE_HIGH;
-    if (g_comm_rx_crc_error_count > 0u)                                   alarm |= SENSOR_ALARM_COMM_RX_ERROR;
-
-    g_alarm_flags = alarm;
-    g_alarm_latched_flags |= alarm;
-    g_jscope_alarm_flags = alarm;
 }
 
 /* ------------------------------------------------------------------ */
@@ -447,7 +738,7 @@ void Communicate_Task_entry(void *pvParameters)
     /* 该任务必须比传感器采样任务高，避免装载 RSP 时被打断 */
     vTaskPrioritySet(NULL, 3u);
 
-    s_spi_done_sem = xSemaphoreCreateBinary();
+    s_spi_done_sem = xSemaphoreCreateBinaryStatic(&s_spi_done_sem_buf);
     configASSERT(s_spi_done_sem != NULL);
 
     /* 0) 打开 SCI0 作为日志通道（保留 UART 串口功能）。失败不影响 SPI 通信。 */
@@ -508,3 +799,44 @@ void Communicate_Task_entry(void *pvParameters)
         g_comm_last_tx_ok = 1u;
     }
 }
+
+#endif /* USE_UART_COMM */
+
+/* ============================================================================
+ * 公共函数（两种通信模式共用）
+ * ============================================================================ */
+
+void app_update_alarm_flags(void)
+{
+    uint32_t alarm = 0u;
+
+    if (0u != g_soil_sensor_state)                                        alarm |= SENSOR_ALARM_SOIL_SENSOR_FAULT;
+    if (FSP_SUCCESS != g_pressure_last_err)                               alarm |= SENSOR_ALARM_PRESSURE_READ_FAIL;
+    if (FSP_SUCCESS != g_air_last_err)                                    alarm |= SENSOR_ALARM_AIR_READ_FAIL;
+    if (FSP_SUCCESS != g_wqs_last_err)                                   alarm |= SENSOR_ALARM_WQS_READ_FAIL;
+    if (FSP_SUCCESS != g_uwt_last_err)                                    alarm |= SENSOR_ALARM_UWT_READ_FAIL;
+    if ((FSP_SUCCESS == g_uwt_last_err) && (g_uwt_temperature_c >= g_ctrl_water_temp_high_c))
+                                                                          alarm |= SENSOR_ALARM_WATER_TEMP_HIGH;
+    if ((0u != g_wqs_last_read_ok) && (g_wqs_info.wqs_info_wqi <= g_ctrl_wqi_low_threshold))
+                                                                          alarm |= SENSOR_ALARM_WQI_LOW;
+    if ((g_pressure_latest.pressure_kg[0] >= HOST_ALARM_PRESSURE_HIGH_KG) ||
+        (g_pressure_latest.pressure_kg[1] >= HOST_ALARM_PRESSURE_HIGH_KG) ||
+        (g_pressure_latest.pressure_kg[2] >= HOST_ALARM_PRESSURE_HIGH_KG))
+                                                                          alarm |= SENSOR_ALARM_PRESSURE_HIGH;
+    if (g_comm_rx_crc_error_count > 0u)                                   alarm |= SENSOR_ALARM_COMM_RX_ERROR;
+
+    g_alarm_flags = alarm;
+    g_alarm_latched_flags |= alarm;
+    g_jscope_alarm_flags = alarm;
+}
+
+/* ------------------------------------------------------------------ */
+/* SPI 回调函数（RASC 自动生成代码会引用此函数）                        */
+/* ------------------------------------------------------------------ */
+#if defined(USE_UART_COMM)
+/* UART 模式下的空实现 */
+void Com_SPI_Callback(spi_callback_args_t *p_args)
+{
+    FSP_PARAMETER_NOT_USED(p_args);
+}
+#endif

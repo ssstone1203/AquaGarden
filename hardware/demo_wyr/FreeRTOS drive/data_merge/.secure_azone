@@ -13,6 +13,7 @@
             <slot name="P100.CM33" secure="true"/>
             <slot name="P101.CM33" secure="true"/>
             <slot name="P102.CM33" secure="true"/>
+            <slot name="P103.CM33" secure="true"/>
             <slot name="P108.CM33" secure="true"/>
             <slot name="P109.CM33" secure="true"/>
             <slot name="P110.CM33" secure="true"/>

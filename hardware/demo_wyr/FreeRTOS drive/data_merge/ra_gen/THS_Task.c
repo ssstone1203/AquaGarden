@@ -100,7 +100,7 @@ extern uint32_t g_fsp_common_thread_count;
                         (const char *)"THS_Measure",
                         1024/4, // In words, not bytes
                         (void *) &THS_Task_parameters, //pvParameters
-                        1,
+                        2,
                         #if 1
                         (StackType_t *)&THS_Task_stack,
                         (StaticTask_t *)&THS_Task_memory
