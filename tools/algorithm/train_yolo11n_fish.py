@@ -6,18 +6,16 @@
 依赖：pip install ultralytics>=8.3.0
 许可：Ultralytics 发布包为 AGPL-3.0，商用请自行合规评估。
 
-数据集需符合 Ultralytics YOLO 检测格式：
-  dataset/
-    images/train/*.jpg
-    images/val/*.jpg
-    labels/train/*.txt   # 每行: class xc yc w h（归一化），单类时 class 恒为 0
-    labels/val/*.txt
-  data.yaml 中配置 path / train / val / names（1 类即可）。
+数据集目录约定（根目录默认 D:/Code/data）：
+  {data_root}/fish/
+    data.yaml
+    dataset/images/train|val
+    dataset/labels/train|val
 
 用法：
-  1）在下方 「手动填写」 处填写 DATASET_YAML
-  2） python train_yolo11n_fish.py
-  也可用命令行覆盖： python train_yolo11n_fish.py --data "D:/data/fish.yaml"
+  python train_yolo11n_fish.py fish
+  python train_yolo11n_fish.py fish_new --epochs 50 --batch 8
+  python train_yolo11n_fish.py fish --data-root "D:/Code/data"
 """
 
 from __future__ import annotations
@@ -26,37 +24,33 @@ import argparse
 import sys
 from pathlib import Path
 
-
-# -----------------------------------------------------------------------------
-# 手动填写（可留空，改用命令行 --data）
-# -----------------------------------------------------------------------------
-# 设为 data.yaml 的路径：绝对路径，或相对于「本仓库根目录」的相对路径。
-DATASET_YAML: str = ""
-
-
 SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from fish_yolo_common import DEFAULT_DATA_ROOT, dataset_yaml
 REPO_ROOT = SCRIPT_DIR.parents[1]
-# 训练日志与权重默认写入仓库 model/，与 CAD 等资源分子目录存放
 DEFAULT_TRAIN_PROJECT = REPO_ROOT / "model" / "yolo_fish" / "runs"
 
 PRETRAINED_WEIGHTS = "yolo11n.pt"
 
 
-def _resolve_yaml(p: str) -> Path:
-    path = Path(p).expanduser()
-    if not path.is_absolute():
-        path = (REPO_ROOT / path).resolve()
-    else:
-        path = path.resolve()
-    return path
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="使用 YOLO11n 预训练权重训练单类鱼类检测")
     p.add_argument(
+        "dataset",
+        help="D:/Code/data 下的文件夹名，如 fish、fish_new",
+    )
+    p.add_argument(
+        "--data-root",
+        type=Path,
+        default=DEFAULT_DATA_ROOT,
+        help=f"数据集根目录，默认 {DEFAULT_DATA_ROOT}",
+    )
+    p.add_argument(
         "--data",
         default=None,
-        help="覆盖 DATASET_YAML：data.yaml 路径",
+        help="直接指定 data.yaml 路径（覆盖 dataset 自动解析）",
     )
     p.add_argument("--model", default=PRETRAINED_WEIGHTS, help="预训练起点，默认 yolo11n.pt")
     p.add_argument("--epochs", type=int, default=100)
@@ -73,7 +67,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=str(DEFAULT_TRAIN_PROJECT),
         help="Ultralytics project 目录（其下再建 run name）",
     )
-    p.add_argument("--name", type=str, default="yolo11n_fish", help="本次 run 名称")
+    p.add_argument(
+        "--name",
+        type=str,
+        default=None,
+        help="本次 run 名称，默认 yolo11n_{dataset}",
+    )
     p.add_argument("--workers", type=int, default=8, help="dataloader workers，Windows 报错可改为 0")
     p.add_argument("--patience", type=int, default=50, help="早停 patience，0 关闭早停")
     p.add_argument("--seed", type=int, default=42)
@@ -82,49 +81,46 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
+    data_root = Path(args.data_root).expanduser().resolve()
+    run_name = args.name or f"yolo11n_{args.dataset}"
 
-    data_src = args.data if args.data is not None else DATASET_YAML
-    data_src = (data_src or "").strip()
-    if not data_src:
-        print(
-            "[ERROR] 请在脚本顶部设置 DATASET_YAML，或通过 --data 指定 data.yaml。\n"
-            "  data.yaml 示例片段：\n"
-            "    path: D:/datasets/fish    # 数据集根目录\n"
-            "    train: images/train\n"
-            "    val: images/val\n"
-            "    names:\n"
-            "      0: fish\n"
-        )
-        return 1
-
-    data_yaml = _resolve_yaml(data_src)
-    if not data_yaml.is_file():
-        print(f"[ERROR] 找不到数据集配置: {data_yaml}")
-        return 1
+    if args.data:
+        data_yaml_path = Path(args.data).expanduser().resolve()
+        if not data_yaml_path.is_file():
+            print(f"[ERROR] 找不到数据集配置: {data_yaml_path}")
+            return 1
+    else:
+        try:
+            data_yaml_path = dataset_yaml(data_root, args.dataset)
+        except (ValueError, FileNotFoundError) as e:
+            print(f"[ERROR] {e}")
+            print(f"        请确认目录存在: {data_root / args.dataset}")
+            return 1
 
     try:
         from ultralytics import YOLO
     except ImportError:
-        print("[ERROR] 请先安装: pip install \"ultralytics>=8.3.0\"")
+        print('[ERROR] 请先安装: pip install "ultralytics>=8.3.0"')
         return 1
 
     project_dir = Path(args.project).expanduser().resolve()
     project_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"[INFO] 仓库根目录: {REPO_ROOT}")
-    print(f"[INFO] data.yaml: {data_yaml}")
+    print(f"[INFO] 数据集根目录: {data_root}")
+    print(f"[INFO] 数据集: {args.dataset}")
+    print(f"[INFO] data.yaml: {data_yaml_path}")
     print(f"[INFO] 预训练模型: {args.model}")
-    print(f"[INFO] 输出目录: {project_dir / args.name}")
+    print(f"[INFO] 输出目录: {project_dir / run_name}")
 
     model = YOLO(args.model)
     kwargs: dict = {
-        "data": str(data_yaml),
+        "data": str(data_yaml_path),
         "epochs": args.epochs,
         "imgsz": args.imgsz,
         "batch": args.batch,
         "device": args.device,
         "project": str(project_dir),
-        "name": args.name,
+        "name": run_name,
         "exist_ok": True,
         "workers": args.workers,
         "seed": args.seed,
@@ -135,7 +131,7 @@ def main() -> int:
     model.train(**kwargs)
     print(
         "[INFO] 训练结束。最优权重通常在:\n"
-        f"       {project_dir / args.name / 'weights' / 'best.pt'}"
+        f"       {project_dir / run_name / 'weights' / 'best.pt'}"
     )
     return 0
 
