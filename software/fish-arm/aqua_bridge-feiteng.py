@@ -42,7 +42,7 @@ RGB_CAMERA_INDEX = int(os.getenv("AQUA_BRIDGE_RGB_CAMERA_INDEX", "0"))
 DEPTH_CAMERA_INDEX = int(os.getenv("AQUA_BRIDGE_DEPTH_CAMERA_INDEX", "-1"))
 CAMERA_WIDTH = int(os.getenv("AQUA_BRIDGE_CAMERA_WIDTH", "640"))
 CAMERA_HEIGHT = int(os.getenv("AQUA_BRIDGE_CAMERA_HEIGHT", "480"))
-CAMERA_FPS = float(os.getenv("AQUA_BRIDGE_CAMERA_FPS", "10"))
+CAMERA_FPS = float(os.getenv("AQUA_BRIDGE_CAMERA_FPS", "15"))
 CAMERA_JPEG_QUALITY = max(30, min(95, int(os.getenv("AQUA_BRIDGE_CAMERA_JPEG_QUALITY", "80"))))
 MJPEG_BOUNDARY = "frame"
 
@@ -250,9 +250,15 @@ def _camera_stream(mode: str):
 
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
+        cap.set(cv2.CAP_PROP_FPS, CAMERA_FPS)
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         try:
+            cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+        except Exception:
+            pass
+        try:
             while True:
+                frame_started = time.monotonic()
                 ok, frame = cap.read()
                 if not ok or frame is None:
                     _set_camera_state(mode, False, f"camera read failed index={camera_index}")
@@ -268,7 +274,8 @@ def _camera_stream(mode: str):
                     continue
                 _set_camera_state(mode, True)
                 yield _mjpeg_part(buf.tobytes())
-                time.sleep(interval)
+                elapsed = time.monotonic() - frame_started
+                time.sleep(max(0.001, interval - elapsed))
         finally:
             cap.release()
 

@@ -137,9 +137,13 @@ public class AquaBridgeService {
     /**
      * 水泵短时运行（秒），由树莓派 AquaGarden Bridge 执行；未实现时通常返回 404。
      */
-    public BridgeResponse pumpPulse(int seconds) throws JsonProcessingException, InterruptedException {
-        String body = objectMapper.writeValueAsString(Map.of("seconds", seconds));
+    public BridgeResponse pumpPulse(int seconds, int pwm) throws JsonProcessingException, InterruptedException {
+        String body = objectMapper.writeValueAsString(Map.of("seconds", seconds, "pwm", pwm));
         return request("POST", pumpPulsePath, body);
+    }
+
+    public BridgeResponse pumpPulse(int seconds) throws JsonProcessingException, InterruptedException {
+        return pumpPulse(seconds, 80);
     }
 
     public BridgeResponse pumpStart(int pwm) throws JsonProcessingException, InterruptedException {
@@ -172,7 +176,12 @@ public class AquaBridgeService {
         connection.setConnectTimeout(3000);
         connection.setReadTimeout(0);
         try (InputStream inputStream = connection.getInputStream()) {
-            inputStream.transferTo(outputStream);
+            byte[] buffer = new byte[8192];
+            int n;
+            while ((n = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, n);
+                outputStream.flush();
+            }
         }
     }
 

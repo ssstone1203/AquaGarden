@@ -1,6 +1,9 @@
 package com.aquagarden.web;
 
 import com.aquagarden.service.AquaBridgeService;
+import com.aquagarden.service.CameraProxyService;
+import com.aquagarden.service.HardwareSerialService;
+import com.aquagarden.service.SerialPumpBridgeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -35,14 +38,31 @@ public class AquaController {
     private static final MediaType MJPEG = MediaType.parseMediaType("multipart/x-mixed-replace; boundary=" + BOUNDARY);
 
     private final AquaBridgeService bridgeService;
+    private final HardwareSerialService hardwareSerialService;
+    private final CameraProxyService cameraProxyService;
+    private final SerialPumpBridgeService serialPumpBridgeService;
 
-    public AquaController(AquaBridgeService bridgeService) {
+    public AquaController(AquaBridgeService bridgeService,
+                          HardwareSerialService hardwareSerialService,
+                          CameraProxyService cameraProxyService,
+                          SerialPumpBridgeService serialPumpBridgeService) {
         this.bridgeService = bridgeService;
+        this.hardwareSerialService = hardwareSerialService;
+        this.cameraProxyService = cameraProxyService;
+        this.serialPumpBridgeService = serialPumpBridgeService;
     }
 
     @GetMapping("/api/aqua/status")
     public Map<String, Object> status() {
+        if (hardwareSerialService.isEnabled()) {
+            return hardwareSerialService.status(cameraProxyService.status());
+        }
         return bridgeService.status();
+    }
+
+    @GetMapping("/api/aqua/pump/status")
+    public Map<String, Object> pumpStatus() {
+        return hardwareSerialService.pumpDebugStatus();
     }
 
     @PostMapping("/api/aqua/tasks/{task}")
@@ -87,20 +107,32 @@ public class AquaController {
     @PostMapping("/api/aqua/pump/start")
     public ResponseEntity<Object> pumpStart(@RequestBody Map<String, Object> body) throws Exception {
         int pwm = parsePwm(body.get("pwm"));
-        AquaBridgeService.BridgeResponse response = bridgeService.pumpStart(pwm);
+        AquaBridgeService.BridgeResponse response = hardwareSerialService.isEnabled()
+                ? hardwareSerialService.pumpStart(pwm)
+                : serialPumpBridgeService.isEnabled()
+                ? serialPumpBridgeService.pumpStart(pwm)
+                : bridgeService.pumpStart(pwm);
         return bridgeResponse(response);
     }
 
     @PostMapping("/api/aqua/pump/pwm")
     public ResponseEntity<Object> pumpPwm(@RequestBody Map<String, Object> body) throws Exception {
         int pwm = parsePwm(body.get("pwm"));
-        AquaBridgeService.BridgeResponse response = bridgeService.pumpPwm(pwm);
+        AquaBridgeService.BridgeResponse response = hardwareSerialService.isEnabled()
+                ? hardwareSerialService.pumpPwm(pwm)
+                : serialPumpBridgeService.isEnabled()
+                ? serialPumpBridgeService.pumpPwm(pwm)
+                : bridgeService.pumpPwm(pwm);
         return bridgeResponse(response);
     }
 
     @PostMapping("/api/aqua/pump/auto")
     public ResponseEntity<Object> pumpAuto() throws Exception {
-        AquaBridgeService.BridgeResponse response = bridgeService.pumpAuto();
+        AquaBridgeService.BridgeResponse response = hardwareSerialService.isEnabled()
+                ? hardwareSerialService.pumpAuto()
+                : serialPumpBridgeService.isEnabled()
+                ? serialPumpBridgeService.pumpAuto()
+                : bridgeService.pumpAuto();
         return bridgeResponse(response);
     }
 
@@ -108,13 +140,33 @@ public class AquaController {
     public ResponseEntity<Object> pumpManual(@RequestBody Map<String, Object> body) throws Exception {
         int on = parseOn(body.get("on"));
         int pwm = parsePwm(body.get("pwm"));
-        AquaBridgeService.BridgeResponse response = bridgeService.pumpManual(on, pwm);
+        AquaBridgeService.BridgeResponse response = hardwareSerialService.isEnabled()
+                ? hardwareSerialService.pumpManual(on, pwm)
+                : serialPumpBridgeService.isEnabled()
+                ? serialPumpBridgeService.pumpManual(on, pwm)
+                : bridgeService.pumpManual(on, pwm);
         return bridgeResponse(response);
     }
 
     @PostMapping("/api/aqua/pump/stop")
     public ResponseEntity<Object> pumpStop() throws Exception {
-        AquaBridgeService.BridgeResponse response = bridgeService.pumpStop();
+        AquaBridgeService.BridgeResponse response = hardwareSerialService.isEnabled()
+                ? hardwareSerialService.pumpStop()
+                : serialPumpBridgeService.isEnabled()
+                ? serialPumpBridgeService.pumpStop()
+                : bridgeService.pumpStop();
+        return bridgeResponse(response);
+    }
+
+    @PostMapping("/api/aqua/pump/pulse")
+    public ResponseEntity<Object> pumpPulse(@RequestBody Map<String, Object> body) throws Exception {
+        int seconds = parseSeconds(body == null ? null : body.get("seconds"));
+        int pwm = parsePwm(body == null ? 80 : body.getOrDefault("pwm", 80));
+        AquaBridgeService.BridgeResponse response = hardwareSerialService.isEnabled()
+                ? hardwareSerialService.pumpPulse(seconds, pwm)
+                : serialPumpBridgeService.isEnabled()
+                ? serialPumpBridgeService.pumpPulse(seconds, pwm)
+                : bridgeService.pumpPulse(seconds, pwm);
         return bridgeResponse(response);
     }
 
@@ -125,9 +177,17 @@ public class AquaController {
         }
         StreamingResponseBody body = outputStream -> {
             try {
-                bridgeService.streamVideo(mode, outputStream);
-            } catch (IOException ignored) {
-                writeFallbackVideo(mode, outputStream);
+                if (cameraProxyService.hasSource(mode)) {
+                    cameraProxyService.stream(mode, outputStream);
+                } else {
+                    bridgeService.streamVideo(mode, outputStream);
+                }
+            } catch (IOException firstFailure) {
+                try {
+                    bridgeService.streamVideo(mode, outputStream);
+                } catch (IOException ignored) {
+                    writeFallbackVideo(mode, outputStream);
+                }
             }
         };
         return ResponseEntity.ok().contentType(MJPEG).body(body);
@@ -193,6 +253,25 @@ public class AquaController {
         return on;
     }
 
+    private static int parseSeconds(Object value) {
+        int seconds;
+        if (value instanceof Number n) {
+            seconds = n.intValue();
+        } else if (value == null) {
+            seconds = 5;
+        } else {
+            try {
+                seconds = Integer.parseInt(String.valueOf(value));
+            } catch (NumberFormatException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "seconds must be 1..120");
+            }
+        }
+        if (seconds < 1 || seconds > 120) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "seconds must be 1..120");
+        }
+        return seconds;
+    }
+
     private static void writeFallbackVideo(String mode, java.io.OutputStream outputStream) throws IOException {
         byte[] boundaryPrefix = ("--" + BOUNDARY + "\r\nContent-Type: image/jpeg\r\n\r\n").getBytes(StandardCharsets.UTF_8);
         byte[] boundaryEnd = "\r\n".getBytes(StandardCharsets.UTF_8);
@@ -219,13 +298,13 @@ public class AquaController {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setColor(Color.WHITE);
         g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 22));
-        g.drawString("Aqua Bridge video unavailable", 28, 52);
+        g.drawString("Aqua camera video unavailable", 28, 52);
         g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
         g.setColor(new Color(165, 243, 252));
         g.drawString(("depth".equals(mode) ? "Depth" : "RGB") + " stream proxy", 28, 86);
         g.setColor(new Color(148, 163, 184));
         String time = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-        g.drawString("Waiting for Raspberry Pi Bridge · " + time, 28, 120);
+        g.drawString("Configure aquagarden.hardware.camera." + mode + "-url · " + time, 28, 120);
         g.dispose();
 
         ByteArrayOutputStream jpg = new ByteArrayOutputStream();

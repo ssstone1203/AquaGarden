@@ -17,7 +17,6 @@
           <option value="water_temp">水温</option>
           <option value="air_temp">空气温度</option>
           <option value="air_humidity">空气湿度</option>
-          <option value="wqi">水质综合指数</option>
           <option value="soil_moisture">土壤湿度</option>
         </select>
       </div>
@@ -129,7 +128,6 @@
               <th>水温 (°C)</th>
               <th>空气温度 (°C)</th>
               <th>空气湿度 (%RH)</th>
-              <th>水质指数</th>
               <th>土壤湿度 (%)</th>
               <th>状态</th>
             </tr>
@@ -140,7 +138,6 @@
               <td>{{ row.water_temp }}</td>
               <td>{{ row.air_temp }}</td>
               <td>{{ row.air_humidity }}</td>
-              <td>{{ row.wqi }}</td>
               <td>{{ row.soil_moisture }}</td>
               <td><span :class="['status-badge', rowStatus(row)]">{{ rowStatusText(row) }}</span></td>
             </tr>
@@ -176,17 +173,15 @@ const CHART_H = SVG_H - PAD_T - PAD_B
 //   water_temp    DS18B20 水温 (-55~125°C，实用 15~35°C)
 //   air_temp      SHT30 空气温度 (-40~125°C，推荐 5~60°C)
 //   air_humidity  SHT30 空气湿度 (0~100%RH)
-//   wqi           WQM11S 水质综合指数 (0~100)
 //   soil_moisture ADC 土壤湿度 (0~100%)
 const metrics = [
   { key: 'water_temp',    label: '水温',        unit: '°C',  icon: 'fas fa-thermometer-half', iconClass: 'icon-temp', color: '#f59e0b', rangeMin: 15,  rangeMax: 35 },
   { key: 'air_temp',      label: '空气温度',     unit: '°C',  icon: 'fas fa-sun',              iconClass: 'icon-ph',   color: '#8b5cf6', rangeMin: 5,   rangeMax: 60 },
   { key: 'air_humidity',  label: '空气湿度',     unit: '%RH', icon: 'fas fa-cloud',            iconClass: 'icon-turb', color: '#06b6d4', rangeMin: 0,   rangeMax: 100 },
-  { key: 'wqi',           label: '水质综合指数', unit: ' 分', icon: 'fas fa-tachometer-alt',   iconClass: 'icon-oxy',  color: '#10b981', rangeMin: 0,   rangeMax: 100 },
   { key: 'soil_moisture', label: '土壤湿度',     unit: '%',   icon: 'fas fa-tint',             iconClass: 'icon-soil', color: '#3b82f6', rangeMin: 0,   rangeMax: 100 },
 ]
 
-const activeMetrics = ref(['water_temp', 'air_temp', 'wqi'])
+const activeMetrics = ref(['water_temp', 'air_temp', 'air_humidity'])
 const activeMetricsMeta = computed(() => metrics.filter(m => activeMetrics.value.includes(m.key)))
 
 function toggleMetric(key) {
@@ -319,12 +314,11 @@ const xLabels = computed(() => {
   })
 })
 
-// Row status — 基于 DS18B20 水温范围 (18-32°C) 和 WQM11S WQI 阈值
+// Row status — 基于 DS18B20 水温范围 (18-32°C)
 function rowStatus(row) {
   const t   = parseFloat(row.water_temp)
-  const w   = parseFloat(row.wqi)
-  if (t > 32 || t < 16 || w < 40) return 'danger'
-  if (t > 29 || t < 19 || w < 60) return 'warning'
+  if (t > 32 || t < 16) return 'danger'
+  if (t > 29 || t < 19) return 'warning'
   return 'normal'
 }
 function rowStatusText(row) {
@@ -342,7 +336,6 @@ function generateHistoricalData(count = 120) {
       water_temp:   (24 + Math.random() * 4 - 2).toFixed(1),
       air_temp:     (26 + Math.random() * 6 - 3).toFixed(1),
       air_humidity: (55 + Math.random() * 20 - 10).toFixed(1),
-      wqi:          (72 + Math.random() * 20 - 10).toFixed(0),
       soil_moisture:(62 + Math.random() * 20 - 10).toFixed(0),
     })
   }
@@ -363,9 +356,9 @@ async function queryData() {
 }
 
 function exportData() {
-  const header = 'time,water_temp,air_temp,air_humidity,wqi,soil_moisture\n'
+  const header = 'time,water_temp,air_temp,air_humidity,soil_moisture\n'
   const rows = filteredData.value.map(r =>
-    `${r.time},${r.water_temp},${r.air_temp},${r.air_humidity},${r.wqi},${r.soil_moisture}`
+    `${r.time},${r.water_temp},${r.air_temp},${r.air_humidity},${r.soil_moisture}`
   ).join('\n')
   const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
@@ -411,7 +404,7 @@ onBeforeUnmount(() => {
 .filter-btn.secondary { background: var(--bg-main); color: var(--text-primary); }
 
 /* Stats row */
-.stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.stats-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .stat-card {
   background: var(--bg-card); border-radius: 12px; padding: 14px;
   box-shadow: var(--shadow-md); cursor: pointer;
@@ -496,9 +489,9 @@ onBeforeUnmount(() => {
 .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
 @media (max-width: 900px) {
-  .stats-row { grid-template-columns: repeat(3, 1fr); }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 600px) {
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .stats-row { grid-template-columns: 1fr; }
 }
 </style>

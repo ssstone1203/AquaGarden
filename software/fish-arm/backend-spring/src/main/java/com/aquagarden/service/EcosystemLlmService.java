@@ -1,5 +1,6 @@
 package com.aquagarden.service;
 
+import com.aquagarden.dto.AiChatRequest;
 import com.aquagarden.dto.SensorSnapshot;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -127,6 +128,45 @@ public class EcosystemLlmService {
         }
     }
 
+    public Map<String, Object> chat(
+            SensorSnapshot snapshot,
+            boolean fromHardware,
+            String message,
+            List<AiChatRequest.ChatMessage> history) {
+        String cleanMessage = clampUserText(message, 600);
+        List<AiChatRequest.ChatMessage> cleanHistory = sanitizeHistory(history);
+        if (!llmConfigured) {
+            return buildFallback(snapshot, fromHardware, "skipped",
+                    !llmFeatureEnabled
+                            ? "大模型功能未启用（aquagarden.llm.enabled=false），已使用本地规则回复。"
+                            : "未配置 API Key，已使用本地规则回复。");
+        }
+
+        try {
+            LlmHttpOutcome out = PROVIDER_ANTHROPIC.equals(provider)
+                    ? callAnthropicChat(snapshot, fromHardware, cleanMessage, cleanHistory)
+                    : callOpenAiChat(snapshot, fromHardware, cleanMessage, cleanHistory);
+            if (out.text != null && !out.text.isBlank()) {
+                Map<String, Object> ok = baseOkResponse();
+                ok.put("source", "llm");
+                ok.put("provider", provider);
+                ok.put("model", model);
+                ok.put("analysis", out.text.trim());
+                ok.put("llmOk", true);
+                ok.put("llmStatus", "ok");
+                ok.put("llmMessage", "大模型已成功返回对话内容。");
+                return ok;
+            }
+            String err = out.errorHint != null ? out.errorHint : "上游返回为空或无法解析正文";
+            return buildFallback(snapshot, fromHardware, "error",
+                    "大模型调用未成功：" + err + " 以下为本地规则回退回复。");
+        } catch (Exception e) {
+            String msg = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            return buildFallback(snapshot, fromHardware, "error",
+                    "大模型调用异常：" + clampApiMsg(msg) + " 以下为本地规则回退回复。");
+        }
+    }
+
     private Map<String, Object> buildFallback(
             SensorSnapshot snapshot, boolean fromHardware, String llmStatus, String llmMessage) {
         Map<String, Object> m = baseOkResponse();
@@ -247,6 +287,168 @@ public class EcosystemLlmService {
             return LlmHttpOutcome.fail("模型返回的 message.content 为空");
         }
         return LlmHttpOutcome.ok(t);
+    }
+
+    private LlmHttpOutcome callAnthropicChat(
+            SensorSnapshot s,
+            boolean fromHardware,
+            String message,
+            List<AiChatRequest.ChatMessage> history) throws Exception {
+        String sys = ecosystemAssistantSystemPrompt();
+        List<Map<String, Object>> messages = new ArrayList<>();
+        for (AiChatRequest.ChatMessage h : normalizeTurnHistory(history)) {
+            messages.add(Map.of("role", h.role(), "content", h.content()));
+        }
+        messages.add(Map.of("role", "user", "content", sensorContext(s, fromHardware) + "\n用户问题：" + message));
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("model", model);
+        body.put("max_tokens", maxTokens);
+        body.put("temperature", 0.45);
+        body.put("system", sys);
+        body.put("messages", messages);
+
+        String endpoint = baseUrl.endsWith("/v1") ? baseUrl + "/messages" : baseUrl + "/v1/messages";
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(endpoint))
+                .timeout(Duration.ofSeconds(60))
+                .header("Content-Type", "application/json")
+                .header("x-api-key", apiKey)
+                .header("Authorization", "Bearer " + apiKey)
+                .header("anthropic-version", anthropicVersion)
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)))
+                .build();
+        return parseAnthropicResponse(httpClient.send(request, HttpResponse.BodyHandlers.ofString()));
+    }
+
+    private LlmHttpOutcome callOpenAiChat(
+            SensorSnapshot s,
+            boolean fromHardware,
+            String message,
+            List<AiChatRequest.ChatMessage> history) throws Exception {
+        List<Map<String, Object>> messages = new ArrayList<>();
+        messages.add(Map.of("role", "system", "content", ecosystemAssistantSystemPrompt()));
+        for (AiChatRequest.ChatMessage h : normalizeTurnHistory(history)) {
+            messages.add(Map.of("role", h.role(), "content", h.content()));
+        }
+        messages.add(Map.of("role", "user", "content", sensorContext(s, fromHardware) + "\n用户问题：" + message));
+
+        Map<String, Object> body = Map.of(
+                "model", model,
+                "temperature", 0.45,
+                "messages", messages
+        );
+        HttpRequest.Builder rb = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/chat/completions"))
+                .timeout(Duration.ofSeconds(45))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)));
+        if (!apiKey.isBlank()) {
+            rb.header("Authorization", "Bearer " + apiKey);
+        }
+        return parseOpenAiResponse(httpClient.send(rb.build(), HttpResponse.BodyHandlers.ofString()));
+    }
+
+    private LlmHttpOutcome parseAnthropicResponse(HttpResponse<String> resp) throws Exception {
+        String respBody = resp.body() == null ? "" : resp.body();
+        if (resp.statusCode() < 200 || resp.statusCode() >= 300) {
+            return LlmHttpOutcome.fail(summarizeUpstreamError(respBody, resp.statusCode()));
+        }
+        JsonNode root = objectMapper.readTree(respBody);
+        if ("error".equals(root.path("type").asText())) {
+            return LlmHttpOutcome.fail(summarizeUpstreamError(respBody, resp.statusCode()));
+        }
+        JsonNode content = root.path("content");
+        if (!content.isArray() || content.isEmpty()) {
+            return LlmHttpOutcome.fail("响应中无 content 数组或为空");
+        }
+        for (JsonNode block : content) {
+            if ("text".equals(block.path("type").asText())) {
+                String t = block.path("text").asText(null);
+                if (t != null && !t.isBlank()) {
+                    return LlmHttpOutcome.ok(t);
+                }
+            }
+        }
+        return LlmHttpOutcome.fail("响应中无 text 内容块");
+    }
+
+    private LlmHttpOutcome parseOpenAiResponse(HttpResponse<String> resp) throws Exception {
+        String respBody = resp.body() == null ? "" : resp.body();
+        if (resp.statusCode() < 200 || resp.statusCode() >= 300) {
+            return LlmHttpOutcome.fail(summarizeUpstreamError(respBody, resp.statusCode()));
+        }
+        JsonNode root = objectMapper.readTree(respBody);
+        JsonNode choices = root.path("choices");
+        if (!choices.isArray() || choices.isEmpty()) {
+            return LlmHttpOutcome.fail("choices 为空，无法读取模型输出");
+        }
+        String t = choices.get(0).path("message").path("content").asText(null);
+        return t == null || t.isBlank() ? LlmHttpOutcome.fail("模型返回的 message.content 为空") : LlmHttpOutcome.ok(t);
+    }
+
+    private static String ecosystemAssistantSystemPrompt() {
+        return "你是水族箱与智慧盆栽一体化生态系统的对话助手。根据实时传感器状态和上下文，用中文回答用户问题；建议要具体、可执行，必要时提醒检查 MCU 串口、摄像头、水泵或传感器。不要编造未提供的数据。";
+    }
+
+    private static String sensorContext(SensorSnapshot s, boolean fromHardware) {
+        return """
+                当前传感器上下文：
+                数据来源：%s
+                水温 %.1f °C，气温 %.1f °C，空气湿度 %.1f %%RH，水质综合指数 %.0f / 100，土壤湿度 %.0f %%。
+                """.formatted(fromHardware ? "硬件实时采样" : "演示/默认值", s.waterTemp(), s.airTemp(), s.airHumidity(), s.wqi(), s.soilMoisture());
+    }
+
+    private static List<AiChatRequest.ChatMessage> sanitizeHistory(List<AiChatRequest.ChatMessage> history) {
+        if (history == null || history.isEmpty()) {
+            return List.of();
+        }
+        int from = Math.max(0, history.size() - 12);
+        List<AiChatRequest.ChatMessage> clean = new ArrayList<>();
+        for (AiChatRequest.ChatMessage h : history.subList(from, history.size())) {
+            if (h == null || h.role() == null || h.content() == null) {
+                continue;
+            }
+            String role = h.role().trim();
+            if (!"user".equals(role) && !"assistant".equals(role)) {
+                continue;
+            }
+            String content = clampUserText(h.content(), 1200);
+            if (!content.isBlank()) {
+                clean.add(new AiChatRequest.ChatMessage(role, content));
+            }
+        }
+        return clean;
+    }
+
+    private static List<AiChatRequest.ChatMessage> normalizeTurnHistory(List<AiChatRequest.ChatMessage> history) {
+        if (history == null || history.isEmpty()) {
+            return List.of();
+        }
+        List<AiChatRequest.ChatMessage> turns = new ArrayList<>();
+        String lastRole = "";
+        for (AiChatRequest.ChatMessage h : history) {
+            if (h.role().equals(lastRole)) {
+                int last = turns.size() - 1;
+                AiChatRequest.ChatMessage prev = turns.get(last);
+                turns.set(last, new AiChatRequest.ChatMessage(prev.role(), prev.content() + "\n" + h.content()));
+            } else {
+                turns.add(h);
+                lastRole = h.role();
+            }
+        }
+        if (!turns.isEmpty() && "user".equals(turns.get(turns.size() - 1).role())) {
+            turns.remove(turns.size() - 1);
+        }
+        return turns;
+    }
+
+    private static String clampUserText(String value, int max) {
+        if (value == null) {
+            return "";
+        }
+        String clean = value.replace('\u0000', ' ').trim();
+        return clean.length() > max ? clean.substring(0, max) : clean;
     }
 
     /** 从 OpenAI / Anthropic 风格错误 JSON 中提取简短说明 */

@@ -7,7 +7,7 @@
             <span><i class="fas fa-robot"></i> 机械臂与滑轨</span>
             <small>喂食、裁剪、松土和滑轨绝对位置控制</small>
           </div>
-          <span :class="['quick-status', connected ? 'online' : 'offline']">{{ connected ? 'Bridge 在线' : 'Bridge 离线' }}</span>
+          <span :class="['quick-status', connected ? 'online' : 'offline']">{{ hardwareStatusText }}</span>
         </div>
 
         <div class="arm-actions">
@@ -36,7 +36,16 @@
           </div>
           <div class="rail-row rail-row-direct">
             <button class="rail-btn" @click="setRailTarget(0)">回到 0</button>
-            <input v-model.number="railTarget" class="rail-input rail-input-large" type="number" min="0" max="4000" step="10" />
+            <input
+              v-model.number="railTarget"
+              class="rail-input rail-input-large"
+              type="number"
+              min="0"
+              max="4000"
+              step="10"
+              @focus="railEditing = true"
+              @blur="finishRailEditing"
+            />
             <button class="rail-btn" @click="setRailTarget(4000)">到 4000</button>
             <button class="rail-btn rail-btn-primary" :disabled="busy || railPending" @click="moveRail">移动滑轨</button>
           </div>
@@ -49,39 +58,34 @@
             <span><i class="fas fa-tint"></i> 水泵控制</span>
             <small>手动启停、PWM 调节和自动模式</small>
           </div>
-          <b class="pump-readout">{{ pumpPwm }}%</b>
+          <div class="pump-readout-wrap">
+            <span>{{ pumpModeText }}</span>
+            <b class="pump-readout">{{ pumpPwm }}%</b>
+          </div>
         </div>
         <div class="pump-body">
-          <input v-model.number="pumpPwm" class="pump-range" type="range" min="0" max="100" step="1" />
-          <div class="rail-row">
+          <div class="pump-meter">
+            <input v-model.number="pumpPwm" class="pump-range" type="range" min="0" max="100" step="1" />
+            <div class="pump-scale">
+              <span>0</span>
+              <span>50</span>
+              <span>100</span>
+            </div>
+          </div>
+          <div class="rail-row pump-command-row">
             <input v-model.number="pumpPwm" class="rail-input rail-input-large" type="number" min="0" max="100" step="1" />
             <button class="rail-btn rail-btn-primary" :disabled="pumpBusy" @click="pumpStart">开泵</button>
             <button class="rail-btn" :disabled="pumpBusy" @click="pumpApplyPwm">更新 PWM</button>
             <button class="rail-btn" :disabled="pumpBusy" @click="pumpAuto">自动模式</button>
             <button class="rail-btn rail-btn-danger" :disabled="pumpBusy" @click="pumpStop">关泵</button>
           </div>
+          <div class="pump-note">
+            <span><i class="fas fa-usb"></i> {{ phase === 'spring-serial' ? 'Spring Boot 直连 MCU 串口' : '下游 HTTP Bridge 控制' }}</span>
+            <span v-if="pumpBusy">指令发送中</span>
+          </div>
         </div>
       </section>
 
-      <section class="control-panel mcu-pump-panel">
-        <div class="panel-header control-panel-header">
-          <div>
-            <span><i class="fas fa-microchip"></i> MCU 水泵控制</span>
-            <small>通过 UART 串口桥接控制 RA6E2 板载水泵</small>
-          </div>
-          <b class="pump-readout">{{ mcuPwm }}%</b>
-        </div>
-        <div class="pump-body">
-          <input v-model.number="mcuPwm" class="pump-range" type="range" min="0" max="100" step="1" />
-          <div class="rail-row">
-            <input v-model.number="mcuPwm" class="rail-input rail-input-large" type="number" min="0" max="100" step="1" />
-            <button class="rail-btn rail-btn-primary" :disabled="mcuPumpBusy" @click="mcuPumpStart">开泵</button>
-            <button class="rail-btn" :disabled="mcuPumpBusy" @click="mcuPumpSetPwm">设置 PWM</button>
-            <button class="rail-btn rail-btn-danger" :disabled="mcuPumpBusy" @click="mcuPumpStop">关泵</button>
-          </div>
-          <p class="mcu-pump-hint">命令路径：前端 → 后端 → serial_bridge.py → UART → MCU</p>
-        </div>
-      </section>
     </div>
 
     <div class="robot-right">
@@ -90,13 +94,13 @@
           <span><i class="fas fa-terminal"></i> 终端运行状态</span>
           <div class="terminal-status-row">
             <span :class="['status-dot', connected ? 'dot-connected' : 'dot-disconnected']"></span>
-            <span class="status-text">{{ connected ? '已连接' : '断开' }}</span>
+            <span class="status-text">{{ connected ? '链路正常' : '链路异常' }}</span>
           </div>
         </div>
 
         <div class="terminal-status-grid">
           <div><span>当前任务</span><b>{{ currentTask }}</b></div>
-          <div><span>阶段</span><b>{{ phase }}</b></div>
+          <div><span>链路</span><b>{{ phaseText }}</b></div>
           <div><span>滑轨</span><b>{{ railPositionText }}</b></div>
           <div><span>运行</span><b>{{ uptime }}</b></div>
           <div><span>RGB</span><b>{{ cameraState.hasRgb ? 'OK' : '--' }}</b></div>
@@ -139,13 +143,11 @@ const logs = ref([])
 const logContainer = ref(null)
 const railTarget = ref(0)
 const railPosition = ref(null)
+const railEditing = ref(false)
 const cameraState = reactive({ hasRgb: false, hasDepth: false, ageSec: null })
 const pumpPwm = ref(80)
 const pumpBusy = ref(false)
-
-// MCU 水泵控制（通过 UART 串口桥接）
-const mcuPwm = ref(80)
-const mcuPumpBusy = ref(false)
+const pumpManualOn = ref(false)
 
 /** 滑轨移动请求进行中（与 busy 分离，避免与服务端 busy 不同步时连点） */
 const railPending = ref(false)
@@ -167,13 +169,24 @@ async function fetchWithTimeout(url, init, timeoutMs) {
   try {
     return await fetch(url, { ...init, signal })
   } catch (e) {
-    if (e?.name === 'AbortError') throw new Error('请求超时，请检查 Bridge 与网络')
+    if (e?.name === 'AbortError') throw new Error('请求超时，请检查硬件链路与后端服务')
     throw e
   } finally {
     cancel()
   }
 }
 const railPositionText = computed(() => railPosition.value == null ? '--' : String(railPosition.value))
+const hardwareStatusText = computed(() => {
+  if (!connected.value) return phase.value === 'spring-serial' ? '串口异常' : '链路离线'
+  return phase.value === 'spring-serial' ? '串口直连' : 'Bridge 在线'
+})
+const phaseText = computed(() => {
+  if (phase.value === 'spring-serial') return 'MCU 串口'
+  if (phase.value === 'disabled') return '未启用'
+  if (phase.value === 'offline') return '离线'
+  return phase.value || 'idle'
+})
+const pumpModeText = computed(() => pumpManualOn.value ? '手动' : '自动')
 
 let statusTimer = null
 let railDebounceTimer = null
@@ -191,8 +204,22 @@ function addLog(msg, type = 'info') {
 
 function clearLogs() { logs.value = [] }
 
+function pumpSuccessLog(successMsg, data) {
+  const detail = []
+  const pwm = data?.pwmUi ?? data?.pwm ?? data?.pump?.pwm
+  if (typeof pwm === 'number') detail.push(`PWM=${pwm}%`)
+  if (typeof data?.connected === 'boolean') detail.push(data.connected ? '串口已连接' : '串口未连接')
+  addLog(detail.length ? `${successMsg}（${detail.join('，')}）` : successMsg, 'task')
+}
+
 function setRailTarget(value) {
   railTarget.value = Math.max(0, Math.min(4000, Number(value) || 0))
+}
+
+function finishRailEditing() {
+  railEditing.value = false
+  if (railTarget.value === '' || railTarget.value == null) return
+  setRailTarget(railTarget.value)
 }
 
 function setPumpPwm(value) {
@@ -216,9 +243,15 @@ async function callPumpApi(path, payload, successMsg) {
     )
     const d = await r.json().catch(() => ({}))
     if (!r.ok || d.ok === false) {
-      throw new Error(d.message || `水泵控制失败 HTTP ${r.status}`)
+      const msg = d.message || d.error || (r.ok ? '水泵控制未完成' : `水泵接口返回 ${r.status}`)
+      throw new Error(msg)
     }
-    addLog(successMsg, 'task')
+    pumpSuccessLog(successMsg, d)
+    if (d.pump) {
+      pumpManualOn.value = Boolean(d.pump.manualOn)
+      if (typeof d.pump.pwm === 'number') setPumpPwm(d.pump.pwm)
+    }
+    if (typeof d.pwmUi === 'number') setPumpPwm(d.pwmUi)
   } catch (e) {
     addLog(e.message || '水泵控制失败', 'error')
   } finally {
@@ -240,46 +273,6 @@ async function pumpStop() {
 
 async function pumpAuto() {
   await callPumpApi('/api/aqua/pump/auto', {}, '切换为水泵自动模式')
-}
-
-// MCU 水泵控制（通过 serial_bridge.py → UART → MCU）
-async function callMcuPumpApi(action, power, successMsg) {
-  if (mcuPumpBusy.value) return
-  mcuPumpBusy.value = true
-  try {
-    const payload = { action }
-    if (power !== undefined) payload.power = power
-    const r = await fetchWithTimeout(
-      apiUrl('/api/mcu/pump'),
-      {
-        method: 'POST',
-        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      },
-      5000,
-    )
-    const d = await r.json().catch(() => ({}))
-    if (!r.ok || d.ok === false) {
-      throw new Error(d.message || `MCU 水泵控制失败 HTTP ${r.status}`)
-    }
-    addLog(successMsg, 'task')
-  } catch (e) {
-    addLog(e.message || 'MCU 水泵控制失败', 'error')
-  } finally {
-    mcuPumpBusy.value = false
-  }
-}
-
-async function mcuPumpStart() {
-  await callMcuPumpApi('start', mcuPwm.value, `[MCU] 开泵 PWM=${mcuPwm.value}%`)
-}
-
-async function mcuPumpStop() {
-  await callMcuPumpApi('stop', 0, '[MCU] 关泵')
-}
-
-async function mcuPumpSetPwm() {
-  await callMcuPumpApi('set_pwm', mcuPwm.value, `[MCU] 设置 PWM=${mcuPwm.value}%`)
 }
 
 async function sendTask(taskName) {
@@ -385,8 +378,12 @@ async function fetchStatus() {
       busy.value = Boolean(d.busy)
       currentTask.value = d.currentTask ?? '待命'
       phase.value = d.phase ?? 'idle'
-      railPosition.value = d.railPosition ?? railPosition.value
-      railTarget.value = Number(railPosition.value ?? railTarget.value)
+      if (d.railPosition != null) {
+        railPosition.value = d.railPosition
+        if (!railEditing.value && !railPending.value) {
+          railTarget.value = Number(d.railPosition)
+        }
+      }
       lastError.value = d.lastError ?? ''
       if (d.uptimeSec != null) uptime.value = formatUptime(Number(d.uptimeSec))
       else uptime.value = d.uptime ?? uptime.value
@@ -397,7 +394,10 @@ async function fetchStatus() {
       }
       // Bridge 在手动模式下返回 UI 语义 pwm；自动模式为 null，避免轮询把滑块拽成 0 或与硬件反向值混淆
       if (d.pump && d.pump.manualOn === true && typeof d.pump.pwm === 'number') {
+        pumpManualOn.value = true
         setPumpPwm(d.pump.pwm)
+      } else if (d.pump) {
+        pumpManualOn.value = Boolean(d.pump.manualOn)
       }
     }
   } catch { connected.value = false }
@@ -441,8 +441,8 @@ onUnmounted(() => {
 <style scoped>
 .robot-page {
   display: grid;
-  grid-template-columns: minmax(520px, 1fr) 390px;
-  gap: 20px;
+  grid-template-columns: minmax(560px, 1fr) 420px;
+  gap: 18px;
   grid-template-areas: "left right";
   height: calc(100vh - 120px);
   min-height: 600px;
@@ -451,8 +451,8 @@ onUnmounted(() => {
 
 .quick-status {
   flex: none;
-  padding: 5px 10px;
-  border-radius: 999px;
+  padding: 6px 11px;
+  border-radius: 8px;
   font-size: 12px;
   font-weight: 700;
 }
@@ -470,14 +470,14 @@ onUnmounted(() => {
 .arm-actions {
   display: grid;
   grid-template-columns: repeat(4, minmax(110px, 1fr));
-  gap: 12px;
-  padding: 18px;
+  gap: 10px;
+  padding: 16px;
 }
 
 .primary-task-btn {
-  min-height: 82px;
+  min-height: 76px;
   border: none;
-  border-radius: 14px;
+  border-radius: 8px;
   color: #fff;
   cursor: pointer;
   font-size: 14px;
@@ -488,7 +488,7 @@ onUnmounted(() => {
   justify-content: center;
   gap: 8px;
   transition: transform 0.18s, filter 0.18s, opacity 0.18s;
-  box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.16);
 }
 
 .primary-task-btn i {
@@ -506,10 +506,10 @@ onUnmounted(() => {
   transform: none;
 }
 
-.task-loosen { background: linear-gradient(135deg, #10b981, #059669); }
-.task-feed { background: linear-gradient(135deg, #f59e0b, #d97706); }
-.task-prune { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
-.task-stop { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.task-loosen { background: #0f9f6e; }
+.task-feed { background: #d97706; }
+.task-prune { background: #6d5bd0; }
+.task-stop { background: #dc2626; }
 
 /* ---- Left Panel ---- */
 .robot-left {
@@ -523,7 +523,8 @@ onUnmounted(() => {
 
 .control-panel, .terminal-panel {
   background: var(--bg-card);
-  border-radius: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.07);
   box-shadow: var(--shadow-md);
   overflow: hidden;
 }
@@ -532,7 +533,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 18px;
+  padding: 13px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.06);
   font-size: 13px;
   font-weight: 600;
@@ -559,9 +560,9 @@ onUnmounted(() => {
 
 .rail-control-block,
 .pump-body {
-  margin: 0 18px 18px;
+  margin: 0 16px 16px;
   padding: 16px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: rgba(15,15,26,0.78);
   border: 1px solid rgba(255,255,255,0.06);
 }
@@ -595,8 +596,26 @@ onUnmounted(() => {
 
 .pump-range {
   width: 100%;
-  margin: 4px 0 14px;
+  margin: 4px 0 6px;
   accent-color: #06b6d4;
+}
+
+.pump-meter {
+  margin-bottom: 14px;
+}
+
+.pump-scale {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: monospace;
+}
+
+.pump-command-row {
+  display: grid;
+  grid-template-columns: minmax(72px, 90px) repeat(4, minmax(86px, 1fr));
 }
 
 .rail-input {
@@ -606,7 +625,7 @@ onUnmounted(() => {
   border: 1px solid rgba(255,255,255,0.08);
   background: var(--bg-card);
   color: var(--text-primary);
-  border-radius: 8px;
+  border-radius: 7px;
   padding: 0 10px;
   font-family: monospace;
 }
@@ -616,7 +635,7 @@ onUnmounted(() => {
   border: none;
   background: var(--bg-card);
   color: var(--text-secondary);
-  border-radius: 8px;
+  border-radius: 7px;
   padding: 0 10px;
   cursor: pointer;
   transition: all 0.18s;
@@ -659,6 +678,31 @@ onUnmounted(() => {
   font-size: 20px;
 }
 
+.pump-readout-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.pump-readout-wrap span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.pump-note {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.pump-note i {
+  color: #67e8f9;
+  margin-right: 6px;
+}
+
 /* ---- Right Panel: Terminal ---- */
 .robot-right { grid-area: right; min-width: 0; }
 .terminal-panel {
@@ -685,7 +729,7 @@ onUnmounted(() => {
 .terminal-status-grid > div {
   min-width: 0;
   padding: 10px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgba(15,15,26,0.72);
   border: 1px solid rgba(255,255,255,0.06);
   display: flex;
@@ -738,7 +782,7 @@ onUnmounted(() => {
   padding: 4px 10px 10px;
   font-family: 'Courier New', monospace;
   font-size: 12px;
-  background: #0a0a14;
+  background: #070b12;
 }
 .log-line { display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; line-height: 1.5; }
 .log-ts { color: #4b5563; min-width: 70px; font-size: 11px; }
@@ -772,18 +816,4 @@ onUnmounted(() => {
   .rail-input { flex-basis: 100%; }
 }
 
-/* MCU 水泵控制面板 */
-.mcu-pump-panel .control-panel-header {
-  background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(99,102,241,0.08));
-}
-.mcu-pump-panel .control-panel-header i {
-  color: #60a5fa;
-}
-.mcu-pump-hint {
-  margin: 8px 0 0;
-  font-size: 11px;
-  color: var(--text-secondary);
-  text-align: center;
-  opacity: 0.7;
-}
 </style>

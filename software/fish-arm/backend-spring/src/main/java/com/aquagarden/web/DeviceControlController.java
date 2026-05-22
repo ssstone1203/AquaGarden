@@ -1,6 +1,8 @@
 package com.aquagarden.web;
 
 import com.aquagarden.service.AquaBridgeService;
+import com.aquagarden.service.HardwareSerialService;
+import com.aquagarden.service.SerialPumpBridgeService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,13 +15,19 @@ import java.util.Map;
 public class DeviceControlController {
 
     private final AquaBridgeService bridgeService;
+    private final HardwareSerialService hardwareSerialService;
+    private final SerialPumpBridgeService serialPumpBridgeService;
 
-    public DeviceControlController(AquaBridgeService bridgeService) {
+    public DeviceControlController(AquaBridgeService bridgeService,
+                                   HardwareSerialService hardwareSerialService,
+                                   SerialPumpBridgeService serialPumpBridgeService) {
         this.bridgeService = bridgeService;
+        this.hardwareSerialService = hardwareSerialService;
+        this.serialPumpBridgeService = serialPumpBridgeService;
     }
 
     /**
-     * 短时启动水泵（由树莓派 Bridge 执行；未实现时返回明确错误信息）。
+     * 短时启动水泵。启用后端串口时由 Spring Boot 直接写 MCU 串口，否则保留下游 HTTP 设备兼容。
      * 请求体：{ "seconds": 5 }，范围 1~120。
      */
     @PostMapping("/api/control/pump")
@@ -37,20 +45,36 @@ public class DeviceControlController {
             }
         }
         seconds = Math.max(1, Math.min(120, seconds));
+        int pwm = 80;
+        Object rawPwm = body == null ? null : body.get("pwm");
+        if (rawPwm instanceof Number n) {
+            pwm = n.intValue();
+        } else if (rawPwm != null) {
+            try {
+                pwm = Integer.parseInt(String.valueOf(rawPwm));
+            } catch (NumberFormatException ignored) {
+                pwm = 80;
+            }
+        }
+        pwm = Math.max(0, Math.min(100, pwm));
 
         try {
-            AquaBridgeService.BridgeResponse r = bridgeService.pumpPulse(seconds);
+            AquaBridgeService.BridgeResponse r = hardwareSerialService.isEnabled()
+                    ? hardwareSerialService.pumpPulse(seconds, pwm)
+                    : serialPumpBridgeService.isEnabled()
+                    ? serialPumpBridgeService.pumpPulse(seconds, pwm)
+                    : bridgeService.pumpPulse(seconds, pwm);
             if (r.statusCode() >= 200 && r.statusCode() < 300) {
-                return ResponseEntity.ok(Map.of("ok", true, "seconds", seconds, "bridgeStatus", r.statusCode()));
+                return ResponseEntity.ok(Map.of("ok", true, "seconds", seconds, "pwm", pwm, "status", r.statusCode()));
             }
             if (r.statusCode() == 404) {
                 return ResponseEntity.ok(Map.of(
                         "ok", false,
                         "seconds", seconds,
-                        "message", "树莓派 Bridge 未实现 POST /api/pump/pulse，请在 Bridge 侧增加水泵控制。"
+                        "message", "水泵脉冲控制未实现。启用 aquagarden.hardware.serial.enabled 或配置下游设备。"
                 ));
             }
-            String msg = "Bridge 拒绝水泵请求 HTTP " + r.statusCode();
+            String msg = "水泵请求失败 HTTP " + r.statusCode();
             if (r.statusCode() == 503) {
                 try {
                     Map<String, Object> m = bridgeService.parseMap(r.body());
@@ -67,7 +91,7 @@ public class DeviceControlController {
             return ResponseEntity.ok(Map.of(
                     "ok", false,
                     "seconds", seconds,
-                    "message", "Bridge 请求被中断"
+                    "message", "水泵请求被中断"
             ));
         }
     }

@@ -1,9 +1,12 @@
 package com.aquagarden.web;
 
+import com.aquagarden.dto.AiChatRequest;
 import com.aquagarden.dto.SensorSnapshot;
 import com.aquagarden.service.EcosystemLlmService;
 import com.aquagarden.service.SystemStateService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
@@ -27,5 +30,12 @@ public class AiAnalysisController {
         SensorSnapshot snap = systemStateService.readSensorsWithNoise();
         boolean hw = systemStateService.hasHardwareSnapshot();
         return llmService.analyze(snap, hw);
+    }
+
+    @PostMapping("/api/ai/chat")
+    public Map<String, Object> chat(@Valid @RequestBody AiChatRequest request) {
+        SensorSnapshot snap = systemStateService.readSensorsWithNoise();
+        boolean hw = systemStateService.hasHardwareSnapshot();
+        return llmService.chat(snap, hw, request.message(), request.history());
     }
 }

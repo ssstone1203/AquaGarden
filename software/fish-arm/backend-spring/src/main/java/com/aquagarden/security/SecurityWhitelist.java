@@ -19,6 +19,7 @@ public final class SecurityWhitelist {
             "/api/users",
             "/api/video/**",
             "/api/aqua/video/**",
+            "/api/aqua/pump/status",
             "/api/debug/whoami",
             "/api/sensor/latest",
             "/api/sensor/upload",

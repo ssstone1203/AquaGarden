@@ -40,12 +40,13 @@
         <div class="video-body">
           <div class="video-area">
             <img
+              :key="tankCameraImgKey"
               :src="showLiveVideos ? tankCameraSrc : ''"
               alt="Tank Camera"
               decoding="async"
               fetchpriority="low"
               @load="tankVideoError = ''"
-              @error="tankVideoError = '鱼缸视频流加载失败'"
+              @error="handleTankVideoError"
             />
             <div class="vbadge vbadge-live"><i class="fas fa-circle"></i> {{ tankVideoReady ? 'Live' : 'Wait' }}</div>
             <div class="vbadge vbadge-cam"><i class="fas fa-video"></i></div>
@@ -140,29 +141,6 @@
         </div>
       </div>
 
-      <!-- Water Quality Index (WQM11S) -->
-      <div class="sensor-card sensor-card-clickable" @click="openDetail('wqi')">
-        <div class="sensor-card-header">
-          <span class="sensor-label">Water Quality</span>
-          <span class="sensor-icon-btn sensor-icon-oxygen"><i class="fas fa-tachometer-alt"></i></span>
-        </div>
-        <div class="sensor-value-row">
-          <span class="sensor-big">{{ wqi }}</span>
-          <span class="sensor-unit"> / 100</span>
-        </div>
-        <div class="sensor-subtitle">水质综合指数 · WQM11S</div>
-        <div class="sparkline-wrap">
-          <svg class="sparkline" viewBox="0 0 100 32" preserveAspectRatio="none">
-            <polyline :points="sparkPoints(wqiHistory, 0, 100)" class="sparkline-line" />
-          </svg>
-        </div>
-        <div class="sensor-footer">
-          <span class="sensor-status-dot" :class="sensorPollError ? 'dot-warn' : 'dot-normal'"></span>
-          <span class="sensor-status-text">{{ sensorFooterStatus }}</span>
-          <span class="sensor-period">点击查看详情</span>
-        </div>
-      </div>
-
       <!-- Soil Moisture (ADC) -->
       <div class="sensor-card sensor-card-clickable" @click="openDetail('moisture')">
         <div class="sensor-card-header">
@@ -189,16 +167,25 @@
 
     <div class="ai-panel">
       <div class="ai-panel-header">
-        <h3><i class="fas fa-brain"></i> 生态数据智能分析</h3>
+        <h3><i class="fas fa-brain"></i> 生态智能助手</h3>
         <div class="ai-header-actions">
           <button
-            v-if="aiInsight.analysis"
+            v-if="aiMessages.length"
             type="button"
             class="ai-secondary-btn"
-            title="复制正文"
+            title="复制最后一条回复"
             @click="copyAiAnalysis"
           >
             <i class="fas fa-copy"></i> 复制
+          </button>
+          <button
+            v-if="aiMessages.length"
+            type="button"
+            class="ai-secondary-btn"
+            title="清空本轮对话"
+            @click="clearAiChat"
+          >
+            <i class="fas fa-trash-alt"></i> 清空
           </button>
           <button type="button" class="ai-action-btn" :disabled="aiInsight.loading" @click="runAiAnalysis">
             {{ aiInsight.loading ? '分析中…' : 'Claude 综合分析' }}
@@ -207,37 +194,70 @@
       </div>
       <p class="ai-hint">
         基于当前传感器快照调用后端配置的大模型（默认 Anthropic Claude；未设置 <code>ANTHROPIC_API_KEY</code> 时自动走规则回退）。<br />
-        快捷键 <kbd>P</kbd> 触发水泵脉冲（需树莓派 Bridge 实现 <code>POST /api/control/pump</code>）。
+        快捷键 <kbd>P</kbd> 触发水泵脉冲（通过 Bridge 执行 <code>POST /api/aqua/pump/pulse</code>）。
       </p>
 
-      <div v-if="aiInsight.loading" class="ai-skeleton" aria-busy="true">
-        <div class="ai-skel-line"></div>
-        <div class="ai-skel-line ai-skel-short"></div>
-        <div class="ai-skel-line"></div>
-      </div>
-
-      <div v-else-if="aiInsight.error" class="ai-error-box" role="alert">
+      <div v-if="aiInsight.error" class="ai-error-box" role="alert">
         <i class="fas fa-exclamation-circle"></i>
         <span>{{ aiInsight.error }}</span>
       </div>
 
-      <template v-else>
-        <div v-if="aiLlmBanner.title" :class="aiLlmBanner.cls" role="status">
-          <i :class="aiLlmBanner.icon"></i>
-          <div class="ai-llm-banner-inner">
-            <strong>{{ aiLlmBanner.title }}</strong>
-            <p v-if="aiLlmBanner.showDetail && aiInsight.llmMessage" class="ai-llm-banner-msg">{{ aiInsight.llmMessage }}</p>
-          </div>
+      <div v-if="aiLlmBanner.title" :class="aiLlmBanner.cls" role="status">
+        <i :class="aiLlmBanner.icon"></i>
+        <div class="ai-llm-banner-inner">
+          <strong>{{ aiLlmBanner.title }}</strong>
+          <p v-if="aiLlmBanner.showDetail && aiInsight.llmMessage" class="ai-llm-banner-msg">{{ aiInsight.llmMessage }}</p>
         </div>
+      </div>
 
-        <div v-if="aiInsight.analysis || aiInsight.source" class="ai-result-card" :class="{ 'ai-result-card-shift': aiLlmBanner.title }">
-          <div class="ai-result-toolbar">
+      <div class="ai-chat-card">
+        <div class="ai-result-toolbar">
+          <div class="ai-chat-title">
             <span v-if="aiSourceBadge.label" :class="['ai-source-badge', aiSourceBadge.cls]">{{ aiSourceBadge.label }}</span>
             <code v-if="aiInsight.model" class="ai-model-pill">{{ aiInsight.model }}</code>
           </div>
-          <div class="ai-result-body">{{ aiInsight.analysis }}</div>
+          <span class="ai-chat-count">{{ aiMessages.length ? `${aiMessages.length} 条消息` : '等待提问' }}</span>
         </div>
-      </template>
+        <div ref="aiChatBodyRef" class="ai-chat-body">
+          <div v-if="!aiMessages.length && !aiInsight.loading" class="ai-empty-state">
+            <i class="fas fa-comments"></i>
+            <span>点击综合分析，或直接输入问题开始对话。</span>
+          </div>
+          <div
+            v-for="msg in aiMessages"
+            :key="msg.id"
+            :class="['ai-message', msg.role === 'user' ? 'ai-message-user' : 'ai-message-assistant']"
+          >
+            <div class="ai-message-meta">
+              <span>{{ msg.role === 'user' ? '你' : '助手' }}</span>
+              <small>{{ msg.time }}</small>
+            </div>
+            <div class="ai-message-text">{{ msg.content }}</div>
+          </div>
+          <div v-if="aiInsight.loading" class="ai-skeleton ai-chat-loading" aria-busy="true">
+            <div class="ai-skel-line"></div>
+            <div class="ai-skel-line ai-skel-short"></div>
+            <div class="ai-skel-line"></div>
+          </div>
+        </div>
+        <form class="ai-chat-form" @submit.prevent="sendAiChat">
+          <textarea
+            v-model="aiChatInput"
+            class="ai-chat-input"
+            rows="2"
+            maxlength="600"
+            placeholder="输入你想继续问的问题，例如：现在适合打开水泵吗？"
+            :disabled="aiInsight.loading"
+            @keydown="onAiInputKeydown"
+          ></textarea>
+          <div class="ai-result-toolbar">
+            <span class="ai-input-count">{{ aiChatInput.length }}/600</span>
+            <button type="submit" class="ai-send-btn" :disabled="aiInsight.loading || !aiChatInput.trim()">
+              <i class="fas fa-paper-plane"></i> 发送
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- Sensor Detail Modal -->
@@ -245,10 +265,10 @@
       <div class="sensor-modal">
         <div class="sensor-modal-header">
           <div class="sensor-modal-title">
-            <span :class="['sensor-modal-icon', detailModal.iconClass]"><i :class="detailModal.icon"></i></span>
+            <span :class="['sensor-modal-icon', activeDetail.iconClass]"><i :class="activeDetail.icon"></i></span>
             <div>
-              <h2>{{ detailModal.title }}</h2>
-              <p>{{ detailModal.subtitle }}</p>
+              <h2>{{ activeDetail.title }}</h2>
+              <p>{{ activeDetail.subtitle }}</p>
             </div>
           </div>
           <button class="sensor-modal-close" @click="closeDetail"><i class="fas fa-times"></i></button>
@@ -257,48 +277,48 @@
         <div class="sensor-modal-stats">
           <div class="stat-card">
             <span class="stat-label">当前值</span>
-            <span class="stat-value">{{ detailModal.current }}<small>{{ detailModal.unit }}</small></span>
+            <span class="stat-value">{{ activeDetail.current }}<small>{{ activeDetail.unit }}</small></span>
           </div>
           <div class="stat-card">
             <span class="stat-label">最小值</span>
-            <span class="stat-value stat-min">{{ detailModal.min }}<small>{{ detailModal.unit }}</small></span>
+            <span class="stat-value stat-min">{{ activeDetail.min }}<small>{{ activeDetail.unit }}</small></span>
           </div>
           <div class="stat-card">
             <span class="stat-label">最大值</span>
-            <span class="stat-value stat-max">{{ detailModal.max }}<small>{{ detailModal.unit }}</small></span>
+            <span class="stat-value stat-max">{{ activeDetail.max }}<small>{{ activeDetail.unit }}</small></span>
           </div>
           <div class="stat-card">
             <span class="stat-label">平均值</span>
-            <span class="stat-value stat-avg">{{ detailModal.avg }}<small>{{ detailModal.unit }}</small></span>
+            <span class="stat-value stat-avg">{{ activeDetail.avg }}<small>{{ activeDetail.unit }}</small></span>
           </div>
         </div>
 
         <div class="sensor-modal-charts">
           <!-- Line Chart -->
           <div class="modal-chart-block">
-            <h3><i class="fas fa-chart-line"></i> 实时趋势（最近 {{ detailModal.history.length }} 次采样）</h3>
+            <h3><i class="fas fa-chart-line"></i> 实时趋势（最近 {{ activeDetail.history.length }} 次采样）</h3>
             <div class="modal-line-chart">
               <svg viewBox="0 0 400 120" preserveAspectRatio="none" class="modal-svg">
                 <defs>
-                  <linearGradient :id="'grad-' + detailModal.key" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" :stop-color="detailModal.color" stop-opacity="0.3"/>
-                    <stop offset="100%" :stop-color="detailModal.color" stop-opacity="0"/>
+                  <linearGradient :id="'grad-' + activeDetail.key" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" :stop-color="activeDetail.color" stop-opacity="0.3"/>
+                    <stop offset="100%" :stop-color="activeDetail.color" stop-opacity="0"/>
                   </linearGradient>
                 </defs>
                 <polygon
-                  :points="areaPoints(detailModal.history, detailModal.rangeMin, detailModal.rangeMax)"
-                  :fill="'url(#grad-' + detailModal.key + ')'"
+                  :points="areaPoints(activeDetail.history, activeDetail.rangeMin, activeDetail.rangeMax)"
+                  :fill="'url(#grad-' + activeDetail.key + ')'"
                 />
                 <polyline
-                  :points="modalLinePoints(detailModal.history, detailModal.rangeMin, detailModal.rangeMax)"
+                  :points="modalLinePoints(activeDetail.history, activeDetail.rangeMin, activeDetail.rangeMax)"
                   fill="none"
-                  :stroke="detailModal.color"
+                  :stroke="activeDetail.color"
                   stroke-width="2"
                   stroke-linejoin="round"
                 />
                 <line x1="0" y1="110" x2="400" y2="110" stroke="#e5e7eb" stroke-width="1"/>
-                <text x="4" y="108" font-size="9" fill="#9ca3af">{{ detailModal.rangeMin }}{{ detailModal.unit }}</text>
-                <text x="4" y="14" font-size="9" fill="#9ca3af">{{ detailModal.rangeMax }}{{ detailModal.unit }}</text>
+                <text x="4" y="108" font-size="9" fill="#9ca3af">{{ activeDetail.rangeMin }}{{ activeDetail.unit }}</text>
+                <text x="4" y="14" font-size="9" fill="#9ca3af">{{ activeDetail.rangeMax }}{{ activeDetail.unit }}</text>
               </svg>
             </div>
           </div>
@@ -308,17 +328,17 @@
             <h3><i class="fas fa-chart-bar"></i> 近期采样分布</h3>
             <div class="modal-bar-chart">
               <div
-                v-for="(v, i) in detailModal.history.slice(-12)"
+                v-for="(v, i) in activeDetail.history.slice(-12)"
                 :key="i"
                 class="modal-bar-wrap"
               >
                 <div
                   class="modal-bar"
                   :style="{
-                    height: barPct(v, detailModal.rangeMin, detailModal.rangeMax) + '%',
-                    background: detailModal.color
+                    height: barPct(v, activeDetail.rangeMin, activeDetail.rangeMax) + '%',
+                    background: activeDetail.color
                   }"
-                  :title="v + detailModal.unit"
+                  :title="v + activeDetail.unit"
                 ></div>
                 <span class="modal-bar-label">{{ i + 1 }}</span>
               </div>
@@ -327,8 +347,8 @@
         </div>
 
         <div class="sensor-modal-footer">
-          <span class="modal-update-time">最近更新：{{ new Date().toLocaleTimeString('zh-CN') }}</span>
-          <span :class="['modal-status-badge', detailModal.statusClass]">{{ detailModal.statusText }}</span>
+          <span class="modal-update-time">最近更新：{{ activeDetail.updatedAt }}</span>
+          <span :class="['modal-status-badge', activeDetail.statusClass]">{{ activeDetail.statusText }}</span>
         </div>
       </div>
     </div>
@@ -348,7 +368,6 @@ const PLACEHOLDER = '--'
 const waterTemp    = ref(PLACEHOLDER) // DS18B20 水温 (°C)
 const airTemp      = ref(PLACEHOLDER) // SHT30 空气温度 (°C)
 const airHumidity  = ref(PLACEHOLDER) // SHT30 空气湿度 (%RH)
-const wqi          = ref(PLACEHOLDER) // WQM11S 水质综合指数 (0-100)
 const soilMoisture = ref(PLACEHOLDER) // ADC 土壤湿度 (%)
 
 const waterTempF = computed(() => {
@@ -362,7 +381,7 @@ const waterTempFSub = computed(() => {
   return `/${waterTempF.value}°F`
 })
 
-const robotUseDirectBridge = ref(false)
+const robotUseDirectBridge = ref(import.meta.env.VITE_ROBOT_CAMERA_DIRECT !== 'false')
 const robotCameraMode = ref('rgb')
 const robotCameraKey = ref(Date.now())
 const robotDirectBridgeUrl = computed(() => {
@@ -375,7 +394,12 @@ const robotCameraSrc = computed(() => {
 })
 const robotCameraImgKey = computed(() => `${robotCameraMode.value}-${robotCameraKey.value}`)
 const robotCameraLabel = computed(() => robotCameraMode.value === 'depth' ? 'Depth' : 'RGB')
-const tankCameraSrc = apiUrl('/api/video/tank')
+const tankCameraKey = ref(Date.now())
+const tankCameraSrc = computed(() => {
+  const src = apiUrl('/api/video/tank')
+  return `${src}${src.includes('?') ? '&' : '?'}v=${tankCameraKey.value}`
+})
+const tankCameraImgKey = computed(() => `tank-${tankCameraKey.value}`)
 const tankStatus = reactive({ hasFrame: false, seq: 0, bytes: 0, updatedAt: 0, detectionCount: 0 })
 const aquaStatus = reactive({ connected: false, hasRgb: false, hasDepth: false, rgbError: '', depthError: '', lastError: '' })
 const robotVideoError = ref('')
@@ -386,13 +410,14 @@ const showLiveVideos = ref(true)
 
 const robotVideoReady = computed(() => {
   if (robotVideoError.value) return false
-  if (!aquaStatus.connected) return true
+  if (robotUseDirectBridge.value) return true
   return robotCameraMode.value === 'depth' ? aquaStatus.hasDepth : aquaStatus.hasRgb
 })
 const tankVideoReady = computed(() => tankStatus.hasFrame && !tankVideoError.value)
 const robotVideoMessage = computed(() => {
   if (!showLiveVideos.value) return ''
   if (robotVideoError.value) return `${robotVideoError.value}，请检查 /api/aqua/video/${robotCameraMode.value}`
+  if (!robotVideoReady.value) return '后端正在等待机械臂摄像头源'
   return ''
 })
 const tankVideoMessage = computed(() => {
@@ -403,18 +428,23 @@ const tankVideoMessage = computed(() => {
 })
 
 function handleRobotVideoError() {
-  if (!robotUseDirectBridge.value) {
-    robotUseDirectBridge.value = true
+  if (robotUseDirectBridge.value) {
+    robotUseDirectBridge.value = false
+    robotCameraKey.value = Date.now()
     return
   }
   robotVideoError.value = '机械臂视频流加载失败'
+}
+
+function handleTankVideoError() {
+  tankVideoError.value = '鱼缸视频流加载失败'
 }
 
 function setRobotCameraMode(mode) {
   if (!['rgb', 'depth'].includes(mode) || robotCameraMode.value === mode) return
   robotCameraMode.value = mode
   robotCameraKey.value = Date.now()
-  robotUseDirectBridge.value = false
+  robotUseDirectBridge.value = import.meta.env.VITE_ROBOT_CAMERA_DIRECT !== 'false'
   robotVideoError.value = ''
   updateVideoStatus()
 }
@@ -424,7 +454,6 @@ const STABLE_DEFAULTS = {
   water_temp: 24.5,
   air_temp: 26.0,
   air_humidity: 58.0,
-  wqi: 76.0,
   soil_moisture: 62.0,
 }
 
@@ -442,6 +471,9 @@ const aiInsight = reactive({
   llmStatus: '',
   llmMessage: '',
 })
+const aiMessages = ref([])
+const aiChatInput = ref('')
+const aiChatBodyRef = ref(null)
 
 const aiLlmBanner = computed(() => {
   const st = aiInsight.llmStatus
@@ -483,15 +515,16 @@ const aiSourceBadge = computed(() => {
 })
 
 const HISTORY_LEN = 20
+const AI_HISTORY_CONTENT_MAX = 1200
 
 const waterTempHistory   = ref([])
 const airTempHistory     = ref([])
 const airHumidityHistory = ref([])
-const wqiHistory         = ref([])
 const moistureHistory    = ref([])
 
 /** 最近一次 `/api/sensors` 轮询是否失败（不改动当前显示值与曲线数据源） */
 const sensorPollError = ref(false)
+const sensorUpdatedAt = ref('')
 
 function valueLooksLive(s) {
   if (s == null || s === PLACEHOLDER) return false
@@ -503,7 +536,6 @@ const sensorHasLiveReading = computed(() =>
   valueLooksLive(waterTemp.value)
   || valueLooksLive(airTemp.value)
   || valueLooksLive(airHumidity.value)
-  || valueLooksLive(wqi.value)
   || valueLooksLive(soilMoisture.value))
 
 const sensorBannerMessage = computed(() => {
@@ -528,15 +560,14 @@ const sensorFooterStatus = computed(() => {
 
 function applyStableDisplayDefaults() {
   sensorDataSource.value = 'demo'
+  sensorUpdatedAt.value = new Date().toLocaleTimeString('zh-CN')
   waterTemp.value = String(STABLE_DEFAULTS.water_temp)
   airTemp.value = String(STABLE_DEFAULTS.air_temp)
   airHumidity.value = String(STABLE_DEFAULTS.air_humidity)
-  wqi.value = String(STABLE_DEFAULTS.wqi)
   soilMoisture.value = String(STABLE_DEFAULTS.soil_moisture)
   pushHistory(waterTempHistory, STABLE_DEFAULTS.water_temp)
   pushHistory(airTempHistory, STABLE_DEFAULTS.air_temp)
   pushHistory(airHumidityHistory, STABLE_DEFAULTS.air_humidity)
-  pushHistory(wqiHistory, STABLE_DEFAULTS.wqi)
   pushHistory(moistureHistory, STABLE_DEFAULTS.soil_moisture)
 }
 
@@ -570,6 +601,7 @@ async function updateSensorData() {
       sensorsEverSucceeded = true
       sensorPollError.value = false
       const d = await r.json()
+      sensorUpdatedAt.value = new Date().toLocaleTimeString('zh-CN')
       if (d.source) sensorDataSource.value = d.source
       if (d.water_temp != null) {
         waterTemp.value = String(d.water_temp)
@@ -582,10 +614,6 @@ async function updateSensorData() {
       if (d.air_humidity != null) {
         airHumidity.value = String(d.air_humidity)
         pushHistory(airHumidityHistory, d.air_humidity)
-      }
-      if (d.wqi != null) {
-        wqi.value = String(d.wqi)
-        pushHistory(wqiHistory, d.wqi)
       }
       if (d.soil_moisture != null) {
         soilMoisture.value = String(d.soil_moisture)
@@ -607,10 +635,17 @@ async function updateVideoStatus() {
     const r = await fetch(apiUrl('/api/video/tank/status'))
     if (!r.ok) return
     const d = await r.json()
+    const previousSeq = tankStatus.seq
     tankStatus.hasFrame = Boolean(d.hasFrame)
     tankStatus.seq = Number(d.seq ?? 0)
     tankStatus.bytes = Number(d.bytes ?? 0)
     tankStatus.detectionCount = Number(d.detectionCount ?? 0)
+    if (tankStatus.hasFrame) {
+      tankVideoError.value = ''
+      if (previousSeq === 0 && tankStatus.seq > 0) {
+        tankCameraKey.value = Date.now()
+      }
+    }
   } catch {
     tankStatus.hasFrame = false
     tankStatus.detectionCount = 0
@@ -638,21 +673,20 @@ async function updateVideoStatus() {
 let ws = null
 let sensorTimer = null
 let videoStatusTimer = null
-let videoObserver = null
-let observedVideoEl = null
+function onVideoVisibilityChange() {
+  showLiveVideos.value = !document.hidden
+}
 
 // ---- Sensor detail modal ----
 // 每项参数与 MCU 传感器规格一一对应：
 //   waterTemp   DS18B20   -55~125°C，显示范围 15~35°C
 //   airTemp     SHT30     -40~125°C，推荐工作 5~60°C
 //   airHumidity SHT30     0~100%RH，推荐 20~80%
-//   wqi         WQM11S    0~100（综合水质评分）
 //   moisture    ADC       0~100%
 const SENSOR_META = {
   waterTemp:   { title: '水温',          subtitle: 'Water Temperature (DS18B20)', unit: '°C',   icon: 'fas fa-thermometer-half',  iconClass: 'sensor-icon-temp',     color: '#f59e0b', rangeMin: 15,  rangeMax: 35,  statusText: '正常', statusClass: 'modal-status-normal' },
   airTemp:     { title: '空气温度',       subtitle: 'Air Temperature (SHT30)',     unit: '°C',   icon: 'fas fa-sun',               iconClass: 'sensor-icon-ph',       color: '#8b5cf6', rangeMin: 5,   rangeMax: 60,  statusText: '正常', statusClass: 'modal-status-optimal' },
   airHumidity: { title: '空气湿度',       subtitle: 'Air Humidity (SHT30)',        unit: '%RH',  icon: 'fas fa-cloud',             iconClass: 'sensor-icon-turbidity', color: '#06b6d4', rangeMin: 0,   rangeMax: 100, statusText: '正常', statusClass: 'modal-status-normal' },
-  wqi:         { title: '水质综合指数',    subtitle: 'Water Quality Index (WQM11S)',unit: ' 分',  icon: 'fas fa-tachometer-alt',    iconClass: 'sensor-icon-oxygen',   color: '#10b981', rangeMin: 0,   rangeMax: 100, statusText: '良好', statusClass: 'modal-status-normal' },
   moisture:    { title: '土壤湿度',       subtitle: 'Soil Moisture (ADC)',         unit: '%',    icon: 'fas fa-tint',              iconClass: 'sensor-icon-moisture', color: '#3b82f6', rangeMin: 0,   rangeMax: 100, statusText: '湿润', statusClass: 'modal-status-wet' },
 }
 
@@ -660,7 +694,6 @@ const historyMap = computed(() => ({
   waterTemp:   waterTempHistory.value,
   airTemp:     airTempHistory.value,
   airHumidity: airHumidityHistory.value,
-  wqi:         wqiHistory.value,
   moisture:    moistureHistory.value,
 }))
 
@@ -668,25 +701,32 @@ const currentMap = computed(() => ({
   waterTemp:   waterTemp.value,
   airTemp:     airTemp.value,
   airHumidity: airHumidity.value,
-  wqi:         wqi.value,
   moisture:    soilMoisture.value,
 }))
 
 const detailModal = reactive({ show: false, key: '' })
 
-function openDetail(key) {
-  const meta = SENSOR_META[key]
+const activeDetail = computed(() => {
+  const key = detailModal.key
+  const meta = SENSOR_META[key] ?? SENSOR_META.waterTemp
   const hist = historyMap.value[key] ?? []
   const nums = hist.map(Number).filter(n => !isNaN(n))
-  Object.assign(detailModal, {
-    show: true, key,
+  return {
+    key,
     ...meta,
     history: hist,
-    current: currentMap.value[key],
+    current: currentMap.value[key] ?? '--',
     min: nums.length ? Math.min(...nums).toFixed(2) : '--',
     max: nums.length ? Math.max(...nums).toFixed(2) : '--',
     avg: nums.length ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2) : '--',
-  })
+    updatedAt: sensorUpdatedAt.value || '--',
+  }
+})
+
+function openDetail(key) {
+  if (!SENSOR_META[key]) return
+  detailModal.show = true
+  detailModal.key = key
 }
 
 function closeDetail() { detailModal.show = false }
@@ -722,6 +762,7 @@ function applySnapshot(d) {
   sensorsEverSucceeded = true
   sensorPollError.value = false
   sensorDataSource.value = d.source || 'hardware'
+  sensorUpdatedAt.value = new Date().toLocaleTimeString('zh-CN')
   if (d.water_temp != null) {
     waterTemp.value = String(d.water_temp)
     pushHistory(waterTempHistory, d.water_temp)
@@ -734,10 +775,6 @@ function applySnapshot(d) {
     airHumidity.value = String(d.air_humidity)
     pushHistory(airHumidityHistory, d.air_humidity)
   }
-  if (d.wqi != null) {
-    wqi.value = String(d.wqi)
-    pushHistory(wqiHistory, d.wqi)
-  }
   if (d.soil_moisture != null) {
     soilMoisture.value = String(d.soil_moisture)
     pushHistory(moistureHistory, d.soil_moisture)
@@ -745,24 +782,45 @@ function applySnapshot(d) {
 }
 
 async function runAiAnalysis() {
+  await requestAiAssistant('请基于当前传感器快照做一次综合分析，说明状态、风险和建议。', { addUserMessage: false })
+}
+
+async function sendAiChat() {
+  const text = aiChatInput.value.trim()
+  if (!text) return
+  aiChatInput.value = ''
+  await requestAiAssistant(text, { addUserMessage: true })
+}
+
+async function requestAiAssistant(message, options = {}) {
+  const addUserMessage = options.addUserMessage !== false
   aiInsight.loading = true
   aiInsight.error = ''
-  aiInsight.analysis = ''
   aiInsight.source = ''
   aiInsight.provider = ''
   aiInsight.model = ''
   aiInsight.llmOk = null
   aiInsight.llmStatus = ''
   aiInsight.llmMessage = ''
+  const history = aiMessages.value
+    .slice(-12)
+    .map(({ role, content }) => ({ role, content: clampAiHistoryContent(content) }))
+  if (addUserMessage) {
+    appendAiMessage('user', message)
+  }
   try {
-    const r = await fetch(apiUrl('/api/ai/ecosystem-analysis'), { method: 'POST', headers: authHeaders() })
+    const r = await fetch(apiUrl('/api/ai/chat'), {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ message, history }),
+    })
     if (r.status === 401) {
-      setTimeout(() => logout(router), 500)
+      aiInsight.error = '登录状态已失效，请重新登录后继续使用智能助手。'
       return
     }
     const d = await r.json().catch(() => ({}))
     if (!r.ok) {
-      aiInsight.error = (d && d.message) ? String(d.message) : `请求失败（HTTP ${r.status}）`
+      aiInsight.error = (d && (d.message || d.detail)) ? String(d.message || d.detail) : `请求失败（HTTP ${r.status}）`
       return
     }
 
@@ -776,37 +834,85 @@ async function runAiAnalysis() {
     aiInsight.provider = d.provider || ''
     aiInsight.model = d.model || ''
     aiInsight.analysis = d.analysis != null ? String(d.analysis) : ''
-    if (!aiInsight.analysis && !aiInsight.source) {
+    if (aiInsight.analysis) {
+      appendAiMessage('assistant', aiInsight.analysis)
+    } else if (!aiInsight.source) {
       aiInsight.error = '返回内容为空'
     }
   } catch (e) {
-    aiInsight.error = '分析请求失败：' + (e.message || e)
+    aiInsight.error = '智能助手请求失败：' + (e.message || e)
   } finally {
     aiInsight.loading = false
+    scrollAiChatToBottom()
   }
 }
 
 async function copyAiAnalysis() {
-  const t = aiInsight.analysis
+  const last = [...aiMessages.value].reverse().find(m => m.role === 'assistant')
+  const t = last?.content || aiInsight.analysis
   if (!t || !navigator.clipboard?.writeText) return
   try {
     await navigator.clipboard.writeText(t)
   } catch { /* ignore */ }
 }
 
+function appendAiMessage(role, content) {
+  aiMessages.value.push({
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    role,
+    content,
+    time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+  })
+  if (aiMessages.value.length > 24) {
+    aiMessages.value.splice(0, aiMessages.value.length - 24)
+  }
+  scrollAiChatToBottom()
+}
+
+function clampAiHistoryContent(content) {
+  const text = String(content ?? '').trim()
+  if (text.length <= AI_HISTORY_CONTENT_MAX) return text
+  return text.slice(0, AI_HISTORY_CONTENT_MAX)
+}
+
+function clearAiChat() {
+  aiMessages.value = []
+  aiInsight.error = ''
+  aiInsight.analysis = ''
+  aiInsight.source = ''
+  aiInsight.provider = ''
+  aiInsight.model = ''
+  aiInsight.llmStatus = ''
+  aiInsight.llmMessage = ''
+}
+
+function scrollAiChatToBottom() {
+  nextTick(() => {
+    const el = aiChatBodyRef.value
+    if (el) el.scrollTop = el.scrollHeight
+  })
+}
+
+function onAiInputKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault()
+    sendAiChat()
+  }
+}
+
 async function triggerPump() {
   try {
-    const r = await fetch(apiUrl('/api/control/pump'), {
+    const r = await fetch(apiUrl('/api/aqua/pump/pulse'), {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ seconds: 8 }),
+      body: JSON.stringify({ seconds: 8, pwm: 80 }),
     })
     if (r.status === 401) {
       setTimeout(() => logout(router), 500)
       return
     }
     const d = await r.json().catch(() => ({}))
-    window.alert(d.ok ? `水泵指令已提交（约 ${d.seconds ?? '?'} 秒）` : (d.message || '水泵指令未完成'))
+    window.alert(d.ok ? `水泵指令已提交（约 ${d.seconds ?? '?'} 秒，PWM ${d.pwmUi ?? d.pwm ?? 80}%）` : (d.message || '水泵指令未完成'))
   } catch (e) {
     window.alert('水泵请求失败：' + (e.message || e))
   }
@@ -848,27 +954,12 @@ onMounted(() => {
   videoStatusTimer = setInterval(updateVideoStatus, 2500)
   connectWs()
   window.addEventListener('keydown', onPumpHotkey)
-  nextTick(() => {
-    observedVideoEl = dashboardVideoRow.value
-    if (observedVideoEl && typeof IntersectionObserver !== 'undefined') {
-      videoObserver = new IntersectionObserver(
-        (entries) => {
-          const en = entries[0]
-          showLiveVideos.value = en ? en.isIntersecting : true
-        },
-        { root: null, rootMargin: '100px', threshold: 0.03 },
-      )
-      videoObserver.observe(observedVideoEl)
-    }
-  })
+  document.addEventListener('visibilitychange', onVideoVisibilityChange)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onPumpHotkey)
-  if (videoObserver && observedVideoEl) videoObserver.unobserve(observedVideoEl)
-  if (videoObserver) videoObserver.disconnect()
-  videoObserver = null
-  observedVideoEl = null
+  document.removeEventListener('visibilitychange', onVideoVisibilityChange)
   if (sensorTimer) clearInterval(sensorTimer)
   if (videoStatusTimer) clearInterval(videoStatusTimer)
   if (ws) ws.close()
@@ -962,6 +1053,9 @@ onUnmounted(() => {
 }
 .ai-skel-line:last-child { margin-bottom: 0; }
 .ai-skel-short { width: 55%; }
+.ai-chat-loading {
+  margin: 8px 0 0;
+}
 @keyframes aiSkelShine {
   0% { background-position: 100% 0; }
   100% { background-position: -100% 0; }
@@ -1031,10 +1125,7 @@ onUnmounted(() => {
 }
 .ai-llm-banner-err > i:first-child { color: #fbbf24; }
 
-.ai-result-card-shift {
-  margin-top: 12px;
-}
-.ai-result-card {
+.ai-chat-card {
   margin-top: 16px;
   padding: 0;
   border-radius: 14px;
@@ -1045,11 +1136,23 @@ onUnmounted(() => {
 .ai-result-toolbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px;
   padding: 12px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.06);
   background: rgba(0,0,0,0.2);
+}
+.ai-chat-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ai-chat-count,
+.ai-input-count {
+  color: #94a3b8;
+  font-size: 12px;
 }
 .ai-source-badge {
   display: inline-flex;
@@ -1089,15 +1192,97 @@ onUnmounted(() => {
   color: #bae6fd;
   border: 1px solid rgba(56, 189, 248, 0.2);
 }
-.ai-result-body {
+.ai-chat-body {
   padding: 16px 18px 18px;
+  min-height: 180px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+.ai-empty-state {
+  min-height: 148px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+.ai-empty-state i {
+  color: #38bdf8;
+}
+.ai-message {
+  max-width: min(82%, 760px);
+  margin-bottom: 14px;
+}
+.ai-message-user {
+  margin-left: auto;
+}
+.ai-message-assistant {
+  margin-right: auto;
+}
+.ai-message-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 4px 5px;
+  color: #94a3b8;
+  font-size: 11px;
+}
+.ai-message-user .ai-message-meta {
+  justify-content: flex-end;
+}
+.ai-message-text {
+  padding: 12px 14px;
+  border-radius: 13px;
   font-size: 14px;
   line-height: 1.75;
   color: #f1f5f9;
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: 340px;
-  overflow-y: auto;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.ai-message-user .ai-message-text {
+  background: rgba(14, 165, 233, 0.18);
+  border-color: rgba(56, 189, 248, 0.32);
+}
+.ai-message-assistant .ai-message-text {
+  background: rgba(15, 23, 42, 0.78);
+}
+.ai-chat-form {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(2, 6, 23, 0.3);
+}
+.ai-chat-input {
+  display: block;
+  width: 100%;
+  min-height: 74px;
+  resize: vertical;
+  padding: 14px 16px;
+  border: 0;
+  outline: none;
+  color: #e2e8f0;
+  background: transparent;
+  font: inherit;
+  line-height: 1.55;
+}
+.ai-chat-input::placeholder {
+  color: #64748b;
+}
+.ai-chat-input:disabled {
+  opacity: 0.65;
+}
+.ai-send-btn {
+  border: none;
+  border-radius: 9px;
+  padding: 8px 14px;
+  color: #031926;
+  background: #67e8f9;
+  font-weight: 800;
+  cursor: pointer;
+}
+.ai-send-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
 }
 
 .sensor-card-clickable { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }

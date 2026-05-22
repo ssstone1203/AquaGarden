@@ -1,6 +1,7 @@
 package com.aquagarden.web;
 
 import com.aquagarden.dto.TankDetection;
+import com.aquagarden.service.TankVideoFrameService;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 @RestController
@@ -30,12 +30,14 @@ public class VideoController {
 
     private static final String BOUNDARY = "frame";
     private static final MediaType MJPEG = MediaType.parseMediaType("multipart/x-mixed-replace; boundary=" + BOUNDARY);
-    private static final int MAX_JPEG_BYTES = 1024 * 1024;
 
-    private final AtomicReference<byte[]> latestTankFrame = new AtomicReference<>();
-    private final AtomicLong latestTankFrameAt = new AtomicLong(0L);
-    private final AtomicLong tankFrameSeq = new AtomicLong(0L);
+    private final TankVideoFrameService tankVideoFrameService;
     private final AtomicReference<List<TankDetection>> tankDetections = new AtomicReference<>(List.of());
+    private final AtomicReference<Long> tankDetectionsAt = new AtomicReference<>(0L);
+
+    public VideoController(TankVideoFrameService tankVideoFrameService) {
+        this.tankVideoFrameService = tankVideoFrameService;
+    }
 
     @GetMapping(value = "/api/video/robot", produces = "multipart/x-mixed-replace; boundary=" + BOUNDARY)
     public ResponseEntity<StreamingResponseBody> robot() {
@@ -52,7 +54,7 @@ public class VideoController {
      */
     @GetMapping(value = "/api/video/tank/snapshot", produces = MediaType.IMAGE_JPEG_VALUE)
     public ResponseEntity<byte[]> tankSnapshot() {
-        byte[] frame = latestTankFrame.get();
+        byte[] frame = tankVideoFrameService.latestFrame();
         if (frame == null) {
             return ResponseEntity.notFound().build();
         }
@@ -66,14 +68,7 @@ public class VideoController {
 
     @GetMapping("/api/video/tank/status")
     public Map<String, Object> tankStatus() {
-        byte[] frame = latestTankFrame.get();
-        return Map.of(
-                "hasFrame", frame != null,
-                "seq", tankFrameSeq.get(),
-                "updatedAt", latestTankFrameAt.get(),
-                "bytes", frame == null ? 0 : frame.length,
-                "detectionCount", tankDetections.get().size()
-        );
+        return tankVideoFrameService.status(tankDetections.get().size());
     }
 
     /**
@@ -84,6 +79,7 @@ public class VideoController {
         try {
             List<TankDetection> list = parseDetections(body);
             tankDetections.set(list);
+            tankDetectionsAt.set(System.currentTimeMillis());
             return ResponseEntity.ok(Map.of("ok", true, "count", list.size()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("ok", false, "message", e.getMessage()));
@@ -92,19 +88,16 @@ public class VideoController {
 
     @PostMapping(value = "/api/video/tank/ingest", consumes = MediaType.IMAGE_JPEG_VALUE)
     public ResponseEntity<Map<String, Object>> ingestTankFrame(@RequestBody byte[] frame) {
-        if (frame == null || frame.length < 4 || frame.length > MAX_JPEG_BYTES || !isJpeg(frame)) {
+        if (!tankVideoFrameService.updateFrame(frame)) {
             return ResponseEntity.badRequest().body(Map.of(
                     "ok", false,
                     "message", "invalid jpeg frame"
             ));
         }
 
-        latestTankFrame.set(frame);
-        latestTankFrameAt.set(System.currentTimeMillis());
-        long seq = tankFrameSeq.incrementAndGet();
         return ResponseEntity.ok(Map.of(
                 "ok", true,
-                "seq", seq,
+                "seq", tankVideoFrameService.frameSeq(),
                 "bytes", frame.length
         ));
     }
@@ -145,13 +138,12 @@ public class VideoController {
 
     private ResponseEntity<StreamingResponseBody> tankStream() {
         StreamingResponseBody body = outputStream -> {
-            byte[] boundaryPrefix = ("--" + BOUNDARY + "\r\nContent-Type: image/jpeg\r\n\r\n").getBytes(StandardCharsets.UTF_8);
             byte[] boundaryEnd = "\r\n".getBytes(StandardCharsets.UTF_8);
             long lastSeq = -1L;
             try {
                 while (!Thread.currentThread().isInterrupted()) {
-                    long seq = tankFrameSeq.get();
-                    byte[] frame = latestTankFrame.get();
+                    long seq = tankVideoFrameService.frameSeq();
+                    byte[] frame = tankVideoFrameService.latestFrame();
                     if (frame == null) {
                         frame = generatedJpeg("鱼缸", "Waiting for serial camera frame");
                     } else if (seq == lastSeq) {
@@ -160,12 +152,16 @@ public class VideoController {
                     }
 
                     byte[] payload = maybeDrawDetections(frame);
+                    byte[] boundaryPrefix = ("--" + BOUNDARY
+                            + "\r\nContent-Type: image/jpeg"
+                            + "\r\nContent-Length: " + payload.length
+                            + "\r\n\r\n").getBytes(StandardCharsets.UTF_8);
                     outputStream.write(boundaryPrefix);
                     outputStream.write(payload);
                     outputStream.write(boundaryEnd);
                     outputStream.flush();
                     lastSeq = seq;
-                    pause(frame == latestTankFrame.get() ? 20 : 500);
+                    pause(frame == tankVideoFrameService.latestFrame() ? 20 : 500);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -179,6 +175,10 @@ public class VideoController {
     private byte[] maybeDrawDetections(byte[] jpeg) {
         List<TankDetection> dets = tankDetections.get();
         if (dets == null || dets.isEmpty()) {
+            return jpeg;
+        }
+        long ageMs = System.currentTimeMillis() - tankDetectionsAt.get();
+        if (ageMs > 1500) {
             return jpeg;
         }
         try {
@@ -237,14 +237,6 @@ public class VideoController {
             }
         };
         return ResponseEntity.ok().contentType(MJPEG).body(body);
-    }
-
-    private static boolean isJpeg(byte[] frame) {
-        int len = frame.length;
-        return (frame[0] & 0xFF) == 0xFF
-                && (frame[1] & 0xFF) == 0xD8
-                && (frame[len - 2] & 0xFF) == 0xFF
-                && (frame[len - 1] & 0xFF) == 0xD9;
     }
 
     private static byte[] generatedJpeg(String label, String subtitle) throws Exception {
