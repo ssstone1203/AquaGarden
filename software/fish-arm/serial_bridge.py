@@ -96,6 +96,13 @@ DEFAULT_TANK_CAMERA_INDEX = 0
 DEFAULT_CAMERA_FPS = 10.0
 JPEG_ENCODE_QUALITY = 80
 
+# MCU 下行水泵命令帧常量（与 Communicate_Task_entry.c 一致）
+MCU_CMD_PUMP_STOP    = 0x01
+MCU_CMD_PUMP_START   = 0x02
+MCU_CMD_PUMP_SET_PWM = 0x03
+MCU_FRAME_LEN        = 38  # HEADER_LEN(6) + PAYLOAD(30) + CRC(2)
+MCU_CMD_POLL_SEC     = 0.5  # 命令轮询间隔
+
 
 @dataclass
 class SerialPacket:
@@ -160,6 +167,71 @@ def parse_payload(payload: bytes) -> dict:
             "soil_moisture": float(soil_pct),
         },
     }
+
+
+def build_mcu_pump_frame(cmd: int, power: int) -> bytes:
+    """构建 MCU 水泵下行命令帧（38 字节，与 Communicate_Task_entry.c 格式一致）。
+
+    帧布局：
+      [0]    0x55  SYNC0
+      [1]    0xAA  SYNC1
+      [2]    cmd   命令类型 (0x01=stop, 0x02=start, 0x03=set_pwm)
+      [3]    power 力度 0-100
+      [4:5]  payload_len (小端 uint16, 固定 30)
+      [6:35] payload (填零)
+      [36:37] CRC16 Modbus (覆盖 [0:35])
+    """
+    frame = bytearray(MCU_FRAME_LEN)
+    frame[0] = SYNC0
+    frame[1] = SYNC1
+    frame[2] = cmd & 0xFF
+    frame[3] = power & 0xFF
+    struct.pack_into("<H", frame, 4, EXPECTED_PAYLOAD_LEN)  # payload_len = 30
+    # bytes [6:35] already zero
+    crc = crc16_modbus(bytes(frame[:MCU_FRAME_LEN - CRC_LEN]))
+    struct.pack_into("<H", frame, MCU_FRAME_LEN - CRC_LEN, crc)
+    return bytes(frame)
+
+
+def poll_mcu_command(backend: str, timeout: float = 2.0) -> dict | None:
+    """轮询后端 GET /api/mcu/pump/pending，返回命令字典或 None。"""
+    url = backend.rstrip("/") + "/api/mcu/pump/pending"
+    try:
+        r = requests.get(url, timeout=timeout)
+        if r.status_code == 204:
+            return None
+        if r.ok:
+            return r.json()
+        return None
+    except requests.RequestException:
+        return None
+
+
+def mcu_command_poller(backend: str, ser: serial.Serial, stop_event: threading.Event,
+                       ser_lock: threading.Lock) -> None:
+    """后台线程：轮询后端待发命令，写入 MCU 串口。"""
+    log.info("MCU 命令轮询线程已启动，间隔 %.1f s", MCU_CMD_POLL_SEC)
+    while not stop_event.is_set():
+        stop_event.wait(MCU_CMD_POLL_SEC)
+        if stop_event.is_set():
+            break
+        cmd_data = poll_mcu_command(backend)
+        if cmd_data is None:
+            continue
+
+        cmd_id = cmd_data.get("cmd", 0)
+        power = cmd_data.get("power", 0)
+        cmd_name = cmd_data.get("cmdName", "unknown")
+
+        frame = build_mcu_pump_frame(cmd_id, power)
+        try:
+            with ser_lock:
+                ser.write(frame)
+            log.info("MCU 水泵命令已发送：%s power=%d (%d bytes)", cmd_name, power, len(frame))
+        except serial.SerialException as e:
+            log.warning("MCU 命令写入失败：%s", e)
+
+    log.info("MCU 命令轮询线程已退出")
 
 
 def decode_text_jpeg(line: bytes) -> bytes | None:
@@ -462,10 +534,27 @@ def run(
     yolo_model=None,
     yolo_conf: float = 0.25,
     yolo_device: str | None = None,
+    stop_event: threading.Event | None = None,
 ) -> None:
+    if stop_event is None:
+        stop_event = threading.Event()
+
     log.info("串口：%s @ %d 波特，后端：%s", port, baud, backend)
     with serial.Serial(port, baud, timeout=1.0) as ser:
         log.info("串口已打开，开始监听…")
+
+        # 串口写锁：保护 MCU 命令写入与未来可能的并发写
+        ser_lock = threading.Lock()
+
+        # 启动 MCU 水泵命令轮询线程
+        cmd_thread = threading.Thread(
+            target=mcu_command_poller,
+            args=(backend, ser, stop_event, ser_lock),
+            name="mcu-cmd-poller",
+            daemon=True,
+        )
+        cmd_thread.start()
+
         fail_streak = 0
         last_push_at = 0.0
         while True:
@@ -599,6 +688,7 @@ def main() -> None:
                 yolo_model,
                 args.yolo_conf,
                 yolo_device,
+                stop_event,
             )
         except serial.SerialException as e:
             log.error("串口错误：%s，5 秒后重试…", e)

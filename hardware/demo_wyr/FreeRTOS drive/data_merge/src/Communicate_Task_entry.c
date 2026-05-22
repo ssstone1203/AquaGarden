@@ -348,6 +348,9 @@ void Communicate_Task_entry(void *pvParameters)
         {
             last_tx_tick = now;
         }
+
+        /* 给低优先级传感器任务运行机会（ADC_Task, THS_Task, WQS_Task） */
+        vTaskDelay(pdMS_TO_TICKS(1U));
     }
 }
 

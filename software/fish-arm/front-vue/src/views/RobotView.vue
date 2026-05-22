@@ -62,6 +62,26 @@
           </div>
         </div>
       </section>
+
+      <section class="control-panel mcu-pump-panel">
+        <div class="panel-header control-panel-header">
+          <div>
+            <span><i class="fas fa-microchip"></i> MCU 水泵控制</span>
+            <small>通过 UART 串口桥接控制 RA6E2 板载水泵</small>
+          </div>
+          <b class="pump-readout">{{ mcuPwm }}%</b>
+        </div>
+        <div class="pump-body">
+          <input v-model.number="mcuPwm" class="pump-range" type="range" min="0" max="100" step="1" />
+          <div class="rail-row">
+            <input v-model.number="mcuPwm" class="rail-input rail-input-large" type="number" min="0" max="100" step="1" />
+            <button class="rail-btn rail-btn-primary" :disabled="mcuPumpBusy" @click="mcuPumpStart">开泵</button>
+            <button class="rail-btn" :disabled="mcuPumpBusy" @click="mcuPumpSetPwm">设置 PWM</button>
+            <button class="rail-btn rail-btn-danger" :disabled="mcuPumpBusy" @click="mcuPumpStop">关泵</button>
+          </div>
+          <p class="mcu-pump-hint">命令路径：前端 → 后端 → serial_bridge.py → UART → MCU</p>
+        </div>
+      </section>
     </div>
 
     <div class="robot-right">
@@ -122,6 +142,10 @@ const railPosition = ref(null)
 const cameraState = reactive({ hasRgb: false, hasDepth: false, ageSec: null })
 const pumpPwm = ref(80)
 const pumpBusy = ref(false)
+
+// MCU 水泵控制（通过 UART 串口桥接）
+const mcuPwm = ref(80)
+const mcuPumpBusy = ref(false)
 
 /** 滑轨移动请求进行中（与 busy 分离，避免与服务端 busy 不同步时连点） */
 const railPending = ref(false)
@@ -216,6 +240,46 @@ async function pumpStop() {
 
 async function pumpAuto() {
   await callPumpApi('/api/aqua/pump/auto', {}, '切换为水泵自动模式')
+}
+
+// MCU 水泵控制（通过 serial_bridge.py → UART → MCU）
+async function callMcuPumpApi(action, power, successMsg) {
+  if (mcuPumpBusy.value) return
+  mcuPumpBusy.value = true
+  try {
+    const payload = { action }
+    if (power !== undefined) payload.power = power
+    const r = await fetchWithTimeout(
+      apiUrl('/api/mcu/pump'),
+      {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      },
+      5000,
+    )
+    const d = await r.json().catch(() => ({}))
+    if (!r.ok || d.ok === false) {
+      throw new Error(d.message || `MCU 水泵控制失败 HTTP ${r.status}`)
+    }
+    addLog(successMsg, 'task')
+  } catch (e) {
+    addLog(e.message || 'MCU 水泵控制失败', 'error')
+  } finally {
+    mcuPumpBusy.value = false
+  }
+}
+
+async function mcuPumpStart() {
+  await callMcuPumpApi('start', mcuPwm.value, `[MCU] 开泵 PWM=${mcuPwm.value}%`)
+}
+
+async function mcuPumpStop() {
+  await callMcuPumpApi('stop', 0, '[MCU] 关泵')
+}
+
+async function mcuPumpSetPwm() {
+  await callMcuPumpApi('set_pwm', mcuPwm.value, `[MCU] 设置 PWM=${mcuPwm.value}%`)
 }
 
 async function sendTask(taskName) {
@@ -706,5 +770,20 @@ onUnmounted(() => {
   .arm-actions { grid-template-columns: 1fr; }
   .rail-row { flex-wrap: wrap; }
   .rail-input { flex-basis: 100%; }
+}
+
+/* MCU 水泵控制面板 */
+.mcu-pump-panel .control-panel-header {
+  background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(99,102,241,0.08));
+}
+.mcu-pump-panel .control-panel-header i {
+  color: #60a5fa;
+}
+.mcu-pump-hint {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: center;
+  opacity: 0.7;
 }
 </style>

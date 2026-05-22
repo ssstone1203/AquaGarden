@@ -26,6 +26,8 @@ public final class SecurityWhitelist {
             "/api/sensors/ingest",
             "/api/sensors/history",
             "/api/robot/status",
+            "/api/mcu/pump/pending",
+            "/api/mcu/pump/status",
             "/ws/**",
             "/error"
     };
