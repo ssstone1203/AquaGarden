@@ -26,12 +26,14 @@ import time
 from pathlib import Path
 
 import requests
+from requests.adapters import HTTPAdapter
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _DEFAULT_YOLO_WEIGHTS = _REPO_ROOT / "model" / "yolo_fish" / "runs" / "yolo11n_fish_new" / "weights" / "best.pt"
 
 DEFAULT_TANK_CAMERA_INDEX = 0
-DEFAULT_CAMERA_FPS = 10.0
+DEFAULT_BACKEND = "http://127.0.0.1:8090"
+DEFAULT_CAMERA_FPS = 6.0
 DEFAULT_YOLO_EVERY_N = 5
 JPEG_ENCODE_QUALITY = 80
 
@@ -45,10 +47,33 @@ log = logging.getLogger("tank-camera")
 _yolo_predict_lock = threading.Lock()
 
 
-def post_tank_frame(backend: str, frame: bytes, timeout: float = 5.0) -> tuple[bool, str]:
+def create_http_session() -> requests.Session:
+    session = requests.Session()
+    adapter = HTTPAdapter(pool_connections=1, pool_maxsize=2, max_retries=0)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    session.headers.update({"Connection": "keep-alive"})
+    return session
+
+
+def wait_for_backend(backend: str, timeout: float = 3.0) -> None:
+    url = backend.rstrip("/") + "/api/video/tank/status"
+    while True:
+        try:
+            r = requests.get(url, timeout=timeout)
+            if r.ok:
+                log.info("Backend reachable: %s", backend)
+                return
+            log.warning("Backend responded HTTP %s; retrying in 2s", r.status_code)
+        except requests.RequestException as e:
+            log.warning("Backend not reachable (%s); retrying in 2s", e)
+        time.sleep(2.0)
+
+
+def post_tank_frame(session: requests.Session, backend: str, frame: bytes, timeout: float = 5.0) -> tuple[bool, str]:
     url = backend.rstrip("/") + "/api/video/tank/ingest"
     try:
-        r = requests.post(url, data=frame, headers={"Content-Type": "image/jpeg"}, timeout=timeout)
+        r = session.post(url, data=frame, headers={"Content-Type": "image/jpeg"}, timeout=timeout)
         if r.ok:
             return True, f"HTTP {r.status_code}"
         detail = r.text.strip()
@@ -59,10 +84,10 @@ def post_tank_frame(backend: str, frame: bytes, timeout: float = 5.0) -> tuple[b
         return False, str(e)
 
 
-def post_tank_detections(backend: str, detections: list[dict], timeout: float = 2.0) -> tuple[bool, str]:
+def post_tank_detections(session: requests.Session, backend: str, detections: list[dict], timeout: float = 2.0) -> tuple[bool, str]:
     url = backend.rstrip("/") + "/api/video/tank/detections"
     try:
-        r = requests.post(url, json={"detections": detections}, timeout=timeout)
+        r = session.post(url, json={"detections": detections}, timeout=timeout)
         if r.ok:
             return True, f"HTTP {r.status_code}"
         detail = r.text.strip()
@@ -107,6 +132,7 @@ def run_yolo_on_bgr_frame(model, frame, conf: float, device: str | None) -> list
 
 
 def maybe_infer_tank_and_post(
+    session: requests.Session,
     backend: str,
     yolo_model,
     frame_bgr,
@@ -119,7 +145,7 @@ def maybe_infer_tank_and_post(
     try:
         with _yolo_predict_lock:
             detections = run_yolo_on_bgr_frame(yolo_model, frame_bgr, conf, device)
-        ok, reason = post_tank_detections(backend, detections, timeout=2.0)
+        ok, reason = post_tank_detections(session, backend, detections, timeout=2.0)
         if not ok and verbose:
             log.warning("YOLO detections upload failed: %s", reason)
     except Exception as e:
@@ -145,6 +171,9 @@ def run_tank_usb_camera(
     interval = 1.0 / max(fps, 0.1)
     yolo_every_n = max(1, int(yolo_every_n))
     log.info("Tank USB camera: index=%d, target %.1f FPS", camera_index, fps)
+    wait_for_backend(backend)
+    session = create_http_session()
+    upload_failures = 0
 
     while True:
         cap = cv2.VideoCapture(camera_index, cv2.CAP_DSHOW)
@@ -180,20 +209,30 @@ def run_tank_usb_camera(
                     continue
 
                 payload = jpg.tobytes()
-                posted, reason = post_tank_frame(backend, payload, timeout=2.0)
+                posted, reason = post_tank_frame(session, backend, payload, timeout=5.0)
                 now = time.monotonic()
                 if not posted:
+                    upload_failures += 1
                     log.warning("Tank frame upload failed: %s", reason)
+                    if upload_failures == 1 or upload_failures % 3 == 0:
+                        session.close()
+                        session = create_http_session()
                 elif verbose and now - last_log_at >= 2.0:
+                    upload_failures = 0
                     log.info("Tank frame uploaded: %d bytes", len(payload))
                     last_log_at = now
+                elif posted:
+                    upload_failures = 0
 
-                if posted and yolo_model is not None and frame_no % yolo_every_n == 0:
+                if posted and upload_failures == 0 and yolo_model is not None and frame_no % yolo_every_n == 0:
                     maybe_infer_tank_and_post(
-                        backend, yolo_model, frame, yolo_conf, yolo_device, verbose
+                        session, backend, yolo_model, frame, yolo_conf, yolo_device, verbose
                     )
 
                 elapsed = time.monotonic() - started
+                if upload_failures >= 3:
+                    time.sleep(min(5.0, 0.75 * upload_failures))
+                    continue
                 time.sleep(max(0.001, interval - elapsed))
         finally:
             cap.release()
@@ -223,7 +262,7 @@ def load_yolo_model(weights: str, disabled: bool):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Tank USB camera + YOLO bridge")
-    parser.add_argument("--backend", default="http://localhost:8090", help="Spring Boot backend URL")
+    parser.add_argument("--backend", default=DEFAULT_BACKEND, help="Spring Boot backend URL")
     parser.add_argument("--tank-camera-index", type=int, default=DEFAULT_TANK_CAMERA_INDEX, help="USB camera index")
     parser.add_argument("--tank-camera-fps", type=float, default=DEFAULT_CAMERA_FPS, help="Target upload FPS")
     parser.add_argument("--verbose", action="store_true", help="Print successful frame upload logs")

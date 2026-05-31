@@ -41,6 +41,8 @@ public class AquaBridgeService {
     private final String pumpManualPath;
     private final String rgbVideoPath;
     private final String depthVideoPath;
+    private final String authHeaderName;
+    private final String authHeaderValue;
 
     public AquaBridgeService(
             ObjectMapper objectMapper,
@@ -58,7 +60,9 @@ public class AquaBridgeService {
             @Value("${aquagarden.bridge.paths.pump-stop:/api/pump/stop}") String pumpStopPath,
             @Value("${aquagarden.bridge.paths.pump-manual:/api/pump/manual}") String pumpManualPath,
             @Value("${aquagarden.bridge.paths.video-rgb:/video/rgb.mjpg}") String rgbVideoPath,
-            @Value("${aquagarden.bridge.paths.video-depth:/video/depth.mjpg}") String depthVideoPath) {
+            @Value("${aquagarden.bridge.paths.video-depth:/video/depth.mjpg}") String depthVideoPath,
+            @Value("${aquagarden.bridge.auth.header-name:}") String authHeaderName,
+            @Value("${aquagarden.bridge.auth.header-value:}") String authHeaderValue) {
         this.objectMapper = objectMapper;
         this.baseUrl = stripTrailingSlash(baseUrl);
         this.statusPath = normalizePath(statusPath);
@@ -75,6 +79,8 @@ public class AquaBridgeService {
         this.pumpManualPath = normalizePath(pumpManualPath);
         this.rgbVideoPath = normalizePath(rgbVideoPath);
         this.depthVideoPath = normalizePath(depthVideoPath);
+        this.authHeaderName = authHeaderName == null ? "" : authHeaderName.trim();
+        this.authHeaderValue = authHeaderValue == null ? "" : authHeaderValue.trim();
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(3))
                 .build();
@@ -175,6 +181,7 @@ public class AquaBridgeService {
         URLConnection connection = new URL(baseUrl + path).openConnection();
         connection.setConnectTimeout(3000);
         connection.setReadTimeout(0);
+        applyBridgeAuth(connection);
         try (InputStream inputStream = connection.getInputStream()) {
             byte[] buffer = new byte[8192];
             int n;
@@ -197,6 +204,7 @@ public class AquaBridgeService {
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl + path))
                     .timeout(Duration.ofSeconds(8));
+            applyBridgeAuth(builder);
 
             if ("POST".equals(method)) {
                 HttpRequest.BodyPublisher publisher = jsonBody == null
@@ -250,6 +258,18 @@ public class AquaBridgeService {
             return "/";
         }
         return value.startsWith("/") ? value : "/" + value;
+    }
+
+    private void applyBridgeAuth(HttpRequest.Builder builder) {
+        if (!authHeaderName.isBlank() && !authHeaderValue.isBlank()) {
+            builder.header(authHeaderName, authHeaderValue);
+        }
+    }
+
+    private void applyBridgeAuth(URLConnection connection) {
+        if (!authHeaderName.isBlank() && !authHeaderValue.isBlank()) {
+            connection.setRequestProperty(authHeaderName, authHeaderValue);
+        }
     }
 
     private String taskPath(String task) {

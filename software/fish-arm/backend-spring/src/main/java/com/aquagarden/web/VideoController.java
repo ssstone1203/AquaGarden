@@ -30,6 +30,7 @@ public class VideoController {
 
     private static final String BOUNDARY = "frame";
     private static final MediaType MJPEG = MediaType.parseMediaType("multipart/x-mixed-replace; boundary=" + BOUNDARY);
+    private static final long DETECTION_OVERLAY_TTL_MS = 5000L;
 
     private final TankVideoFrameService tankVideoFrameService;
     private final AtomicReference<List<TankDetection>> tankDetections = new AtomicReference<>(List.of());
@@ -178,7 +179,7 @@ public class VideoController {
             return jpeg;
         }
         long ageMs = System.currentTimeMillis() - tankDetectionsAt.get();
-        if (ageMs > 1500) {
+        if (ageMs > DETECTION_OVERLAY_TTL_MS) {
             return jpeg;
         }
         try {

@@ -14,7 +14,7 @@ const routes = [
     component: AppLayout,
     meta: { requiresAuth: true },
     children: [
-      { path: '', name: 'dashboard', component: DashboardView, meta: { nav: 'dashboard', title: '控制面板', subtitle: '实时监控您的水族箱状态' } },
+      { path: '', name: 'dashboard', component: DashboardView, meta: { nav: 'dashboard', title: '控制面板', subtitle: '实时监控您的水族箱状态', keepAlive: true } },
       { path: 'history', name: 'history', component: HistoryView, meta: { nav: 'history', title: '历史数据', subtitle: '查看和分析历史监控数据' } },
       { path: 'robot', name: 'robot', component: RobotView, meta: { nav: 'robot', title: '系统控制', subtitle: '机械臂任务、滑轨、水泵与终端状态' } },
     ],

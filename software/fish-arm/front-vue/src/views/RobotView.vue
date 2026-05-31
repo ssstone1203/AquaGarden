@@ -131,7 +131,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { apiUrl, authHeaders } from '@/api/http'
+import { apiFetch } from '@/api/http'
 
 const connected = ref(true)
 const currentTask = ref('待命')
@@ -148,6 +148,7 @@ const cameraState = reactive({ hasRgb: false, hasDepth: false, ageSec: null })
 const pumpPwm = ref(80)
 const pumpBusy = ref(false)
 const pumpManualOn = ref(false)
+const taskPending = ref(false)
 
 /** 滑轨移动请求进行中（与 busy 分离，避免与服务端 busy 不同步时连点） */
 const railPending = ref(false)
@@ -157,6 +158,7 @@ const RAIL_HTTP_MS = 90_000
 const TASK_HTTP_MS = 120_000
 const STATUS_HTTP_MS = 15_000
 const RAIL_DEBOUNCE_MS = 350
+const TASK_SUBMIT_LOCK_MS = 900
 
 function withTimeout(ms) {
   const ctrl = new AbortController()
@@ -167,7 +169,7 @@ function withTimeout(ms) {
 async function fetchWithTimeout(url, init, timeoutMs) {
   const { signal, cancel } = withTimeout(timeoutMs)
   try {
-    return await fetch(url, { ...init, signal })
+    return await apiFetch(url, { ...init, signal })
   } catch (e) {
     if (e?.name === 'AbortError') throw new Error('请求超时，请检查硬件链路与后端服务')
     throw e
@@ -233,10 +235,10 @@ async function callPumpApi(path, payload, successMsg) {
   try {
     const body = payload ? JSON.stringify(payload) : undefined
     const r = await fetchWithTimeout(
-      apiUrl(path),
+      path,
       {
         method: 'POST',
-        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body,
       },
       TASK_HTTP_MS,
@@ -276,15 +278,22 @@ async function pumpAuto() {
 }
 
 async function sendTask(taskName) {
-  if (busy.value || railPending.value) return
+  if (busy.value || railPending.value || taskPending.value) return
   const labels = { feed: '自动喂食', loosen: '松土', prune: '裁剪黄色叶子' }
   addLog(`触发任务: ${labels[taskName] ?? taskName}`, 'task')
   currentTask.value = labels[taskName] ?? taskName
   busy.value = true
-  try {
+  taskPending.value = true
+
+  setTimeout(() => {
+    taskPending.value = false
+  }, TASK_SUBMIT_LOCK_MS)
+
+  ;(async () => {
+    try {
     const r = await fetchWithTimeout(
-      apiUrl(`/api/aqua/tasks/${taskName}`),
-      { method: 'POST', headers: authHeaders() },
+      `/api/aqua/tasks/${taskName}`,
+      { method: 'POST' },
       TASK_HTTP_MS,
     )
     const d = await r.json().catch(() => ({}))
@@ -292,19 +301,27 @@ async function sendTask(taskName) {
       throw new Error(d.message || `任务启动失败 HTTP ${r.status}`)
     }
     addLog(`任务已提交: ${labels[taskName] ?? taskName}`, 'task')
+    busy.value = Boolean(d.busy)
+    if (!busy.value) currentTask.value = '待命'
     fetchStatus()
-  } catch (e) {
-    busy.value = false
-    addLog(e.message || '任务启动失败', 'error')
-  }
+    } catch (e) {
+      busy.value = false
+      currentTask.value = '待命'
+      addLog(e.message || '任务启动失败', 'error')
+    }
+  })()
+
+  requestAnimationFrame(() => {
+    fetchStatus()
+  })
 }
 
 async function stopTask() {
   addLog('请求停止当前任务', 'warn')
   try {
     const r = await fetchWithTimeout(
-      apiUrl('/api/aqua/tasks/stop'),
-      { method: 'POST', headers: authHeaders() },
+      '/api/aqua/tasks/stop',
+      { method: 'POST' },
       TASK_HTTP_MS,
     )
     const d = await r.json().catch(() => ({}))
@@ -335,20 +352,20 @@ async function executeMoveRail() {
   addLog(`滑轨移动到 ${railTarget.value}`, 'robot')
   try {
     let r = await fetchWithTimeout(
-      apiUrl('/api/aqua/rail/position'),
+      '/api/aqua/rail/position',
       {
         method: 'POST',
-        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ position: railTarget.value }),
       },
       RAIL_HTTP_MS,
     )
     if (r.status === 404) {
       r = await fetchWithTimeout(
-        apiUrl('/api/aqua/rail/move'),
+        '/api/aqua/rail/move',
         {
           method: 'POST',
-          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ position: railTarget.value }),
         },
         RAIL_HTTP_MS,
@@ -371,12 +388,15 @@ async function fetchStatus() {
   if (statusInFlight) return
   statusInFlight = true
   try {
-    const r = await fetchWithTimeout(apiUrl('/api/aqua/status'), { headers: authHeaders() }, STATUS_HTTP_MS)
+    const r = await fetchWithTimeout('/api/aqua/status', {}, STATUS_HTTP_MS)
     if (r.ok) {
       const d = await r.json()
+      const nextTask = d.currentTask ?? '待命'
+      const taskText = String(nextTask).trim().toLowerCase()
+      const taskIsIdle = taskText === '' || taskText === 'idle' || taskText === '待命'
       connected.value = d.connected ?? d.ok ?? true
-      busy.value = Boolean(d.busy)
-      currentTask.value = d.currentTask ?? '待命'
+      busy.value = taskPending.value || (Boolean(d.busy) && !taskIsIdle)
+      currentTask.value = busy.value ? nextTask : '待命'
       phase.value = d.phase ?? 'idle'
       if (d.railPosition != null) {
         railPosition.value = d.railPosition

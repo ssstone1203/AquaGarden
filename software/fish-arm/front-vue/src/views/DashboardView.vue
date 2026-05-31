@@ -6,20 +6,20 @@
         <div class="video-card-header">
           <span class="video-title">Robot Arm Camera <span class="video-title-cn">(机械臂摄像头)</span></span>
           <div class="camera-mode-switch">
-            <button type="button" :class="['camera-mode-btn', robotCameraMode === 'rgb' ? 'active' : '']" @click="setRobotCameraMode('rgb')">RGB</button>
-            <button type="button" :class="['camera-mode-btn', robotCameraMode === 'depth' ? 'active' : '']" @click="setRobotCameraMode('depth')">深度图</button>
+            <button type="button" :disabled="robotSwitching" :class="['camera-mode-btn', robotCameraMode === 'rgb' ? 'active' : '']" @click="setRobotCameraMode('rgb')">RGB</button>
+            <button type="button" :disabled="robotSwitching" :class="['camera-mode-btn', robotCameraMode === 'depth' ? 'active' : '']" @click="setRobotCameraMode('depth')">深度图</button>
           </div>
         </div>
         <div class="video-body">
           <div class="video-area">
             <img
               :key="robotCameraImgKey"
-              :src="showLiveVideos ? robotCameraSrc : ''"
+              :src="robotCameraImgSrc"
               alt="Robot Arm Camera"
               decoding="async"
               fetchpriority="high"
-              @load="robotVideoError = ''"
-              @error="handleRobotVideoError"
+              @load="handleRobotVideoLoad(robotCameraImgKey)"
+              @error="handleRobotVideoError(robotCameraImgKey)"
             />
             <div class="vbadge vbadge-live"><i class="fas fa-circle"></i> {{ robotVideoReady ? 'Live' : 'Wait' }}</div>
             <div class="vbadge vbadge-cam"><i class="fas fa-video"></i></div>
@@ -188,12 +188,12 @@
             <i class="fas fa-trash-alt"></i> 清空
           </button>
           <button type="button" class="ai-action-btn" :disabled="aiInsight.loading" @click="runAiAnalysis">
-            {{ aiInsight.loading ? '分析中…' : 'Claude 综合分析' }}
+            {{ aiInsight.loading ? '分析中…' : 'DeepSeek 综合分析' }}
           </button>
         </div>
       </div>
       <p class="ai-hint">
-        基于当前传感器快照调用后端配置的大模型（默认 Anthropic Claude；未设置 <code>ANTHROPIC_API_KEY</code> 时自动走规则回退）。<br />
+        基于当前传感器快照调用后端配置的大模型（未设置 API Key 时自动走规则回退）。<br />
         快捷键 <kbd>P</kbd> 触发水泵脉冲（通过 Bridge 执行 <code>POST /api/aqua/pump/pulse</code>）。
       </p>
 
@@ -356,7 +356,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, nextTick, onActivated, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiUrl, authHeaders, logout, wsLogsUrl } from '@/api/http'
 
@@ -381,9 +381,15 @@ const waterTempFSub = computed(() => {
   return `/${waterTempF.value}°F`
 })
 
-const robotUseDirectBridge = ref(import.meta.env.VITE_ROBOT_CAMERA_DIRECT !== 'false')
+const robotUseDirectBridge = ref(import.meta.env.VITE_ROBOT_CAMERA_DIRECT === 'true')
 const robotCameraMode = ref('rgb')
 const robotCameraKey = ref(Date.now())
+const robotVideoConnected = ref(false)
+const robotStreamMounted = ref(true)
+const robotSwitching = ref(false)
+let robotCameraKeySeed = Date.now()
+let robotVideoPendingTimer = null
+let robotSwitchTimer = null
 const robotDirectBridgeUrl = computed(() => {
   const base = import.meta.env.VITE_AQUA_BRIDGE_BASE || 'http://10.116.177.50:18080'
   return `${base.replace(/\/$/, '')}/video/${robotCameraMode.value}.mjpg`
@@ -392,6 +398,7 @@ const robotCameraSrc = computed(() => {
   const src = robotUseDirectBridge.value ? robotDirectBridgeUrl.value : apiUrl(`/api/aqua/video/${robotCameraMode.value}`)
   return `${src}${src.includes('?') ? '&' : '?'}v=${robotCameraKey.value}`
 })
+const robotCameraImgSrc = computed(() => (showLiveVideos.value && robotStreamMounted.value ? robotCameraSrc.value : ''))
 const robotCameraImgKey = computed(() => `${robotCameraMode.value}-${robotCameraKey.value}`)
 const robotCameraLabel = computed(() => robotCameraMode.value === 'depth' ? 'Depth' : 'RGB')
 const tankCameraKey = ref(Date.now())
@@ -410,6 +417,7 @@ const showLiveVideos = ref(true)
 
 const robotVideoReady = computed(() => {
   if (robotVideoError.value) return false
+  if (robotVideoConnected.value) return true
   if (robotUseDirectBridge.value) return true
   return robotCameraMode.value === 'depth' ? aquaStatus.hasDepth : aquaStatus.hasRgb
 })
@@ -427,10 +435,49 @@ const tankVideoMessage = computed(() => {
   return ''
 })
 
-function handleRobotVideoError() {
+function nextRobotCameraKey() {
+  robotCameraKeySeed += 1
+  return robotCameraKeySeed
+}
+
+function scheduleRobotVideoReady(expectedKey) {
+  if (robotVideoPendingTimer) clearTimeout(robotVideoPendingTimer)
+  robotVideoPendingTimer = setTimeout(() => {
+    if (expectedKey === robotCameraImgKey.value && !robotVideoError.value && showLiveVideos.value) {
+      robotVideoConnected.value = true
+    }
+  }, 1200)
+}
+
+async function refreshRobotCameraStream() {
+  robotVideoConnected.value = false
+  robotVideoError.value = ''
+  robotSwitching.value = true
+  robotStreamMounted.value = false
+  await nextTick()
+  robotCameraKey.value = nextRobotCameraKey()
+  requestAnimationFrame(() => {
+    robotStreamMounted.value = true
+    scheduleRobotVideoReady(robotCameraImgKey.value)
+    if (robotSwitchTimer) clearTimeout(robotSwitchTimer)
+    robotSwitchTimer = setTimeout(() => {
+      robotSwitching.value = false
+    }, 300)
+  })
+}
+
+function handleRobotVideoLoad(key) {
+  if (key !== robotCameraImgKey.value) return
+  robotVideoError.value = ''
+  robotVideoConnected.value = true
+}
+
+function handleRobotVideoError(key) {
+  if (key !== robotCameraImgKey.value) return
+  robotVideoConnected.value = false
   if (robotUseDirectBridge.value) {
     robotUseDirectBridge.value = false
-    robotCameraKey.value = Date.now()
+    refreshRobotCameraStream()
     return
   }
   robotVideoError.value = '机械臂视频流加载失败'
@@ -441,11 +488,10 @@ function handleTankVideoError() {
 }
 
 function setRobotCameraMode(mode) {
-  if (!['rgb', 'depth'].includes(mode) || robotCameraMode.value === mode) return
+  if (!['rgb', 'depth'].includes(mode) || robotCameraMode.value === mode || robotSwitching.value) return
   robotCameraMode.value = mode
-  robotCameraKey.value = Date.now()
-  robotUseDirectBridge.value = import.meta.env.VITE_ROBOT_CAMERA_DIRECT !== 'false'
-  robotVideoError.value = ''
+  robotUseDirectBridge.value = import.meta.env.VITE_ROBOT_CAMERA_DIRECT === 'true'
+  refreshRobotCameraStream()
   updateVideoStatus()
 }
 
@@ -506,7 +552,7 @@ const aiLlmBanner = computed(() => {
 
 const aiSourceBadge = computed(() => {
   if (aiInsight.source === 'llm') {
-    if (aiInsight.provider === 'anthropic') return { label: 'Claude', cls: 'badge-claude' }
+    if (aiInsight.provider === 'anthropic') return { label: 'DeepSeek', cls: 'badge-deepseek' }
     if (aiInsight.provider === 'openai') return { label: 'OpenAI', cls: 'badge-openai' }
     return { label: 'LLM', cls: 'badge-llm' }
   }
@@ -675,6 +721,12 @@ let sensorTimer = null
 let videoStatusTimer = null
 function onVideoVisibilityChange() {
   showLiveVideos.value = !document.hidden
+  if (!showLiveVideos.value) {
+    robotStreamMounted.value = false
+    return
+  }
+  robotStreamMounted.value = true
+  if (showLiveVideos.value && !robotVideoReady.value) refreshRobotCameraStream()
 }
 
 // ---- Sensor detail modal ----
@@ -948,6 +1000,9 @@ function connectWs() {
 }
 
 onMounted(() => {
+  showLiveVideos.value = !document.hidden
+  robotStreamMounted.value = showLiveVideos.value
+  scheduleRobotVideoReady(robotCameraImgKey.value)
   updateSensorData()
   updateVideoStatus()
   sensorTimer = setInterval(updateSensorData, 5000)
@@ -957,11 +1012,20 @@ onMounted(() => {
   document.addEventListener('visibilitychange', onVideoVisibilityChange)
 })
 
+onActivated(() => {
+  showLiveVideos.value = !document.hidden
+  robotStreamMounted.value = showLiveVideos.value
+  updateVideoStatus()
+})
+
 onUnmounted(() => {
   window.removeEventListener('keydown', onPumpHotkey)
   document.removeEventListener('visibilitychange', onVideoVisibilityChange)
   if (sensorTimer) clearInterval(sensorTimer)
   if (videoStatusTimer) clearInterval(videoStatusTimer)
+  if (robotVideoPendingTimer) clearTimeout(robotVideoPendingTimer)
+  if (robotSwitchTimer) clearTimeout(robotSwitchTimer)
+  robotStreamMounted.value = false
   if (ws) ws.close()
 })
 </script>
@@ -1164,10 +1228,10 @@ onUnmounted(() => {
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
-.badge-claude {
-  background: linear-gradient(135deg, rgba(217,119,87,0.35), rgba(245,158,121,0.2));
-  color: #ffefe8;
-  border: 1px solid rgba(245,158,121,0.35);
+.badge-deepseek {
+  background: linear-gradient(135deg, rgba(45, 140, 255, 0.34), rgba(20, 184, 166, 0.2));
+  color: #dff6ff;
+  border: 1px solid rgba(56, 189, 248, 0.35);
 }
 .badge-openai {
   background: rgba(16, 163, 127, 0.2);
@@ -1336,6 +1400,11 @@ onUnmounted(() => {
 .camera-mode-btn.active {
   color: #fff;
   background: #0ea5e9;
+}
+
+.camera-mode-btn:disabled {
+  cursor: wait;
+  opacity: 0.62;
 }
 
 .video-waiting {

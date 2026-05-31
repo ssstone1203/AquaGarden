@@ -27,6 +27,33 @@ export function authHeaders() {
   return h
 }
 
+export async function apiFetch(path, init = {}) {
+  const headers = new Headers(init.headers ?? {})
+  const token = localStorage.getItem('token')
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+
+  const response = await fetch(apiUrl(path), { ...init, headers })
+  if (response.status === 401 && await isJwtAuthFailure(response)) {
+    localStorage.removeItem('token')
+    const next = `${window.location.pathname}${window.location.search}${window.location.hash}`
+    if (!window.location.pathname.startsWith('/login')) {
+      window.location.assign(`/login?redirect=${encodeURIComponent(next)}`)
+    }
+  }
+  return response
+}
+
+async function isJwtAuthFailure(response) {
+  try {
+    const body = await response.clone().json()
+    return body?.detail === '无效的认证凭据' || body?.detail === '用户不存在'
+  } catch {
+    return false
+  }
+}
+
 /**
  * 清除本地凭证并跳转到登录页。
  * 必须在调用 router.push('/login') 之前先调用此函数，否则路由守卫会因
