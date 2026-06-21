@@ -1,0 +1,226 @@
+T130C 005:116.195   SEGGER J-Link V9.36 Log File
+T130C 005:116.282   DLL Compiled: Apr 15 2026 12:15:28
+T130C 005:116.300   Logging started @ 2026-06-21 17:55
+T130C 005:116.375   Process: D:\Program Files\Keil_v5\UV4\UV4.exe
+T130C 005:116.394 - 35.539ms 
+T130C 005:116.408 JLINK_SetWarnOutHandler(...)
+T130C 005:116.417 - 0.008ms 
+T130C 005:116.427 JLINK_OpenEx(...)
+T130C 005:122.929   Firmware: J-Link OB-RA4M2 compiled Dec 10 2025 15:52:53
+T130C 005:124.073   Firmware: J-Link OB-RA4M2 compiled Dec 10 2025 15:52:53
+T130C 005:156.890   Hardware: V1.00
+T130C 005:156.930   S/N: 1089695894
+T130C 005:156.943   OEM: SEGGER
+T130C 005:156.955   Feature(s): None
+T130C 005:157.889   Bootloader: 2021 May 14
+T130C 005:158.659   USB speed mode: Full speed (12 MBit/s)
+T130C 005:159.189   TELNET listener socket opened on port 19021
+T130C 005:167.166   WEBSRV WEBSRV_Init(): Starting webserver thread(s)
+T130C 005:167.424   WEBSRV Webserver running on local port 19080
+T130C 005:167.569   Looking for J-Link GUI Server exe at: D:\Program Files\Keil_v5\ARM\Segger\JLinkGUIServer.exe
+T130C 005:167.609   Looking for J-Link GUI Server exe at: D:\Program Files\SEGGER\JLink_V936\JLinkGUIServer.exe
+T130C 005:167.627   Forking J-Link GUI Server: D:\Program Files\SEGGER\JLink_V936\JLinkGUIServer.exe
+T130C 005:171.675   J-Link GUI Server info: "J-Link GUI server V9.36 "
+T130C 005:172.381 - 55.952ms returns "O.K."
+T130C 005:172.430 JLINK_GetEmuCaps()
+T130C 005:172.439 - 0.008ms returns 0xB8EA5A33
+T130C 005:172.450 JLINK_TIF_GetAvailable(...)
+T130C 005:173.886 - 1.435ms 
+T130C 005:173.932 JLINK_SetErrorOutHandler(...)
+T130C 005:173.942 - 0.009ms 
+T130C 005:174.443 JLINK_ExecCommand("ProjectFile = "E:\AquaGarden\hardware\ra8p1_wyr\pump\JLinkSettings.ini"", ...). 
+T130C 005:179.607 - 5.161ms returns 0x00
+T130C 005:179.707 JLINK_ExecCommand("Device = R7KA8P1KF:CPU0", ...). 
+T130C 005:180.022   Flash bank @ 0x02000000: SFL: Parsing sectorization info from ELF file
+T130C 005:180.044     FlashDevice.SectorInfo[0]: .SectorSize = 0x00000800, .SectorStartAddr = 0x00000000
+T130C 005:180.059   FlashBank @0x02000000: Sectorization info from SFL ELF file ignored because sectorization override from DLL / XML file is active.
+T130C 005:180.653   Flash bank @ 0x02E07400: SFL: Parsing sectorization info from ELF file
+T130C 005:180.675     FlashDevice.SectorInfo[0]: .SectorSize = 0x00000010, .SectorStartAddr = 0x00000000
+T130C 005:180.689   FlashBank @0x02C9F020: Sectorization info from SFL ELF file ignored because sectorization override from DLL / XML file is active.
+T130C 005:180.719   Flash bank @ 0x02E07400: SFL: Parsing sectorization info from ELF file
+T130C 005:180.735     FlashDevice.SectorInfo[0]: .SectorSize = 0x00000010, .SectorStartAddr = 0x00000000
+T130C 005:180.749   FlashBank @0x02E07400: Sectorization info from SFL ELF file ignored because sectorization override from DLL / XML file is active.
+T130C 005:180.793   Flash bank @ 0x12000000: SFL: Parsing sectorization info from ELF file
+T130C 005:180.807     FlashDevice.SectorInfo[0]: .SectorSize = 0x00000800, .SectorStartAddr = 0x00000000
+T130C 005:180.820   FlashBank @0x12000000: Sectorization info from SFL ELF file ignored because sectorization override from DLL / XML file is active.
+T130C 005:181.535   Flash bank @ 0x12E07400: SFL: Parsing sectorization info from ELF file
+T130C 005:181.556     FlashDevice.SectorInfo[0]: .SectorSize = 0x00000010, .SectorStartAddr = 0x00000000
+T130C 005:181.569   FlashBank @0x12C9F4C0: Sectorization info from SFL ELF file ignored because sectorization override from DLL / XML file is active.
+T130C 005:181.641   Flash bank @ 0x12E07400: SFL: Parsing sectorization info from ELF file
+T130C 005:181.653     FlashDevice.SectorInfo[0]: .SectorSize = 0x00000010, .SectorStartAddr = 0x00000000
+T130C 005:181.667   FlashBank @0x12E07780: Sectorization info from SFL ELF file ignored because sectorization override from DLL / XML file is active.
+T130C 005:181.800   Flash bank @ 0x70000000: SFL: Parsing sectorization info from ELF file
+T130C 005:181.818     FlashDevice.SectorInfo[0]: .SectorSize = 0x00010000, .SectorStartAddr = 0x00000000
+T130C 005:196.046   Flash bank @ 0x78000000: SFL: Parsing sectorization info from ELF file
+T130C 005:196.081     FlashDevice.SectorInfo[0]: .SectorSize = 0x00010000, .SectorStartAddr = 0x00000000
+T130C 005:208.182   Flash bank @ 0x80000000: SFL: Parsing sectorization info from ELF file
+T130C 005:208.210     FlashDevice.SectorInfo[0]: .SectorSize = 0x00010000, .SectorStartAddr = 0x00000000
+T130C 005:231.722   Flash bank @ 0x90000000: SFL: Parsing sectorization info from ELF file
+T130C 005:231.753     FlashDevice.SectorInfo[0]: .SectorSize = 0x00010000, .SectorStartAddr = 0x00000000
+T130C 005:255.409   Device "R7KA8P1KF_CPU0" selected.
+T130C 005:255.899 - 76.191ms returns 0x00
+T130C 005:255.932   ERROR: Unknown command
+T130C 005:255.944 JLINK_GetHardwareVersion()
+T130C 005:255.951 - 0.006ms returns 10000
+T130C 005:255.957 JLINK_GetDLLVersion()
+T130C 005:255.963 - 0.005ms returns 93600
+T130C 005:255.970 JLINK_GetOEMString(...)
+T130C 005:255.978 JLINK_GetFirmwareString(...)
+T130C 005:255.984 - 0.006ms 
+T130C 005:255.996 JLINK_GetDLLVersion()
+T130C 005:256.002 - 0.005ms returns 93600
+T130C 005:256.009 JLINK_GetCompileDateTime()
+T130C 005:256.015 - 0.005ms 
+T130C 005:256.024 JLINK_GetFirmwareString(...)
+T130C 005:256.029 - 0.005ms 
+T130C 005:256.697 JLINK_GetHardwareVersion()
+T130C 005:256.723 - 0.026ms returns 10000
+T130C 005:256.737 JLINK_GetSN()
+T130C 005:256.744 - 0.006ms returns 1089695894
+T130C 005:256.752 JLINK_GetOEMString(...)
+T130C 005:256.762 JLINK_TIF_Select(JLINKARM_TIF_SWD)
+T130C 005:257.917 - 1.154ms returns 0x00
+T130C 005:257.943 JLINK_HasError()
+T130C 005:257.955 JLINK_SetSpeed(5000)
+T130C 005:258.209 - 0.250ms 
+T130C 005:258.679 JLINK_HasError()
+T130C 005:258.695 JLINK_SetResetType(JLINKARM_RESET_TYPE_NORMAL)
+T130C 005:258.703 - 0.007ms returns JLINKARM_RESET_TYPE_NORMAL
+T130C 005:258.710 JLINK_Reset()
+T130C 005:263.155   ConfigTargetSettings() start
+T130C 005:263.181    J-Link Script File: Executing ConfigTargetSettings()
+T130C 005:263.190   J-Link script: ConfigTargetSettings()
+T130C 005:263.202   ConfigTargetSettings() end - Took 20us
+T130C 005:263.216   InitTarget() start
+T130C 005:263.224    J-Link Script File: Executing InitTarget()
+T130C 005:263.233   Identifying target device...
+T130C 005:263.242   SWD selected. Executing JTAG -> SWD switching sequence...
+T130C 005:264.124   Initializing DAP...
+T130C 005:264.995   DAP initialized successfully.
+T130C 005:265.018   Determining TrustZone configuration...
+T130C 005:266.077     Secure Debug: Enabled (SSD)
+T130C 005:266.101   Determining currently configured transfer type by reading the AHB-AP CSW register.
+T130C 005:266.834     --> Correct transfer type configured. Done.
+T130C 005:266.859   InitTarget() end - Took 3.63ms
+T130C 005:267.647   Found SW-DP with ID 0x6BA02477
+T130C 005:270.255   DPIDR: 0x6BA02477
+T130C 005:270.282   CoreSight SoC-400 or earlier
+T130C 005:270.292   Scanning AP map to find all available APs
+T130C 005:371.004   AP[2]: Stopped AP scan as end of AP map seems to be reached
+T130C 005:371.393   AP[0]: AHB-AP (IDR: 0x84770001, ADDR: 0x00000000)
+T130C 005:371.418   AP[1]: APB-AP (IDR: 0x54770002, ADDR: 0x01000000)
+T130C 005:371.431   Iterating through AP map to find AHB-AP to use
+T130C 005:372.582   AP[0]: Core found
+T130C 005:372.607   AP[0]: AHB-AP ROM base: 0xE00FE000
+T130C 005:373.218   CPUID register: 0x411FD231. Implementer code: 0x41 (ARM)
+T130C 005:373.243   Feature set: Mainline
+T130C 005:373.860   Cache: L1 I/D-cache present
+T130C 005:373.901   Found Cortex-M85 r1p1, Little endian.
+T130C 005:374.609   -- Max. mem block: 0x0001D828
+T130C 005:375.736   CPU_ReadMem(4 bytes @ 0xE000EDF0)
+T130C 005:376.462   CPU_WriteMem(4 bytes @ 0xE000EDF0)
+T130C 005:377.023   CPU_ReadMem(4 bytes @ 0xE0002000)
+T130C 005:377.619   FPUnit: 8 code (BP) slots and 0 literal slots
+T130C 005:377.643   CPU_ReadMem(4 bytes @ 0xE000EDFC)
+T130C 005:378.005   CPU_WriteMem(4 bytes @ 0xE000EDFC)
+T130C 005:378.613   CPU_ReadMem(4 bytes @ 0xE0001000)
+T130C 005:379.187   CPU_ReadMem(4 bytes @ 0xE0001000)
+T130C 005:379.837   CPU_ReadMem(4 bytes @ 0xE0001028)
+T130C 005:380.370   CPU_ReadMem(4 bytes @ 0xE0001038)
+T130C 005:380.817   CPU_ReadMem(4 bytes @ 0xE0001048)
+T130C 005:381.345   CPU_ReadMem(4 bytes @ 0xE0001058)
+T130C 005:381.959   CPU_ReadMem(4 bytes @ 0xE0001068)
+T130C 005:382.495   CPU_ReadMem(4 bytes @ 0xE0001078)
+T130C 005:383.002   CPU_ReadMem(4 bytes @ 0xE0001088)
+T130C 005:383.545   CPU_ReadMem(4 bytes @ 0xE0001098)
+T130C 005:384.031   CPU_WriteMem(4 bytes @ 0xE0001000)
+T130C 005:384.717   CPU_ReadMem(4 bytes @ 0xE000ED88)
+T130C 005:385.215   CPU_WriteMem(4 bytes @ 0xE000ED88)
+T130C 005:385.834   CPU_ReadMem(4 bytes @ 0xE000ED88)
+T130C 005:386.480   CPU_WriteMem(4 bytes @ 0xE000ED88)
+T130C 005:386.902   CPU_ReadMem(4 bytes @ 0xE000EFB8)
+T130C 005:387.608   Security extension: implemented
+T130C 005:387.631   Secure debug: enabled
+T130C 005:387.641   CPU_ReadMem(4 bytes @ 0xE000ED74)
+T130C 005:388.062   PACBTI extension: implemented
+T130C 005:388.087   CoreSight components:
+T130C 005:388.097   ROMTbl[0] @ E00FE000
+T130C 005:388.107   CPU_ReadMem(64 bytes @ 0xE00FE000)
+T130C 005:388.992   CPU_ReadMem(32 bytes @ 0xE00FFFE0)
+T130C 005:389.747   [0][0]: E00FF000 CID B105100D PID 000BB4D4 ROM Table
+T130C 005:389.769   ROMTbl[1] @ E00FF000
+T130C 005:389.780   CPU_ReadMem(64 bytes @ 0xE00FF000)
+T130C 005:390.800   CPU_ReadMem(32 bytes @ 0xE000EFE0)
+T130C 005:391.484   CPU_ReadMem(4 bytes @ 0xE000EFBC)
+T130C 005:392.000   CPU_ReadMem(4 bytes @ 0xE000EFCC)
+T130C 005:392.643   [1][0]: E000E000 CID B105900D PID 000BBD23 DEVARCH 47702A04 DEVTYPE 00 ???
+T130C 005:392.667   CPU_ReadMem(32 bytes @ 0xE0001FE0)
+T130C 005:393.357   CPU_ReadMem(4 bytes @ 0xE0001FBC)
+T130C 005:393.894   CPU_ReadMem(4 bytes @ 0xE0001FCC)
+T130C 005:394.446   [1][1]: E0001000 CID B105900D PID 000BBD23 DEVARCH 47711A02 DEVTYPE 00 DWT
+T130C 005:394.470   CPU_ReadMem(32 bytes @ 0xE0002FE0)
+T130C 005:395.190   CPU_ReadMem(4 bytes @ 0xE0002FBC)
+T130C 005:395.720   CPU_ReadMem(4 bytes @ 0xE0002FCC)
+T130C 005:396.281   [1][2]: E0002000 CID B105900D PID 000BBD23 DEVARCH 47701A03 DEVTYPE 00 FPB
+T130C 005:396.305   CPU_ReadMem(32 bytes @ 0xE0000FE0)
+T130C 005:396.975   CPU_ReadMem(4 bytes @ 0xE0000FBC)
+T130C 005:397.527   CPU_ReadMem(4 bytes @ 0xE0000FCC)
+T130C 005:398.071   [1][3]: E0000000 CID B105900D PID 000BBD23 DEVARCH 47701A01 DEVTYPE 43 ITM
+T130C 005:398.095   CPU_ReadMem(32 bytes @ 0xE0041FE0)
+T130C 005:398.708   CPU_ReadMem(4 bytes @ 0xE0041FBC)
+T130C 005:399.278   CPU_ReadMem(4 bytes @ 0xE0041FCC)
+T130C 005:399.839   [1][5]: E0041000 CID B105900D PID 004BBD23 DEVARCH 47754A13 DEVTYPE 13 ETM
+T130C 005:399.863   CPU_ReadMem(32 bytes @ 0xE0003FE0)
+T130C 005:400.634   CPU_ReadMem(4 bytes @ 0xE0003FBC)
+T130C 005:401.218   CPU_ReadMem(4 bytes @ 0xE0003FCC)
+T130C 005:401.879   [1][6]: E0003000 CID B105900D PID 000BBD23 DEVARCH 47700A06 DEVTYPE 16 ???
+T130C 005:401.906   CPU_ReadMem(32 bytes @ 0xE0042FE0)
+T130C 005:402.709   CPU_ReadMem(4 bytes @ 0xE0042FBC)
+T130C 005:403.160   CPU_ReadMem(4 bytes @ 0xE0042FCC)
+T130C 005:403.676   [1][7]: E0042000 CID B105900D PID 000BBD23 DEVARCH 47701A14 DEVTYPE 14 CSS600-CTI
+T130C 005:403.713   CPU_ReadMem(32 bytes @ 0xE0040FE0)
+T130C 005:404.465   [0][1]: E0040000 CID 05900D00 PID 0BBD23B1 ???
+T130C 005:404.495   CPU_WriteMem(4 bytes @ 0xE000ED84)
+T130C 005:405.028   CPU_ReadMem(4 bytes @ 0xE000ED80)
+T130C 005:405.617   I-Cache L1: 16 KB, 256 Sets, 32 Bytes/Line, 2-Way
+T130C 005:405.639   CPU_WriteMem(4 bytes @ 0xE000ED84)
+T130C 005:406.251   CPU_ReadMem(4 bytes @ 0xE000ED80)
+T130C 005:406.852   D-Cache L1: 16 KB, 128 Sets, 32 Bytes/Line, 4-Way
+T130C 005:406.934   ResetTarget() start
+T130C 005:406.943    J-Link Script File: Executing ResetTarget()
+T130C 005:406.964   CPU_ReadMem(4 bytes @ 0xE000ED44)
+T130C 005:407.522   CPU_ReadMem(4 bytes @ 0xE000EE08)
+T130C 005:408.135   CPU is running
+T130C 005:408.161   CPU_WriteMem(4 bytes @ 0xE000EE08)
+T130C 005:408.749   CPU_ReadMem(4 bytes @ 0xE000EE08)
+T130C 005:409.152   Reset: ARMv8M core with Security Extension enabled detected. Switch to secure domain.
+T130C 005:409.175   Reset: Halt core after reset via DEMCR.VC_CORERESET.
+T130C 005:409.190   CPU is running
+T130C 005:409.201   CPU_WriteMem(4 bytes @ 0xE000EDF0)
+T130C 005:409.699   CPU is running
+T130C 005:409.723   CPU_WriteMem(4 bytes @ 0xE000EDFC)
+T130C 005:410.567   Reset: Reset device via AIRCR.SYSRESETREQ.
+T130C 005:410.601   CPU is running
+T130C 005:410.626   CPU_WriteMem(4 bytes @ 0xE000ED0C)
+T130C 005:463.971   CPU_ReadMem(4 bytes @ 0xE000EDF0)
+T130C 005:464.621   CPU_ReadMem(4 bytes @ 0xE000EDF0)
+T130C 005:465.113   CPU is running
+T130C 005:465.139   CPU_WriteMem(4 bytes @ 0xE000EDFC)
+T130C 005:465.672   ResetTarget() end - Took 58.7ms
+T130C 005:465.694   Device specific reset executed.
+T130C 005:470.096   CPU_ReadMem(4 bytes @ 0xE000EE08)
+T130C 005:470.671   CPU_WriteMem(4 bytes @ 0xE0002000)
+T130C 005:471.239   CPU_ReadMem(4 bytes @ 0xE000EDFC)
+T130C 005:471.796   CPU_ReadMem(4 bytes @ 0xE0001000)
+T130C 005:472.364   CPU_ReadMem(4 bytes @ 0xE000EE08)
+T130C 005:472.910 - 214.199ms 
+T130C 005:472.952 JLINK_GetId()
+T130C 005:473.281 - 0.329ms returns 0x6BA02477
+T130C 005:475.349 JLINK_GetFirmwareString(...)
+T130C 005:475.373 - 0.024ms 
+T130C 008:626.181 JLINK_Close()
+T130C 008:627.120   CPU_ReadMem(4 bytes @ 0xE0001000)
+T130C 008:627.723   CPU_WriteMem(4 bytes @ 0xE0001004)
+T130C 008:675.212 - 49.029ms
+T130C 008:675.254   
+T130C 008:675.262   Closed
