@@ -15,6 +15,9 @@ typedef struct st_usb_app_debug
     uint8_t      configured_addr;
     uint8_t      ch340_ready;
     uint8_t      configured_seen;
+    uint8_t      stack_ready;
+    uint8_t      usb_callback_count;
+    fsp_err_t    usb_open_err;
     fsp_err_t    ch340_bringup_err;
     fsp_err_t    last_light_err;
 } usb_app_debug_t;

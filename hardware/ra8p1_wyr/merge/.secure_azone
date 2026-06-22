@@ -13,6 +13,10 @@
             <slot name="P210.CPU0" secure="true"/>
             <slot name="P211.CPU0" secure="true"/>
         </peripheral>
+        <peripheral name="PORT4.CPU0" group="PORT">
+            <slot name="P407.CPU0" secure="true"/>
+            <slot name="P408.CPU0" secure="true"/>
+        </peripheral>
         <peripheral name="PORT5.CPU0" group="PORT">
             <slot name="P514.CPU0" secure="true"/>
             <slot name="P515.CPU0" secure="true"/>
@@ -20,6 +24,8 @@
         <peripheral name="PORT6.CPU0" group="PORT">
             <slot name="P601.CPU0" secure="true"/>
         </peripheral>
+        <peripheral name="USB_FS.CPU0" security="s"/>
+        <peripheral name="USB_HS.CPU0" security="s"/>
         <peripheral name="IIC2.CPU0" group="IIC" security="s"/>
         <peripheral name="GPT1.CPU0" group="GPT" security="s"/>
         <peripheral name="ICU.CPU0">
@@ -33,6 +39,13 @@
             <slot name="IRQ7.CPU0" secure="true"/>
             <slot name="IRQ8.CPU0" secure="true"/>
             <slot name="IRQ9.CPU0" secure="true"/>
+            <slot name="IRQ10.CPU0" secure="true"/>
+            <slot name="IRQ11.CPU0" secure="true"/>
+            <slot name="IRQ12.CPU0" secure="true"/>
+            <slot name="IRQ13.CPU0" secure="true"/>
+            <slot name="IRQ14.CPU0" secure="true"/>
+            <slot name="IRQ15.CPU0" secure="true"/>
+            <slot name="IRQ16.CPU0" secure="true"/>
         </peripheral>
     </partition>
 </azone>

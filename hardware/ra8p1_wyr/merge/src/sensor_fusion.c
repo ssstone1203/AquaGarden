@@ -28,7 +28,8 @@ volatile uint8_t g_pump_running              = 0U;
 volatile uint8_t g_control_need_watering     = 0U;
 
 volatile uint8_t g_usb_light_enable       = 0U;
-volatile uint8_t g_usb_light_mode_request = 0U;
+/** Not used by USB task (auto demo like usb_light). UART cmd 0x10/0x11 may set this for future override. */
+volatile uint8_t g_usb_light_mode_request = 0xFFU;
 
 volatile uint8_t g_ctrl_enable_soil       = 1U;
 volatile uint8_t g_ctrl_enable_water_temp = 1U;

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Merge module RASC configuration.xml fragments into merge/configuration.xml."""
 import copy
+import subprocess
+import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -9,8 +11,19 @@ MERGE = BASE / "merge"
 
 root = ET.parse(BASE / "soil_sensor/configuration.xml").getroot()
 
-# Keep soil_sensor clock tree (PLL2/SCICLK disabled). UART g_com_uart0 uses int_clk;
-# enabling PLL2 here caused flash data-read faults in SystemRuntimeInit after bsp_clock_init().
+# SCI9 uses SCICLK from PLL1R. USB HS Host needs PLL2 + UCLK/USB60CLK (see usb_light).
+clk_cfg = root.find("raClockConfiguration")
+if clk_cfg is not None:
+    clk_usb = {
+        "board.clock.pll2.source": "board.clock.pll2.source.xtal",
+        "board.clock.uck.source": "board.clock.uck.source.pll2r",
+        "board.clock.u60ck.source": "board.clock.u60ck.source.pll2r",
+        "board.clock.sciclk.source": "board.clock.sciclk.source.pll1r",
+    }
+    for node in clk_cfg.findall("node"):
+        nid = node.get("id")
+        if nid in clk_usb:
+            node.set("option", clk_usb[nid])
 
 comp_sel = root.find("raComponentSelection")
 extra_comps = """
@@ -24,6 +37,14 @@ extra_comps = """
     </component>
     <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_sci_b_uart" variant="" vendor="Renesas" version="6.4.0">
       <description>UART</description>
+      <originalPack>Renesas.RA.6.4.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_usb_basic" variant="" vendor="Renesas" version="6.4.0">
+      <description>USB Basic</description>
+      <originalPack>Renesas.RA.6.4.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_usb_hvnd" variant="" vendor="Renesas" version="6.4.0">
+      <description>USB Host Vendor Class</description>
       <originalPack>Renesas.RA.6.4.0.pack</originalPack>
     </component>
     <component apiversion="" class="Heaps" condition="" group="FreeRTOS" subgroup="heap_4" variant="" vendor="AWS" version="11.1.0+fsp.6.4.0">
@@ -66,7 +87,7 @@ uart_xml = """
   <property id="module.driver.uart.rx_fifo_trigger" value="module.driver.uart.rx_fifo_trigger.max"/>
   <property id="module.driver.uart.irda.ire" value="module.driver.uart.irda.ire.disabled"/>
   <property id="module.driver.uart.irda.irrxinv" value="module.driver.uart.irda.irrxinv.disabled"/>
-  <property id="module.driver.uart.irda.irtxinv" value="module.driver.uart.irda.irtxinv.disabled"/>
+  <property id="module.driver.uart.irda.irtxinv" value="module.driver.uart.irtxinv.disabled"/>
   <property id="module.driver.uart.rs485.de_enable" value="module.driver.uart.rs485.de_enable.disabled"/>
   <property id="module.driver.uart.rs485.de_polarity" value="module.driver.uart.rs485.de_polarity.high"/>
   <property id="module.driver.uart.rs485.de_port_number" value="module.driver.uart.rs485.de_port_number.PORT_DISABLE"/>
@@ -79,6 +100,17 @@ uart_xml = """
 </module>
 """
 mod_cfg.insert(5, ET.fromstring(uart_xml))
+
+for i, m in enumerate(
+    get_modules(
+        BASE / "usb_light/configuration.xml",
+        [
+            "module.driver.hvnd_on_usb.295880289",
+            "module.driver.basic_on_usb.1004914669",
+        ],
+    )
+):
+    mod_cfg.insert(6 + i, m)
 
 heap_mod = ET.Element("module", {"id": "module.freertos.heap.4.900000002"})
 freertos_port = mod_cfg.find("module[@id='module.middleware.rm_freertos_port.0']")
@@ -102,6 +134,17 @@ for stack in list(hal_ctx.findall("stack")):
     ):
         hal_ctx.remove(stack)
 
+usb_stack = ET.Element("stack", {"module": "module.driver.hvnd_on_usb.295880289"})
+ET.SubElement(
+    usb_stack,
+    "stack",
+    {
+        "module": "module.driver.basic_on_usb.1004914669",
+        "requires": "module.driver.basic_on_usb.requires.basic",
+    },
+)
+hal_ctx.append(usb_stack)
+
 for t in list(mod_cfg.findall("context")):
     if t.get("id", "").startswith("rtos.awsfreertos.thread"):
         mod_cfg.remove(t)
@@ -115,6 +158,7 @@ threads = [
         "module.driver.timer_on_gpt.1278374793",
         "module.driver.uart_on_sci_b_uart.900000001",
     ]),
+    ("rtos.awsfreertos.thread.2", "USB_Light_Task", "USBLight", 12288, 1, []),
 ]
 for tid, sym, name, stack, pri, stacks in threads:
     ctx = ET.Element("context", {"id": tid})
@@ -135,13 +179,14 @@ for prop in mod_cfg.findall("config[@id='config.awsfreertos.thread']/property"):
     if prop.get("id") == "config.awsfreertos.thread.configuse_mutexes":
         prop.set("value", "config.awsfreertos.thread.configuse_mutexes.enabled")
     if prop.get("id") == "config.awsfreertos.thread.configtotal_heap_size":
-        prop.set("value", "16384")
+        prop.set("value", "32768")
     if prop.get("id") == "config.awsfreertos.thread.configsupport_dynamic_allocation":
         prop.set("value", "config.awsfreertos.thread.configsupport_dynamic_allocation.enabled")
 
 for cfg_id, src_proj in [
     ("config.driver.iic_master", "th_sensor"),
     ("config.driver.gpt", "pump"),
+    ("config.driver.usb_basic", "usb_light"),
 ]:
     if mod_cfg.find(f"config[@id='{cfg_id}']") is None:
         c = ET.parse(BASE / src_proj / "configuration.xml").find(f"raModuleConfiguration/config[@id='{cfg_id}']")
@@ -208,12 +253,19 @@ extra_pins = """
       <configSetting altId="p301.sci9.txd9" configurationId="p301"/>
       <configSetting altId="p302.gpio_mode.gpio_mode_peripheral" configurationId="p302.gpio_mode"/>
       <configSetting altId="p302.sci9.rxd9" configurationId="p302"/>
+      <configSetting altId="p407.usbhs.usbhs_vbusen" configurationId="p407"/>
+      <configSetting altId="p407.gpio_mode.gpio_mode_peripheral" configurationId="p407.gpio_mode"/>
+      <configSetting altId="p408.usbhs.usbhs_vbus" configurationId="p408"/>
+      <configSetting altId="p408.gpio_mode.gpio_mode_peripheral" configurationId="p408.gpio_mode"/>
+      <configSetting altId="usbhs.mode.custom.free" configurationId="usbhs.mode"/>
+      <configSetting altId="usbhs.usbhs_vbus.p408" configurationId="usbhs.usbhs_vbus"/>
+      <configSetting altId="usbhs.usbhs_vbusen.p407" configurationId="usbhs.usbhs_vbusen"/>
 """
 for el in ET.fromstring("<wrap>" + extra_pins + "</wrap>"):
     pincfg.append(el)
 
 for prop in root.findall(".//property[@id='config.bsp.common.main']"):
-    prop.set("value", "0x8000")
+    prop.set("value", "0x400")
 
 ET.indent(root, space="  ")
 with open(MERGE / "configuration.xml", "w", encoding="utf-8", newline="\n") as f:
@@ -227,3 +279,7 @@ if VIA.exists():
     if "BSP_BOOTLOADED_APPLICATION" not in text:
         VIA.write_text(text.rstrip() + "\n-DBSP_BOOTLOADED_APPLICATION\n", encoding="utf-8")
         print("Added -DBSP_BOOTLOADED_APPLICATION to rasc_armclang.via")
+
+SOLUTION_SCRIPT = MERGE / "scripts" / "gen_solution_xml.py"
+if SOLUTION_SCRIPT.exists():
+    subprocess.run([sys.executable, str(SOLUTION_SCRIPT)], check=True)

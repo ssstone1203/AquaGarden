@@ -281,7 +281,7 @@
       <property id="config.bsp.option_setting_otp.zhuk.zhuken3" value="config.bsp.option_setting_otp.zhuk.zhuken3.disabled" />
     </config>
     <config id="config.bsp.ra">
-      <property id="config.bsp.common.main" value="0x8000" />
+      <property id="config.bsp.common.main" value="0x400" />
       <property id="config.bsp.common.heap" value="0" />
       <property id="config.bsp.common.bootloader.xip_enable" value="config.bsp.common.bootloader.xip_enable.disabled" />
       <property id="config.bsp.common.vcc" value="3300" />
@@ -314,7 +314,7 @@
     <node id="board.clock.pll1q.display" option="board.clock.pll1q.display.value" />
     <node id="board.clock.pll1r.div" option="board.clock.pll1r.div.5" />
     <node id="board.clock.pll1r.display" option="board.clock.pll1r.display.value" />
-    <node id="board.clock.pll2.source" option="board.clock.pll2.source.disabled" />
+    <node id="board.clock.pll2.source" option="board.clock.pll2.source.xtal" />
     <node id="board.clock.pll2.div" option="board.clock.pll2.div.3" />
     <node id="board.clock.pll2.mul" option="board.clock.pll2.mul.300_00" />
     <node id="board.clock.pll2.display" option="board.clock.pll2.display.value" />
@@ -360,7 +360,7 @@
     <node id="board.clock.clkout.source" option="board.clock.clkout.source.disabled" />
     <node id="board.clock.clkout.div" option="board.clock.clkout.div.1" />
     <node id="board.clock.clkout.display" option="board.clock.clkout.display.value" />
-    <node id="board.clock.sciclk.source" option="board.clock.sciclk.source.disabled" />
+    <node id="board.clock.sciclk.source" option="board.clock.sciclk.source.pll1r" />
     <node id="board.clock.sciclk.div" option="board.clock.sciclk.div.4" />
     <node id="board.clock.sciclk.display" option="board.clock.sciclk.display.value" />
     <node id="board.clock.spiclk.source" option="board.clock.spiclk.source.disabled" />
@@ -380,10 +380,10 @@
     <node id="board.clock.i3cclk.source" option="board.clock.i3cclk.source.disabled" />
     <node id="board.clock.i3cclk.div" option="board.clock.i3cclk.div.4" />
     <node id="board.clock.i3cclk.display" option="board.clock.i3cclk.display.value" />
-    <node id="board.clock.uck.source" option="board.clock.uck.source.disabled" />
+    <node id="board.clock.uck.source" option="board.clock.uck.source.pll2r" />
     <node id="board.clock.uck.div" option="board.clock.uck.div.10" />
     <node id="board.clock.uck.display" option="board.clock.uck.display.value" />
-    <node id="board.clock.u60ck.source" option="board.clock.u60ck.source.disabled" />
+    <node id="board.clock.u60ck.source" option="board.clock.u60ck.source.pll2r" />
     <node id="board.clock.u60ck.div" option="board.clock.u60ck.div.8" />
     <node id="board.clock.u60ck.display" option="board.clock.u60ck.display.value" />
     <node id="board.clock.octaspiclk.source" option="board.clock.octaspiclk.source.disabled" />
@@ -466,6 +466,14 @@
     </component>
     <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_sci_b_uart" variant="" vendor="Renesas" version="6.4.0">
       <description>UART</description>
+      <originalPack>Renesas.RA.6.4.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_usb_basic" variant="" vendor="Renesas" version="6.4.0">
+      <description>USB Basic</description>
+      <originalPack>Renesas.RA.6.4.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_usb_hvnd" variant="" vendor="Renesas" version="6.4.0">
+      <description>USB Host Vendor Class</description>
       <originalPack>Renesas.RA.6.4.0.pack</originalPack>
     </component>
     <component apiversion="" class="Heaps" condition="" group="FreeRTOS" subgroup="heap_4" variant="" vendor="AWS" version="11.1.0+fsp.6.4.0">
@@ -1320,7 +1328,7 @@
       <property id="module.driver.uart.rx_fifo_trigger" value="module.driver.uart.rx_fifo_trigger.max" />
       <property id="module.driver.uart.irda.ire" value="module.driver.uart.irda.ire.disabled" />
       <property id="module.driver.uart.irda.irrxinv" value="module.driver.uart.irda.irrxinv.disabled" />
-      <property id="module.driver.uart.irda.irtxinv" value="module.driver.uart.irda.irtxinv.disabled" />
+      <property id="module.driver.uart.irda.irtxinv" value="module.driver.uart.irtxinv.disabled" />
       <property id="module.driver.uart.rs485.de_enable" value="module.driver.uart.rs485.de_enable.disabled" />
       <property id="module.driver.uart.rs485.de_polarity" value="module.driver.uart.rs485.de_polarity.high" />
       <property id="module.driver.uart.rs485.de_port_number" value="module.driver.uart.rs485.de_port_number.PORT_DISABLE" />
@@ -1331,9 +1339,32 @@
       <property id="module.driver.uart.tei_ipl" value="board.icu.common.irq.priority12" />
       <property id="module.driver.uart.eri_ipl" value="board.icu.common.irq.priority12" />
     </module>
+    <module id="module.driver.hvnd_on_usb.295880289">
+      <property id="module.driver.hvnd.name" value="g_hvnd0" />
+    </module>
+    <module id="module.driver.basic_on_usb.1004914669">
+      <property id="module.driver.basic.name" value="g_basic0" />
+      <property id="module.driver.usb_basic.usb_mode" value="module.driver.usb_basic.usb_mode.host" />
+      <property id="module.driver.usb_basic.usb_speed" value="module.driver.usb_basic.usb_speed.hs" />
+      <property id="module.driver.usb_basic.usb_modulenumber" value="module.driver.usb_basic.usb_modulenumber.1" />
+      <property id="module.driver.usb_basic.p_usb_reg" value="g_usb_descriptor" />
+      <property id="module.driver.usb_basic.complience_cb" value="NULL" />
+      <property id="module.driver.usb_basic.ipl" value="board.icu.common.irq.priority12" />
+      <property id="module.driver.usb_basic.ipl_r" value="board.icu.common.irq.priority12" />
+      <property id="module.driver.usb_basic.ipl_d0" value="board.icu.common.irq.priority12" />
+      <property id="module.driver.usb_basic.ipl_d1" value="board.icu.common.irq.priority12" />
+      <property id="module.driver.usb_basic.hsipl" value="board.icu.common.irq.priority12" />
+      <property id="module.driver.usb_basic.hsipl_d0" value="board.icu.common.irq.priority12" />
+      <property id="module.driver.usb_basic.hsipl_d1" value="board.icu.common.irq.priority12" />
+      <property id="module.driver.usb_basic.rtos_callback" value="NULL" />
+      <property id="module.driver.usb_basic.other_context" value="NULL" />
+    </module>
     <context id="_hal.0">
       <stack module="module.driver.ioport_on_ioport.0" />
       <stack module="module.middleware.rm_freertos_port.0" />
+      <stack module="module.driver.hvnd_on_usb.295880289">
+        <stack module="module.driver.basic_on_usb.1004914669" requires="module.driver.basic_on_usb.requires.basic" />
+      </stack>
     </context>
     <config id="config.driver.ioport">
       <property id="config.driver.ioport.checking" value="config.driver.ioport.checking.system" />
@@ -1374,7 +1405,7 @@
       <property id="config.awsfreertos.thread.configheap_clear_memory_on_free" value="config.awsfreertos.thread.configheap_clear_memory_on_free.disabled" />
       <property id="config.awsfreertos.thread.configsupport_static_allocation" value="config.awsfreertos.thread.configsupport_static_allocation.enabled" />
       <property id="config.awsfreertos.thread.configsupport_dynamic_allocation" value="config.awsfreertos.thread.configsupport_dynamic_allocation.enabled" />
-      <property id="config.awsfreertos.thread.configtotal_heap_size" value="16384" />
+      <property id="config.awsfreertos.thread.configtotal_heap_size" value="32768" />
       <property id="config.awsfreertos.thread.configapplication_allocated_heap" value="config.awsfreertos.thread.configapplication_allocated_heap.disabled" />
       <property id="config.awsfreertos.thread.configgenerate_run_time_stats" value="config.awsfreertos.thread.configgenerate_run_time_stats.disabled" />
       <property id="config.awsfreertos.thread.configuse_timers" value="config.awsfreertos.thread.configuse_timers.enabled" />
@@ -1433,6 +1464,15 @@
       <stack module="module.driver.uart_on_sci_b_uart.900000001" />
       <stack module="module.freertos.heap.4.900000002" />
     </context>
+    <context id="rtos.awsfreertos.thread.2">
+      <property id="_symbol" value="USB_Light_Task" />
+      <property id="rtos.awsfreertos.thread.name" value="USBLight" />
+      <property id="rtos.awsfreertos.thread.stack" value="12288" />
+      <property id="rtos.awsfreertos.thread.priority" value="1" />
+      <property id="rtos.awsfreertos.thread.context" value="NULL" />
+      <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static" />
+      <property id="rtos.awsfreertos.thread.secure_context" value="rtos.awsfreertos.thread.secure_context.enable" />
+    </context>
     <config id="config.driver.iic_master">
       <property id="config.driver.iic_master.param_checking_enable" value="config.driver.iic_master.param_checking_enable.bsp" />
       <property id="config.driver.iic_master.dtc_enable" value="config.driver.iic_master.dtc_enable.disabled" />
@@ -1442,6 +1482,22 @@
       <property id="config.driver.gpt.param_checking_enable" value="config.driver.gpt.param_checking_enable.bsp" />
       <property id="config.driver.gpt.output_support_enable" value="config.driver.gpt.output_support_enable.enabled" />
       <property id="config.driver.gpt.write_protect_enable" value="config.driver.gpt.write_protect_enable.disabled" />
+    </config>
+    <config id="config.driver.usb_basic">
+      <property id="config.driver.usb_basic.param_checking_enable" value="config.driver.usb_basic.param_checking_enable.bsp" />
+      <property id="config.driver.usb_basic.pll_clock_frequency" value="config.driver.usb_basic.pll_clock_frequency.24mhz" />
+      <property id="config.driver.usb_basic.buswait" value="config.driver.usb_basic.buswait.7" />
+      <property id="config.driver.usb_basic.bc_function" value="config.driver.usb_basic.bc_function.enable" />
+      <property id="config.driver.usb_basic.power_source" value="config.driver.usb_basic.power_source.high" />
+      <property id="config.driver.usb_basic.dcp_function" value="config.driver.usb_basic.dcp_function.disable" />
+      <property id="config.driver.usb_basic.request" value="config.driver.usb_basic.request.enable" />
+      <property id="config.driver.usb_basic.dblb" value="config.driver.usb_basic.dblb.enable" />
+      <property id="config.driver.usb_basic.cntmd" value="config.driver.usb_basic.cntmd.disable" />
+      <property id="config.driver.usb_basic.ldo_regulator" value="config.driver.usb_basic.ldo_regulator.disable" />
+      <property id="config.driver.usb_basic.dma" value="config.driver.usb_basic.dma.disable" />
+      <property id="config.driver.usb_basic.usb_multiport" value="config.driver.usb_basic.usb_multiport.disable" />
+      <property id="config.driver.usb_basic.compliance_mode" value="config.driver.usb_basic.compliance_mode.disable" />
+      <property id="config.driver.usb_basic.tpl_table" value="NULL" />
     </config>
     <config id="config.driver.sci_b_uart">
       <property id="config.driver.sci_b_uart.param_checking_enable" value="config.driver.sci_b_uart.param_checking_enable.bsp" />
@@ -1491,6 +1547,13 @@
       <configSetting altId="p301.sci9.txd9" configurationId="p301" />
       <configSetting altId="p302.gpio_mode.gpio_mode_peripheral" configurationId="p302.gpio_mode" />
       <configSetting altId="p302.sci9.rxd9" configurationId="p302" />
+      <configSetting altId="p407.usbhs.usbhs_vbusen" configurationId="p407" />
+      <configSetting altId="p407.gpio_mode.gpio_mode_peripheral" configurationId="p407.gpio_mode" />
+      <configSetting altId="p408.usbhs.usbhs_vbus" configurationId="p408" />
+      <configSetting altId="p408.gpio_mode.gpio_mode_peripheral" configurationId="p408.gpio_mode" />
+      <configSetting altId="usbhs.mode.custom.free" configurationId="usbhs.mode" />
+      <configSetting altId="usbhs.usbhs_vbus.p408" configurationId="usbhs.usbhs_vbus" />
+      <configSetting altId="usbhs.usbhs_vbusen.p407" configurationId="usbhs.usbhs_vbusen" />
     </pincfg>
     <symbolicName propertyId="p000.symbolic_name" value="SOIL_ADC_A0" />
     <symbolicName propertyId="p001.symbolic_name" value="TDS_ADC_A1" />

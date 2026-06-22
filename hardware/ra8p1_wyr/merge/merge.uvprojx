@@ -82,8 +82,8 @@
           <AfterMake>
             <RunUserProg1>1</RunUserProg1>
             <RunUserProg2>1</RunUserProg2>
-            <UserProg1Name>cmd /c ""$Prasc_launcher.bat" "$Prasc_version.txt" -nosplash --launcher.suppressErrors --gensmartbundle --compiler ARMv6 --devicefamily ra "$Pconfiguration.xml" "$L%L" 2&gt; "%%TEMP%%\rasc_stderr.out""</UserProg1Name>
-            <UserProg2Name>cmd /c "python "$Pscripts\strip_code_hex.py" "$PObjects\merge.hex" "$PObjects\merge_code.hex" &amp;&amp; copy /Y "$PObjects\merge_code.hex" "$PObjects\merge.hex""</UserProg2Name>
+            <UserProg1Name>cmd /c ""$Prasc_launcher.bat" "$Prasc_version.txt" -nosplash --launcher.suppressErrors --gensmartbundleandpartition --compiler ARMv6 --devicefamily ra "$Pconfiguration.xml" "$L%L" 2&gt; "%%TEMP%%\rasc_stderr.out""</UserProg1Name>
+            <UserProg2Name>cmd /c "python "$Pscripts\strip_code_hex.py" "$PObjects\merge.hex" "$PObjects\merge_code.hex" &amp;&amp; copy /Y "$PObjects\merge_code.hex" "$PObjects\merge.hex" &amp;&amp; python "$Pscripts\patch_merge_rpd.py" "$PObjects\merge.rpd""</UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
             <nStopA1X>2</nStopA1X>
@@ -486,6 +486,41 @@
               <FileName>soil_moisture_adc.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\src\soil_moisture_adc.h</FilePath>
+            </File>
+            <File>
+              <FileName>ch340_host.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\ch340_host.c</FilePath>
+            </File>
+            <File>
+              <FileName>ch340_host.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\ch340_host.h</FilePath>
+            </File>
+            <File>
+              <FileName>usb_app.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\usb_app.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_app.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\usb_app.h</FilePath>
+            </File>
+            <File>
+              <FileName>usb_light.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\usb_light.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_light.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\src\usb_light.h</FilePath>
+            </File>
+            <File>
+              <FileName>USB_Light_Task_entry.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\USB_Light_Task_entry.c</FilePath>
             </File>
           </Files>
         </Group>

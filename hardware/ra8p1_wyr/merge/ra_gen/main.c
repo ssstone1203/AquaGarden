@@ -7,6 +7,8 @@
                 extern TaskHandle_t Sensor_Task;
 extern void Actuator_Comm_Task_create(void);
                 extern TaskHandle_t Actuator_Comm_Task;
+extern void USB_Light_Task_create(void);
+                extern TaskHandle_t USB_Light_Task;
                 uint32_t g_fsp_common_thread_count;
                 bool g_fsp_common_initialized;
                 SemaphoreHandle_t g_fsp_common_initialized_semaphore;
@@ -104,6 +106,7 @@ extern void Actuator_Comm_Task_create(void);
                     /* Init RTOS tasks. */
                     Sensor_Task_create();
 Actuator_Comm_Task_create();
+USB_Light_Task_create();
 
                     /* Start the scheduler. */
                     vTaskStartScheduler();

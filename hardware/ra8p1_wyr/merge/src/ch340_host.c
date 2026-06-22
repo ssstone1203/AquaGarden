@@ -2,8 +2,13 @@
  * CH340 USB-serial bridge – host-side init (Linux ch341.c protocol) + bulk OUT.
  */
 #include "ch340_host.h"
-#include "USB_Light_Task.h"
+#include "hal_data.h"
 #include <string.h>
+
+#if (2 == BSP_CFG_RTOS)
+#include "FreeRTOS.h"
+#include "task.h"
+#endif
 
 #define CH341_REQ_READ_VERSION    (0x5FU)
 #define CH341_REQ_WRITE_REG       (0x9AU)
@@ -112,6 +117,16 @@ static int ch341_get_divisor(uint32_t speed)
 
 static fsp_err_t usb_wait_event(usb_status_t expect, uint32_t timeout_ms)
 {
+#if (2 == BSP_CFG_RTOS)
+    FSP_PARAMETER_NOT_USED(expect);
+
+    if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(timeout_ms)) > 0U)
+    {
+        return FSP_SUCCESS;
+    }
+
+    return FSP_ERR_TIMEOUT;
+#else
     uint32_t elapsed = 0U;
 
     while (elapsed < timeout_ms)
@@ -129,6 +144,7 @@ static fsp_err_t usb_wait_event(usb_status_t expect, uint32_t timeout_ms)
     }
 
     return FSP_ERR_TIMEOUT;
+#endif
 }
 
 static fsp_err_t ch340_vendor_transfer(uint8_t request, uint16_t value, uint16_t index,
