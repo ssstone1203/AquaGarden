@@ -19,6 +19,32 @@ python run_fastapi.py
 uvicorn app.main:app --host 0.0.0.0 --port 8090 --reload
 ```
 
+## COM4 USB 传感器直连
+
+FastAPI 后端默认启用本机串口直连，端口为 `COM4`、波特率 `115200`。RA8P1 使用 `hardware/ra8p1_wyr/merge` 工程中的 `Actuator_Comm_Task_entry.c`，每 250ms 发送一帧：
+
+- 帧头：`55 AA`
+- 版本：`01` 或 `02`
+- Payload：30 字节
+- 总长度：38 字节
+- 校验：CRC16/Modbus，小端
+
+启动后端后可用以下接口确认链路：
+
+```powershell
+curl http://127.0.0.1:8090/api/mcu/serial/status
+curl http://127.0.0.1:8090/api/sensors
+```
+
+如果电脑枚举出的 USB 串口不是 COM4，可覆盖环境变量：
+
+```powershell
+$env:AQUAGARDEN_HARDWARE_SERIAL_ENABLED="true"
+$env:AQUAGARDEN_HARDWARE_SERIAL_PORT="COM4"
+$env:AQUAGARDEN_HARDWARE_SERIAL_BAUD="115200"
+python run_fastapi.py
+```
+
 ## 已迁移接口
 
 - 认证：`POST /api/register`、`POST /api/login`
@@ -36,8 +62,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8090 --reload
 - JWT 使用 `Authorization: Bearer <token>`，算法固定为 `HS256`。
 - 密码使用 bcrypt 哈希。
 - CORS 默认与原 Spring 配置一致，允许任意来源但不允许凭据。
-- Spring 中直接依赖 Java 串口库的硬件直连逻辑，在 FastAPI 版本中以 HTTP Bridge 和 MCU 内存队列兼容。这样前端接口可用，硬件侧如需直连 Python 串口，可在 `app/services` 下继续接入 `pyserial`。
-- 若要启用 Python 串口直连，设置 `AQUAGARDEN_HARDWARE_SERIAL_ENABLED=true`，并按需配置 `AQUAGARDEN_HARDWARE_SERIAL_PORT`、`AQUAGARDEN_HARDWARE_SERIAL_BAUD`。
+- Spring 中直接依赖 Java 串口库的硬件直连逻辑，在 FastAPI 版本中已由 `app/services/hardware_serial.py` 接管。默认使用 COM4，也可通过 `AQUAGARDEN_HARDWARE_SERIAL_PORT`、`AQUAGARDEN_HARDWARE_SERIAL_BAUD` 覆盖。
 - 若仍保留本机 `serial_bridge.py`，可启用 `AQUAGARDEN_SERIAL_PUMP_ENABLED=true` 作为水泵后备。
 - 现有 SQLite 里的 `users.created_at` 和 `sensor_readings.recorded_at` 兼容整数毫秒时间戳，不需要先清库。
 - LLM 未配置 API Key 或调用失败时，会返回规则引擎回退结果，保持前端功能可用。

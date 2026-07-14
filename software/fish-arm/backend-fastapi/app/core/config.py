@@ -35,8 +35,8 @@ class Settings(BaseSettings):
     camera_rgb_url: str = Field(default="", alias="AQUAGARDEN_CAMERA_RGB_URL")
     camera_depth_url: str = Field(default="", alias="AQUAGARDEN_CAMERA_DEPTH_URL")
 
-    hardware_serial_enabled: bool = Field(default=False, alias="AQUAGARDEN_HARDWARE_SERIAL_ENABLED")
-    hardware_serial_port: str = Field(default="COM20", alias="AQUAGARDEN_HARDWARE_SERIAL_PORT")
+    hardware_serial_enabled: bool = Field(default=True, alias="AQUAGARDEN_HARDWARE_SERIAL_ENABLED")
+    hardware_serial_port: str = Field(default="COM4", alias="AQUAGARDEN_HARDWARE_SERIAL_PORT")
     hardware_serial_baud: int = Field(default=115200, alias="AQUAGARDEN_HARDWARE_SERIAL_BAUD")
     hardware_serial_max_jpeg_bytes: int = Field(default=524288, alias="AQUAGARDEN_HARDWARE_SERIAL_MAX_JPEG_BYTES")
     hardware_serial_persist_interval_ms: int = Field(default=1000, alias="AQUAGARDEN_HARDWARE_SERIAL_PERSIST_INTERVAL_MS")

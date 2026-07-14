@@ -52,6 +52,10 @@ class HardwareSerialService:
         self._last_error: str | None = None
         self._started_at = int(time.time() * 1000)
         self._last_persist_at = 0
+        self._last_frame_at = 0
+        self._rx_frame_count = 0
+        self._rx_crc_error_count = 0
+        self._rx_invalid_frame_count = 0
         self.pump_manual_on = False
         self.pump_pwm_ui: int | None = None
 
@@ -83,8 +87,25 @@ class HardwareSerialService:
             "railPosition": None,
             "lastError": self._last_error,
             "uptimeSec": (int(time.time() * 1000) - self._started_at) // 1000,
+            "serial": self.serial_status(),
             "camera": camera_status or {"hasRgb": bool(settings.camera_rgb_url), "hasDepth": bool(settings.camera_depth_url)},
             "pump": {"manualOn": self.pump_manual_on, "pwm": self.pump_pwm_ui if self.pump_manual_on else None},
+        }
+
+    def serial_status(self) -> dict:
+        now = int(time.time() * 1000)
+        return {
+            "enabled": self.enabled,
+            "connected": self.is_connected(),
+            "port": self.port_name,
+            "baud": self.baud,
+            "protocol": "uart-55AA-v1-v2-38B-crc16-modbus",
+            "rxFrameCount": self._rx_frame_count,
+            "rxCrcErrorCount": self._rx_crc_error_count,
+            "rxInvalidFrameCount": self._rx_invalid_frame_count,
+            "lastFrameAt": self._last_frame_at,
+            "lastFrameAgeMs": now - self._last_frame_at if self._last_frame_at else -1,
+            "lastError": self._last_error,
         }
 
     def pump_debug_status(self) -> dict:
@@ -231,23 +252,32 @@ class HardwareSerialService:
         assert self._serial is not None
         rest = self._serial.read(4)
         if len(rest) != 4:
+            self._rx_invalid_frame_count += 1
             return None
+        version = rest[0]
         payload_len = rest[2] | (rest[3] << 8)
-        if payload_len <= 0 or payload_len > 512:
+        if version not in (0x01, 0x02) or payload_len != EXPECTED_PAYLOAD_LEN:
+            self._rx_invalid_frame_count += 1
             return None
         body = self._serial.read(payload_len + 2)
         if len(body) != payload_len + 2:
+            self._rx_invalid_frame_count += 1
             return None
         frame = SYNC + rest + body
         got = frame[-2] | (frame[-1] << 8)
         if got != crc16_modbus(frame[:-2]):
+            self._rx_crc_error_count += 1
             return None
         return bytes(frame[6:-2])
 
     def _handle_sensor_payload(self, payload: bytes) -> None:
-        if len(payload) < EXPECTED_PAYLOAD_LEN:
+        if len(payload) != EXPECTED_PAYLOAD_LEN:
+            self._rx_invalid_frame_count += 1
             return
         _, air_temp_i, air_humidity_i, water_temp_i, soil, wqi, pump_pct = struct.unpack_from("<ihhhBBB", payload, 0)
+        if not _valid_sensor_values(air_temp_i, air_humidity_i, water_temp_i, soil, wqi, pump_pct):
+            self._rx_invalid_frame_count += 1
+            return
         self.pump_pwm_ui = _clamp(pump_pct, 0, 100)
         snapshot = SensorSnapshot(
             water_temp=round(water_temp_i / 10.0, 1),
@@ -256,6 +286,8 @@ class HardwareSerialService:
             wqi=float(wqi),
             soil_moisture=float(soil),
         )
+        self._rx_frame_count += 1
+        self._last_frame_at = int(time.time() * 1000)
         self._publish_snapshot(snapshot)
 
     def _handle_text_line(self, raw: bytes) -> None:
@@ -441,6 +473,24 @@ def _number_after(text: str, *keys: str) -> float | None:
 
 def _is_jpeg(frame: bytes) -> bool:
     return len(frame) >= 4 and frame[:2] == JPEG_SOI and frame[-2:] == JPEG_EOI
+
+
+def _valid_sensor_values(
+    air_temp_i: int,
+    air_humidity_i: int,
+    water_temp_i: int,
+    soil: int,
+    wqi: int,
+    pump_pct: int,
+) -> bool:
+    return (
+        -400 <= air_temp_i <= 850
+        and 0 <= air_humidity_i <= 1000
+        and -550 <= water_temp_i <= 1250
+        and 0 <= soil <= 100
+        and 0 <= wqi <= 100
+        and 0 <= pump_pct <= 100
+    )
 
 
 def _clamp(value: int, min_value: int, max_value: int) -> int:

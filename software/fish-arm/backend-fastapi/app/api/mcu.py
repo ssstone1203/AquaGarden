@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Response
 
 from app.core.security import get_current_user
+from app.services.hardware_serial import hardware_serial
 from app.services.state import state
 
 
@@ -36,6 +37,11 @@ def status() -> dict:
     if cmd is None:
         return {"pending": False}
     return {"pending": True, "cmd": cmd.cmd, "power": cmd.power, "cmdName": cmd.cmd_name}
+
+
+@router.get("/api/mcu/serial/status")
+def serial_status() -> dict:
+    return hardware_serial.serial_status()
 
 
 def _parse_int(value, default: int) -> int:
