@@ -1,3 +1,6 @@
+import asyncio
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -6,10 +9,25 @@ from app.api import ai, aqua, auth, mcu, mode, robot, sensors, users, video, web
 from app.core.config import settings
 from app.db.session import init_db
 from app.services.hardware_serial import hardware_serial
+from app.services.logs import hub
+from app.services.user_bootstrap import ensure_initial_admin
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    init_db()
+    ensure_initial_admin()
+    hub.bind_loop(asyncio.get_running_loop())
+    hardware_serial.start()
+    try:
+        yield
+    finally:
+        hardware_serial.stop()
+        hub.unbind_loop()
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="AquaGarden FastAPI Backend", version="1.0.0")
+    app = FastAPI(title="AquaGarden FastAPI Backend", version="1.0.0", lifespan=lifespan)
 
     app.add_middleware(
         CORSMiddleware,
@@ -19,15 +37,6 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         allow_headers=["*"],
     )
-
-    @app.on_event("startup")
-    def on_startup() -> None:
-        init_db()
-        hardware_serial.start()
-
-    @app.on_event("shutdown")
-    def on_shutdown() -> None:
-        hardware_serial.stop()
 
     @app.exception_handler(Exception)
     async def unhandled_error(_: Request, exc: Exception) -> JSONResponse:

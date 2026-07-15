@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.db.session import get_db
 from app.models.sensor_reading import SensorReading
 from app.schemas.common import SensorSnapshot
-from app.services.logs import hub
+from app.services.logs import hub, sensor_message
 from app.services.state import now_ms, state
 
 
@@ -44,6 +44,7 @@ def sensors() -> dict:
     fresh = state.has_fresh_hardware_snapshot(settings.sensors_realtime_max_age_ms)
     snapshot = state.read_fresh_or_demo(settings.sensors_realtime_max_age_ms)
     hardware_ts = state.latest_real_ts
+    details = state.read_sensor_details() if fresh else {}
     return {
         "water_temp": snapshot.water_temp,
         "air_temp": snapshot.air_temp,
@@ -54,6 +55,7 @@ def sensors() -> dict:
         "realtime": fresh,
         "hardwareTs": hardware_ts,
         "ageMs": now_ms() - hardware_ts if fresh and hardware_ts > 0 else -1,
+        **details,
     }
 
 
@@ -82,9 +84,10 @@ def history(db: Annotated[Session, Depends(get_db)], range_value: str = Query(de
 
 @router.post("/api/sensors/ingest", status_code=200)
 async def ingest(body: SensorSnapshot, db: Annotated[Session, Depends(get_db)], response: Response) -> Response:
-    state.update_sensor(body)
-    _save_reading(db, body, now_ms())
-    await hub.broadcast({"type": "sensor", "data": body.model_dump()})
+    ts = now_ms()
+    state.update_sensor(body, ts, details={})
+    _save_reading(db, body, ts)
+    await hub.broadcast(sensor_message(body, ts, source="hardware"))
     response.status_code = 200
     return response
 
@@ -110,9 +113,9 @@ async def upload(
     ts = int(body.get("ts") or now_ms())
     current = state.read_sensors().model_copy()
     setattr(current, SENSOR_META[sensor_id][0], float(value))
-    state.update_sensor(current, ts)
+    state.update_sensor(current, ts, details={})
     _save_reading(db, current, ts)
-    await hub.broadcast({"type": "sensor", "data": current.model_dump()})
+    await hub.broadcast(sensor_message(current, ts, source="hardware"))
     return {"code": 0, "msg": "ok", "data": {"deviceId": str(body.get("deviceId", "")), "sensorId": sensor_id, "value": value, "ts": ts}}
 
 

@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import List
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,13 +11,16 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = Field(default=8090, alias="AQUAGARDEN_FASTAPI_PORT")
     reload: bool = Field(default=False, alias="AQUAGARDEN_FASTAPI_RELOAD")
-    database_url: str = "sqlite:///./aquagarden.db"
+    database_url: str = Field(default="sqlite:///./aquagarden.db", alias="AQUAGARDEN_DATABASE_URL")
 
     jwt_secret: str = Field(
         default="your-secret-key-change-in-production-min-256-bits-please-use-long-secret",
         alias="AQUAGARDEN_JWT_SECRET",
     )
     jwt_expiration_minutes: int = Field(default=30, alias="AQUAGARDEN_JWT_EXPIRATION_MINUTES")
+    initial_admin_username: str = Field(default="", alias="AQUAGARDEN_ADMIN_USERNAME")
+    initial_admin_password: SecretStr = Field(default=SecretStr(""), alias="AQUAGARDEN_ADMIN_PASSWORD")
+    initial_admin_email: str | None = Field(default=None, alias="AQUAGARDEN_ADMIN_EMAIL")
 
     cors_origins: List[str] = ["*"]
     cors_origin_regex: str | None = None
@@ -36,7 +39,7 @@ class Settings(BaseSettings):
     camera_depth_url: str = Field(default="", alias="AQUAGARDEN_CAMERA_DEPTH_URL")
 
     hardware_serial_enabled: bool = Field(default=True, alias="AQUAGARDEN_HARDWARE_SERIAL_ENABLED")
-    hardware_serial_port: str = Field(default="COM4", alias="AQUAGARDEN_HARDWARE_SERIAL_PORT")
+    hardware_serial_port: str = Field(default="COM20", alias="AQUAGARDEN_HARDWARE_SERIAL_PORT")
     hardware_serial_baud: int = Field(default=115200, alias="AQUAGARDEN_HARDWARE_SERIAL_BAUD")
     hardware_serial_max_jpeg_bytes: int = Field(default=524288, alias="AQUAGARDEN_HARDWARE_SERIAL_MAX_JPEG_BYTES")
     hardware_serial_persist_interval_ms: int = Field(default=1000, alias="AQUAGARDEN_HARDWARE_SERIAL_PERSIST_INTERVAL_MS")

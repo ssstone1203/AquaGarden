@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import base64
+import logging
 import re
 import struct
 import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Iterable
+from typing import Any, Iterable
 
 from sqlalchemy.orm import Session
 
@@ -15,7 +16,7 @@ from app.core.config import settings
 from app.db.session import SessionLocal
 from app.models.sensor_reading import SensorReading
 from app.schemas.common import SensorSnapshot
-from app.services.logs import hub
+from app.services.logs import hub, sensor_message
 from app.services.state import state
 from app.services.video import tank_video
 
@@ -28,13 +29,134 @@ except ImportError:  # pragma: no cover - pyserial is optional unless hardware m
 SYNC = b"\x55\xaa"
 JPEG_SOI = b"\xff\xd8"
 JPEG_EOI = b"\xff\xd9"
+UPLINK_VERSION = 0x02
 EXPECTED_PAYLOAD_LEN = 30
+UPLINK_FRAME_LEN = 38
+UPLINK_PAYLOAD_STRUCT = struct.Struct("<IhhhBHBBBB3xIHHH")
+ALARM_NAMES = {
+    0: "soil_sensor_fault",
+    2: "air_read_fail",
+    3: "tds_read_fail",
+    4: "water_temp_read_fail",
+    5: "water_temp_high",
+    6: "tds_low",
+    8: "comm_rx_error",
+    9: "usb_light_fault",
+    10: "atomizer_fault",
+}
+logger = logging.getLogger(__name__)
 
 
 @dataclass
 class SerialCommandResult:
     ok: bool
     message: str
+
+
+@dataclass(frozen=True)
+class AquaTelemetry:
+    sequence: int
+    timestamp_ms: int
+    air_temp: float
+    air_humidity: float
+    water_temp: float
+    soil_moisture: int
+    tds_ntu: int
+    pump_pwm: int
+    need_watering: bool
+    atomizer_state: int
+    usb_light_mode: int
+    alarm_flags: int
+    air_retry_count: int
+    tds_retry_count: int
+    uwt_retry_count: int
+
+    @property
+    def alarms(self) -> list[str]:
+        return [name for bit, name in ALARM_NAMES.items() if self.alarm_flags & (1 << bit)]
+
+    def details(self) -> dict[str, Any]:
+        return {
+            "protocol_version": UPLINK_VERSION,
+            "sequence": self.sequence,
+            "mcu_timestamp_ms": self.timestamp_ms,
+            "tds_ntu": self.tds_ntu,
+            "pump_pwm": self.pump_pwm,
+            "need_watering": self.need_watering,
+            "atomizer_state": self.atomizer_state,
+            "usb_light_mode": self.usb_light_mode,
+            "usb_light_ready": self.usb_light_mode != 0xFF,
+            "alarm_flags": self.alarm_flags,
+            "alarms": self.alarms,
+            "air_retry_count": self.air_retry_count,
+            "tds_retry_count": self.tds_retry_count,
+            "uwt_retry_count": self.uwt_retry_count,
+        }
+
+
+class UplinkCrcError(ValueError):
+    pass
+
+
+def decode_uplink_frame(frame: bytes) -> AquaTelemetry:
+    if len(frame) != UPLINK_FRAME_LEN:
+        raise ValueError("invalid uplink frame length")
+    if frame[:2] != SYNC:
+        raise ValueError("invalid uplink sync")
+    if frame[2] != UPLINK_VERSION:
+        raise ValueError("unsupported uplink version")
+    payload_len = frame[4] | (frame[5] << 8)
+    if payload_len != EXPECTED_PAYLOAD_LEN:
+        raise ValueError("invalid uplink payload length")
+    received_crc = frame[-2] | (frame[-1] << 8)
+    if received_crc != crc16_modbus(frame[:-2]):
+        raise UplinkCrcError("invalid uplink crc")
+
+    (
+        timestamp_ms,
+        air_temp_i,
+        air_humidity_i,
+        water_temp_i,
+        soil_moisture,
+        tds_ntu,
+        pump_pwm,
+        need_watering,
+        atomizer_state,
+        usb_light_mode,
+        alarm_flags,
+        air_retry_count,
+        tds_retry_count,
+        uwt_retry_count,
+    ) = UPLINK_PAYLOAD_STRUCT.unpack(frame[6:-2])
+    if not _valid_telemetry_values(
+        air_temp_i,
+        air_humidity_i,
+        water_temp_i,
+        soil_moisture,
+        pump_pwm,
+        need_watering,
+        atomizer_state,
+        usb_light_mode,
+    ):
+        raise ValueError("invalid uplink telemetry values")
+
+    return AquaTelemetry(
+        sequence=frame[3],
+        timestamp_ms=timestamp_ms,
+        air_temp=round(air_temp_i / 10.0, 1),
+        air_humidity=round(air_humidity_i / 10.0, 1),
+        water_temp=round(water_temp_i / 10.0, 1),
+        soil_moisture=soil_moisture,
+        tds_ntu=tds_ntu,
+        pump_pwm=pump_pwm,
+        need_watering=bool(need_watering),
+        atomizer_state=atomizer_state,
+        usb_light_mode=usb_light_mode,
+        alarm_flags=alarm_flags,
+        air_retry_count=air_retry_count,
+        tds_retry_count=tds_retry_count,
+        uwt_retry_count=uwt_retry_count,
+    )
 
 
 class HardwareSerialService:
@@ -50,12 +172,14 @@ class HardwareSerialService:
         self._thread: threading.Thread | None = None
         self._write_lock = threading.Lock()
         self._last_error: str | None = None
+        self._last_persist_error: str | None = None
         self._started_at = int(time.time() * 1000)
         self._last_persist_at = 0
         self._last_frame_at = 0
         self._rx_frame_count = 0
         self._rx_crc_error_count = 0
         self._rx_invalid_frame_count = 0
+        self._last_telemetry: AquaTelemetry | None = None
         self.pump_manual_on = False
         self.pump_pwm_ui: int | None = None
 
@@ -72,6 +196,10 @@ class HardwareSerialService:
     def stop(self) -> None:
         self._running = False
         self._close()
+        thread = self._thread
+        if thread is not None and thread is not threading.current_thread():
+            thread.join(timeout=2)
+        self._thread = None
 
     def is_connected(self) -> bool:
         port = self._serial
@@ -99,13 +227,15 @@ class HardwareSerialService:
             "connected": self.is_connected(),
             "port": self.port_name,
             "baud": self.baud,
-            "protocol": "uart-55AA-v1-v2-38B-crc16-modbus",
+            "protocol": "aquagarden-v1-uplink-55AA-v2-downlink-5AA5",
             "rxFrameCount": self._rx_frame_count,
             "rxCrcErrorCount": self._rx_crc_error_count,
             "rxInvalidFrameCount": self._rx_invalid_frame_count,
             "lastFrameAt": self._last_frame_at,
             "lastFrameAgeMs": now - self._last_frame_at if self._last_frame_at else -1,
             "lastError": self._last_error,
+            "lastPersistError": self._last_persist_error,
+            "telemetry": self._last_telemetry.details() if self._last_telemetry else None,
         }
 
     def pump_debug_status(self) -> dict:
@@ -114,7 +244,7 @@ class HardwareSerialService:
             "connected": self.is_connected(),
             "port": self.port_name,
             "baud": self.baud,
-            "protocols": "legacy-5AA5 + uart-55AA-38B",
+            "protocols": "aquagarden-v1 uplink-55AA-v2 downlink-5AA5",
             "manualOn": self.pump_manual_on,
             "pwm": self.pump_pwm_ui if self.pump_manual_on else None,
             "lastError": self._last_error,
@@ -217,9 +347,9 @@ class HardwareSerialService:
                 continue
             b = raw[0]
             if prev == SYNC[0] and b == SYNC[1]:
-                payload = self._read_binary_packet()
-                if payload is not None:
-                    self._handle_sensor_payload(payload)
+                telemetry = self._read_binary_packet()
+                if telemetry is not None:
+                    self._handle_telemetry(telemetry)
                 prev = -1
                 line.clear()
                 continue
@@ -248,15 +378,14 @@ class HardwareSerialService:
                     line.clear()
             prev = b
 
-    def _read_binary_packet(self) -> bytes | None:
+    def _read_binary_packet(self) -> AquaTelemetry | None:
         assert self._serial is not None
         rest = self._serial.read(4)
         if len(rest) != 4:
             self._rx_invalid_frame_count += 1
             return None
-        version = rest[0]
         payload_len = rest[2] | (rest[3] << 8)
-        if version not in (0x01, 0x02) or payload_len != EXPECTED_PAYLOAD_LEN:
+        if payload_len != EXPECTED_PAYLOAD_LEN:
             self._rx_invalid_frame_count += 1
             return None
         body = self._serial.read(payload_len + 2)
@@ -264,31 +393,27 @@ class HardwareSerialService:
             self._rx_invalid_frame_count += 1
             return None
         frame = SYNC + rest + body
-        got = frame[-2] | (frame[-1] << 8)
-        if got != crc16_modbus(frame[:-2]):
+        try:
+            return decode_uplink_frame(frame)
+        except UplinkCrcError:
             self._rx_crc_error_count += 1
-            return None
-        return bytes(frame[6:-2])
+        except ValueError:
+            self._rx_invalid_frame_count += 1
+        return None
 
-    def _handle_sensor_payload(self, payload: bytes) -> None:
-        if len(payload) != EXPECTED_PAYLOAD_LEN:
-            self._rx_invalid_frame_count += 1
-            return
-        _, air_temp_i, air_humidity_i, water_temp_i, soil, wqi, pump_pct = struct.unpack_from("<ihhhBBB", payload, 0)
-        if not _valid_sensor_values(air_temp_i, air_humidity_i, water_temp_i, soil, wqi, pump_pct):
-            self._rx_invalid_frame_count += 1
-            return
-        self.pump_pwm_ui = _clamp(pump_pct, 0, 100)
+    def _handle_telemetry(self, telemetry: AquaTelemetry) -> None:
+        self._last_telemetry = telemetry
+        self.pump_pwm_ui = telemetry.pump_pwm
         snapshot = SensorSnapshot(
-            water_temp=round(water_temp_i / 10.0, 1),
-            air_temp=round(air_temp_i / 10.0, 1),
-            air_humidity=round(air_humidity_i / 10.0, 1),
-            wqi=float(wqi),
-            soil_moisture=float(soil),
+            water_temp=telemetry.water_temp,
+            air_temp=telemetry.air_temp,
+            air_humidity=telemetry.air_humidity,
+            wqi=float(telemetry.tds_ntu),
+            soil_moisture=float(telemetry.soil_moisture),
         )
         self._rx_frame_count += 1
         self._last_frame_at = int(time.time() * 1000)
-        self._publish_snapshot(snapshot)
+        self._publish_snapshot(snapshot, telemetry.details())
 
     def _handle_text_line(self, raw: bytes) -> None:
         text = raw.decode("utf-8", errors="ignore").strip()
@@ -311,22 +436,25 @@ class HardwareSerialService:
         )
         self._publish_snapshot(snapshot)
 
-    def _publish_snapshot(self, snapshot: SensorSnapshot) -> None:
+    def _publish_snapshot(self, snapshot: SensorSnapshot, details: dict[str, Any] | None = None) -> None:
         ts = int(time.time() * 1000)
-        state.update_sensor(snapshot, ts)
-        try:
-            import asyncio
-
-            asyncio.run(hub.broadcast({"type": "sensor", "data": snapshot.model_dump()}))
-        except Exception:
-            pass
+        state.update_sensor(snapshot, ts, details=details or {})
+        hub.broadcast_from_thread(sensor_message(snapshot, ts, source="hardware", details=details))
         if ts - self._last_persist_at >= self.persist_interval_ms:
-            db = SessionLocal()
+            self._last_persist_at = ts
+            db: Session | None = None
             try:
+                db = SessionLocal()
                 _save_reading(db, snapshot, datetime.fromtimestamp(ts / 1000))
-                self._last_persist_at = ts
+                self._last_persist_error = None
+            except Exception:
+                self._last_persist_error = "sensor history persistence failed"
+                if db is not None:
+                    db.rollback()
+                logger.exception("Failed to persist sensor snapshot")
             finally:
-                db.close()
+                if db is not None:
+                    db.close()
 
     def _send_command(self, action: str, power: int, enable: int = 1) -> SerialCommandResult:
         port = self._serial
@@ -367,31 +495,26 @@ def _save_reading(db: Session, snapshot: SensorSnapshot, recorded_at: datetime) 
 def pump_command_frames(action: str, power: int, enable: int = 1) -> Iterable[bytes]:
     action = action.upper()
     power = _clamp(power, 0, 100)
-    legacy_cmd = 0x01
-    legacy_payload = bytes([1, power])
-    uart_cmd = 0x03
-    uart_power = power
-
     if action == "STOP":
-        legacy_payload = b"\x01\x00"
-        uart_cmd, uart_power = 0x01, 0
+        command, payload = 0x05, b""
     elif action == "AUTO":
-        legacy_payload = b"\x00\x00"
-        uart_cmd, uart_power = 0x01, 0
+        command, payload = 0x07, b""
     elif action == "START":
         power = power or 60
-        legacy_payload = bytes([1, power])
-        uart_cmd, uart_power = 0x02, power
-    elif action in {"PWM", "MANUAL"}:
+        command, payload = 0x04, bytes([power])
+    elif action == "PWM":
+        command, payload = 0x06, bytes([power])
+    elif action == "MANUAL":
         enable = _clamp(enable, 0, 1)
-        legacy_payload = bytes([enable, power])
-        uart_cmd, uart_power = (0x03, power) if enable else (0x01, 0)
+        command, payload = 0x01, bytes([enable, power])
     else:
         return []
-    return [pack_legacy_downlink(legacy_cmd, legacy_payload), pack_uart_comm_downlink(uart_cmd, uart_power)]
+    return [pack_downlink_frame(command, payload)]
 
 
-def pack_legacy_downlink(cmd: int, payload: bytes) -> bytes:
+def pack_downlink_frame(cmd: int, payload: bytes = b"") -> bytes:
+    if len(payload) > 8:
+        raise ValueError("downlink payload exceeds 8 bytes")
     frame = bytearray([0x5A, 0xA5, (1 + len(payload)) & 0xFF, cmd & 0xFF])
     frame.extend(payload)
     crc = crc16_modbus(frame)
@@ -399,16 +522,8 @@ def pack_legacy_downlink(cmd: int, payload: bytes) -> bytes:
     return bytes(frame)
 
 
-def pack_uart_comm_downlink(cmd: int, power: int) -> bytes:
-    frame = bytearray(38)
-    frame[0] = 0x55
-    frame[1] = 0xAA
-    frame[2] = cmd & 0xFF
-    frame[3] = power & 0xFF
-    crc = crc16_modbus(frame[:-2])
-    frame[-2] = crc & 0xFF
-    frame[-1] = (crc >> 8) & 0xFF
-    return bytes(frame)
+def pack_legacy_downlink(cmd: int, payload: bytes) -> bytes:
+    return pack_downlink_frame(cmd, payload)
 
 
 def crc16_modbus(data: bytes | bytearray) -> int:
@@ -475,21 +590,25 @@ def _is_jpeg(frame: bytes) -> bool:
     return len(frame) >= 4 and frame[:2] == JPEG_SOI and frame[-2:] == JPEG_EOI
 
 
-def _valid_sensor_values(
+def _valid_telemetry_values(
     air_temp_i: int,
     air_humidity_i: int,
     water_temp_i: int,
-    soil: int,
-    wqi: int,
-    pump_pct: int,
+    soil_moisture: int,
+    pump_pwm: int,
+    need_watering: int,
+    atomizer_state: int,
+    usb_light_mode: int,
 ) -> bool:
     return (
         -400 <= air_temp_i <= 850
         and 0 <= air_humidity_i <= 1000
         and -550 <= water_temp_i <= 1250
-        and 0 <= soil <= 100
-        and 0 <= wqi <= 100
-        and 0 <= pump_pct <= 100
+        and 0 <= soil_moisture <= 100
+        and 0 <= pump_pwm <= 100
+        and need_watering in (0, 1)
+        and atomizer_state in (0, 1)
+        and (0 <= usb_light_mode <= 26 or usb_light_mode == 0xFF)
     )
 
 

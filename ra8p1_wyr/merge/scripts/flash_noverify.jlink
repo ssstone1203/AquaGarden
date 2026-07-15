@@ -1,9 +1,0 @@
-// Flash code MRAM only, no verify. Run from merge/ after RDPM partition fix:
-//   JLinkExe -CommandFile scripts\flash_noverify.jlink
-device R7KA8P1KF_CPU0
-si SWD
-speed 4000
-r
-loadfile Objects\merge_code.hex
-r
-exit

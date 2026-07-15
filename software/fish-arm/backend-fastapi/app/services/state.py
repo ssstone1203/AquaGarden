@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from random import randint
 from threading import Lock
 from time import time
+from typing import Any
 
 from app.schemas.common import SensorSnapshot
 
@@ -34,12 +35,20 @@ class SystemState:
         self.robot_position = {"x": 0, "y": 0, "z": 0}
         self.latest_real: SensorSnapshot | None = None
         self.latest_real_ts = 0
+        self.latest_sensor_details: dict[str, Any] = {}
         self.pending_command: PendingCommand | None = None
 
-    def update_sensor(self, snapshot: SensorSnapshot, timestamp_ms: int | None = None) -> None:
+    def update_sensor(
+        self,
+        snapshot: SensorSnapshot,
+        timestamp_ms: int | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
         with self._lock:
             self.latest_real = snapshot
             self.latest_real_ts = timestamp_ms if timestamp_ms and timestamp_ms > 0 else now_ms()
+            if details is not None:
+                self.latest_sensor_details = dict(details)
 
     def has_hardware_snapshot(self) -> bool:
         return self.latest_real is not None
@@ -49,6 +58,10 @@ class SystemState:
 
     def read_sensors(self) -> SensorSnapshot:
         return self.latest_real or DEMO_SNAPSHOT
+
+    def read_sensor_details(self) -> dict[str, Any]:
+        with self._lock:
+            return dict(self.latest_sensor_details)
 
     def read_fresh_or_demo(self, max_age_ms: int) -> SensorSnapshot:
         return self.latest_real if self.has_fresh_hardware_snapshot(max_age_ms) else DEMO_SNAPSHOT

@@ -1,0 +1,28 @@
+# 调研发现
+
+- Windows 已枚举 `COM20`，设备描述为 `USB-SERIAL CH340`，VID:PID 为 `1A86:7523`。
+- FastAPI 已有 `HardwareSerialService`，当前默认串口为 COM4，波特率为 115200。
+- 串口服务从后台线程读取数据，并把传感器消息广播到现有 `/ws/logs`。
+- 需要重点确认后台线程调用异步 WebSocket 广播时是否跨事件循环，以及前端是否消费 `type=sensor` 消息。
+- `HardwareSerialService._publish_snapshot()` 当前在串口线程中执行 `asyncio.run(hub.broadcast(...))`，会新建事件循环并跨线程操作由 FastAPI 主循环持有的 WebSocket；异常被裸 `except` 静默吞掉，是实时推送不可靠的根因。
+- front-vue 的 `DashboardView.vue` 已轮询 `/api/sensors`，并订阅 `/ws/logs` 处理传感器消息；已有断线重连代码，需核对清理和消息契约。
+- 后端没有独立 `/ws/sensors` 端点，且 WebSocket 新连接不会立即收到当前快照。
+- 当前工作区只允许写 `backend-fastapi`；同级 `front-vue` 可读但不可直接写，先判断是否确实需要前端修改。
+- front-vue 实际只接受 `type=sensor_data` 且读取扁平字段；后端改为统一输出该格式，同时保留嵌套 `data` 字段，前端无需修改即可实时显示。
+- 仓库中的启动入口在执行期间由用户侧从 `run_fastapi.py` 调整为根目录 `main.py`；实现与文档按当前入口继续，不撤销该变更。
+- COM20 实测成功解析一帧：水温 17.5、气温 18.7、湿度 77.9、水质 0、土壤湿度 100；随后现有 SQLite 报只读写入失败，异常冒泡导致串口读循环断开。
+- 原 `aquagarden.db` 可创建写锁但数据页 INSERT 被操作系统拒绝；同目录新建的 `aquagarden-runtime.db` 可正常提交，因此采用保留数据的 SQLite 备份副本作为当前机器运行库。
+- 2026-07-15 用户明确：当前实际烧录固件及通信文档位于 `hardware/ra8p1/aquagarden`，该目录是后续协议实现的唯一权威来源。
+- 权威固件定义上行帧为 `55 AA version seq 1E 00 payload[30] crc16`，每 250ms 发送一次，CRC16/Modbus 小端。
+- 权威固件定义下行帧为 `5A A5 len cmd payload crc16`，最大 payload 8 字节；正式命令包含泵手动、土壤配置、联动、启停、PWM、自动、USB 灯和雾化器。
+- 后端当前 `<ihhhBBB` 只解析 payload `[0..12]`，其中温湿度和土壤百分比偏移正确，但把 payload `[12]` 当作泵 PWM；实际泵 PWM 在 `[13]`。
+- payload 后半段包含土壤原始 ADC、状态位/有效位、USB 灯模式、雾化器状态、32 位告警位与 TDS 原始值，需要按 `com_build_uplink()` 精确展开。
+- 土壤驱动校准为干燥原始值 3200、湿润原始值 1500，百分比公式为 `(3200 - raw) * 100 / 1700`，并在区间外钳制到 0/100。
+- `VER=0x02` payload 精确格式为 `<IhhhBHBBBB3xIHHH`：MCU tick、气温x10、湿度x10、水温x10、土壤%、TDS NTU、泵PWM、需浇水、雾化器、USB灯、告警、三类重试计数。
+- 用户样本帧解码为：土壤 100%、TDS 0 NTU、泵 60%、need_watering=1、雾化器关、USB 灯未初始化；alarm=0x44 表示 AIR_READ_FAIL(bit2) 与 TDS_LOW(bit6)。
+- 用户样本的 air_retry_count 从 8096 增至 8104，说明 SHT30 读取失败仍在累积；tds_retry_count 与 uwt_retry_count 均为 0。
+- 权威固件仅发送并要求解析 `VER=0x02`；`VER=0x01` 是已废弃旧布局，不应继续按同一字段结构接收。
+- 下行无 ACK，需要通过后续上行字段确认命令生效；水泵推荐命令为 START=0x04、STOP=0x05、PWM=0x06、AUTO=0x07。
+- 新解析器 COM20 实测：sequence=136，MCU tick=9292698，水温17.7℃，土壤100%，TDS 0 NTU，泵60%，need_watering=true，alarm=0x44，air_retry=9121；CRC/无效帧均为0。
+- 登录接口与前端请求契约一致且服务可达；`admin/admin123` 返回 401 的根因是原库和运行库都不存在 admin，而 FastAPI 缺少 Spring `DataInitializer` 对应逻辑。
+- 当前两个数据库各有 1 个非 admin 用户，因此运行库复制没有丢失已有用户。
