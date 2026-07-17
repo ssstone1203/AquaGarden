@@ -12,6 +12,7 @@ from app.main import create_app
 from app.models.user import User
 from app.services.hardware_serial import hardware_serial
 from app.services.user_bootstrap import ensure_admin_user
+from app.services.video import usb_camera
 
 
 @pytest.fixture
@@ -39,6 +40,8 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
         patch("app.main.ensure_initial_admin", return_value=False),
         patch.object(hardware_serial, "start"),
         patch.object(hardware_serial, "stop"),
+        patch.object(usb_camera, "start"),
+        patch.object(usb_camera, "stop"),
         TestClient(app) as test_client,
     ):
         yield test_client
@@ -149,3 +152,65 @@ def test_invalid_token_returns_frontend_compatible_generic_error(client: TestCli
     # Assert
     assert response.status_code == 401
     assert response.json() == {"detail": "无效的认证凭据"}
+
+
+def test_atomizer_control_requires_authentication(client: TestClient) -> None:
+    # Arrange / Act
+    response = client.post("/api/aqua/atomizer", json={"state": True})
+
+    # Assert
+    assert response.status_code == 401
+    assert response.json() == {"detail": "无效的认证凭据"}
+
+
+def test_usb_light_control_requires_authentication(client: TestClient) -> None:
+    # Arrange / Act
+    response = client.post("/api/aqua/usb-light", json={"mode": 2})
+
+    # Assert
+    assert response.status_code == 401
+    assert response.json() == {"detail": "无效的认证凭据"}
+
+
+def test_ai_chat_requires_authentication(client: TestClient) -> None:
+    # Arrange / Act
+    response = client.post("/api/ai/chat", json={"message": "当前水质怎么样？", "history": []})
+
+    # Assert
+    assert response.status_code == 401
+    assert response.json() == {"detail": "无效的认证凭据"}
+
+
+def test_atomizer_control_rejects_non_boolean_state(client: TestClient, db_session: Session) -> None:
+    # Arrange
+    user_factory(db_session, username="admin", password="admin123", role="admin")
+    login = client.post("/api/login", json={"username": "admin", "password": "admin123"})
+    headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+    # Act
+    response = client.post("/api/aqua/atomizer", json={"state": 1}, headers=headers)
+
+    # Assert
+    assert response.status_code == 422
+
+
+def test_atomizer_control_returns_confirmed_hardware_state(client: TestClient, db_session: Session) -> None:
+    # Arrange
+    user_factory(db_session, username="admin", password="admin123", role="admin")
+    login = client.post("/api/login", json={"username": "admin", "password": "admin123"})
+    headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+    hardware_response = {
+        "ok": True,
+        "confirmed": True,
+        "state": True,
+        "message": "atomizer state confirmed",
+    }
+
+    with patch.object(hardware_serial, "atomizer_set", return_value=(200, hardware_response)) as atomizer_set:
+        # Act
+        response = client.post("/api/aqua/atomizer", json={"state": True}, headers=headers)
+
+    # Assert
+    assert response.status_code == 200
+    assert response.json() == hardware_response
+    atomizer_set.assert_called_once_with(True)

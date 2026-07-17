@@ -4,7 +4,15 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import Response, StreamingResponse
 
 from app.schemas.common import DetectionPayload
-from app.services.video import BOUNDARY, DetectionBox, generated_stream, mjpeg_part, tank_video
+from app.services.video import (
+    BOUNDARY,
+    DetectionBox,
+    generated_stream,
+    mjpeg_part,
+    raspberry_pi_video,
+    tank_video,
+    usb_camera,
+)
 
 
 router = APIRouter()
@@ -13,6 +21,19 @@ router = APIRouter()
 @router.get("/api/video/robot")
 def robot():
     return StreamingResponse(generated_stream("机械臂", "Camera Feed"), media_type=f"multipart/x-mixed-replace; boundary={BOUNDARY}")
+
+
+@router.get("/api/video/raspberry-pi")
+def raspberry_pi():
+    return StreamingResponse(
+        raspberry_pi_video.stream(),
+        media_type=f"multipart/x-mixed-replace; boundary={BOUNDARY}",
+    )
+
+
+@router.get("/api/video/raspberry-pi/status")
+def raspberry_pi_status() -> dict:
+    return raspberry_pi_video.status()
 
 
 @router.get("/api/video/tank")
@@ -30,7 +51,10 @@ def tank_snapshot():
 
 @router.get("/api/video/tank/status")
 def tank_status() -> dict:
-    return tank_video.status()
+    return {
+        **tank_video.status(),
+        "capture": usb_camera.status(),
+    }
 
 
 @router.post("/api/video/tank/detections")
@@ -57,7 +81,7 @@ def ingest_detections(payload: DetectionPayload) -> dict:
 @router.post("/api/video/tank/ingest")
 async def ingest_tank_frame(request: Request) -> dict:
     frame = await request.body()
-    if not tank_video.update_frame(frame):
+    if not tank_video.update_frame(frame, source="ingest"):
         return {"ok": False, "message": "invalid jpeg frame"}
     return {"ok": True, "seq": tank_video.frame_seq, "bytes": len(frame)}
 

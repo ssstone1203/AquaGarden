@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
 
 from app.core.security import get_current_user
+from app.schemas.common import AtomizerControlRequest, UsbLightControlRequest
 from app.services import bridge
 from app.services.hardware_serial import hardware_serial
 from app.services.video import BOUNDARY, generated_stream
@@ -14,14 +15,39 @@ VIDEO_MODES = {"rgb", "depth"}
 
 @router.get("/api/aqua/status", dependencies=[Depends(get_current_user)])
 async def status() -> dict:
-    if hardware_serial.enabled:
-        return hardware_serial.status(bridge.camera_status())
-    return await bridge.bridge_status()
+    bridge_state = await bridge.bridge_status()
+    if not hardware_serial.enabled:
+        return bridge_state
+
+    serial_state = hardware_serial.status(bridge.camera_status())
+    merged = {
+        **bridge_state,
+        "ok": bool(bridge_state.get("ok") or serial_state.get("ok")),
+        "connected": bool(bridge_state.get("connected") or serial_state.get("connected")),
+        "pump": serial_state.get("pump"),
+        "atomizer": serial_state.get("atomizer"),
+        "usbLight": serial_state.get("usbLight"),
+        "bridge": bridge_state,
+        "hardwareSerial": serial_state,
+    }
+    return merged
 
 
 @router.get("/api/aqua/pump/status")
 def pump_status() -> dict:
     return hardware_serial.pump_debug_status()
+
+
+@router.post("/api/aqua/atomizer", dependencies=[Depends(get_current_user)])
+def atomizer_control(body: AtomizerControlRequest) -> Response:
+    status_code, payload = hardware_serial.atomizer_set(body.state)
+    return Response(content=_json_bytes(payload), status_code=status_code, media_type="application/json")
+
+
+@router.post("/api/aqua/usb-light", dependencies=[Depends(get_current_user)])
+def usb_light_control(body: UsbLightControlRequest) -> Response:
+    status_code, payload = hardware_serial.usb_light_set(body.mode)
+    return Response(content=_json_bytes(payload), status_code=status_code, media_type="application/json")
 
 
 @router.post("/api/aqua/tasks/{task}", dependencies=[Depends(get_current_user)])
@@ -48,7 +74,7 @@ async def arm_gripper(body: dict):
 
 @router.post("/api/aqua/rail/position", dependencies=[Depends(get_current_user)])
 async def rail_position(body: dict):
-    position = _bounded_int(body.get("position"), 0, 4000, "position must be 0..4000")
+    position = _bounded_int(body.get("position"), 0, 5200, "position must be 0..5200")
     return await _bridge_response("POST", "/api/rail/position", {"position": position})
 
 

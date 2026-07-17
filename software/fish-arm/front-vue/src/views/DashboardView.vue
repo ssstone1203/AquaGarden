@@ -4,18 +4,15 @@
     <div ref="dashboardVideoRow" class="video-row">
       <div class="video-card">
         <div class="video-card-header">
-          <span class="video-title">Robot Arm Camera <span class="video-title-cn">(机械臂摄像头)</span></span>
-          <div class="camera-mode-switch">
-            <button type="button" :disabled="robotSwitching" :class="['camera-mode-btn', robotCameraMode === 'rgb' ? 'active' : '']" @click="setRobotCameraMode('rgb')">RGB</button>
-            <button type="button" :disabled="robotSwitching" :class="['camera-mode-btn', robotCameraMode === 'depth' ? 'active' : '']" @click="setRobotCameraMode('depth')">深度图</button>
-          </div>
+          <span class="video-title">Raspberry Pi Camera <span class="video-title-cn">(树莓派视频)</span></span>
+          <span class="video-source-chip"><i class="fas fa-network-wired"></i> LAN</span>
         </div>
         <div class="video-body">
           <div class="video-area">
             <img
               :key="robotCameraImgKey"
               :src="robotCameraImgSrc"
-              alt="Robot Arm Camera"
+              alt="Raspberry Pi Camera"
               decoding="async"
               fetchpriority="high"
               @load="handleRobotVideoLoad(robotCameraImgKey)"
@@ -23,7 +20,7 @@
             />
             <div class="vbadge vbadge-live"><i class="fas fa-circle"></i> {{ robotVideoReady ? 'Live' : 'Wait' }}</div>
             <div class="vbadge vbadge-cam"><i class="fas fa-video"></i></div>
-            <div class="vbadge vbadge-res">{{ robotVideoReady ? robotCameraLabel : 'Bridge' }}</div>
+            <div class="vbadge vbadge-res">{{ robotVideoReady ? 'Pi RGB' : 'Connecting' }}</div>
             <div v-if="robotVideoMessage" class="video-waiting">
               <i class="fas fa-video-slash"></i>
               <span>{{ robotVideoMessage }}</span>
@@ -35,7 +32,7 @@
       <div class="video-card">
         <div class="video-card-header">
           <span class="video-title">Tank Camera <span class="video-title-cn">(鱼缸摄像头)</span></span>
-          <button type="button" class="menu-btn"><i class="fas fa-ellipsis-h"></i></button>
+          <span class="video-source-chip video-source-chip-usb"><i class="fas fa-usb"></i> USB</span>
         </div>
         <div class="video-body">
           <div class="video-area">
@@ -50,7 +47,7 @@
             />
             <div class="vbadge vbadge-live"><i class="fas fa-circle"></i> {{ tankVideoReady ? 'Live' : 'Wait' }}</div>
             <div class="vbadge vbadge-cam"><i class="fas fa-video"></i></div>
-            <div class="vbadge vbadge-res">{{ tankStatus.hasFrame ? 'USB 实时' : '等待鱼缸帧' }}{{ tankStatus.detectionCount ? ` · ${tankStatus.detectionCount} 检测` : '' }}</div>
+            <div class="vbadge vbadge-res">{{ tankSourceLabel }}{{ tankStatus.detectionCount ? ` · ${tankStatus.detectionCount} 检测` : '' }}</div>
             <div v-if="tankVideoMessage" class="video-waiting">
               <i class="fas fa-plug"></i>
               <span>{{ tankVideoMessage }}</span>
@@ -86,6 +83,29 @@
         <div class="sparkline-wrap">
           <svg class="sparkline" viewBox="0 0 100 32" preserveAspectRatio="none">
             <polyline :points="sparkPoints(waterTempHistory, 15, 35)" class="sparkline-line" />
+          </svg>
+        </div>
+        <div class="sensor-footer">
+          <span class="sensor-status-dot" :class="sensorPollError ? 'dot-warn' : 'dot-normal'"></span>
+          <span class="sensor-status-text">{{ sensorFooterStatus }}</span>
+          <span class="sensor-period">点击查看详情</span>
+        </div>
+      </div>
+
+      <!-- Water Quality (TDS ADC) -->
+      <div class="sensor-card sensor-card-clickable" @click="openDetail('waterQuality')">
+        <div class="sensor-card-header">
+          <span class="sensor-label">Water Quality</span>
+          <span class="sensor-icon-btn sensor-icon-quality"><i class="fas fa-water"></i></span>
+        </div>
+        <div class="sensor-value-row">
+          <span class="sensor-big">{{ waterQuality }}</span>
+          <span class="sensor-unit">NTU</span>
+        </div>
+        <div class="sensor-subtitle">水质浊度 · TDS ADC</div>
+        <div class="sparkline-wrap">
+          <svg class="sparkline" viewBox="0 0 100 32" preserveAspectRatio="none">
+            <polyline :points="sparkPoints(waterQualityHistory, 0, 1400)" class="sparkline-line" />
           </svg>
         </div>
         <div class="sensor-footer">
@@ -188,7 +208,7 @@
             <i class="fas fa-trash-alt"></i> 清空
           </button>
           <button type="button" class="ai-action-btn" :disabled="aiInsight.loading" @click="runAiAnalysis">
-            {{ aiInsight.loading ? '分析中…' : 'DeepSeek 综合分析' }}
+            {{ aiInsight.loading ? '分析中…' : 'AI 综合分析' }}
           </button>
         </div>
       </div>
@@ -215,6 +235,13 @@
           <div class="ai-chat-title">
             <span v-if="aiSourceBadge.label" :class="['ai-source-badge', aiSourceBadge.cls]">{{ aiSourceBadge.label }}</span>
             <code v-if="aiInsight.model" class="ai-model-pill">{{ aiInsight.model }}</code>
+            <span
+              v-if="aiSensorContextBadge.label"
+              :class="['ai-context-badge', aiSensorContextBadge.cls]"
+            >
+              <i :class="aiSensorContextBadge.icon"></i>
+              {{ aiSensorContextBadge.label }}
+            </span>
           </div>
           <span class="ai-chat-count">{{ aiMessages.length ? `${aiMessages.length} 条消息` : '等待提问' }}</span>
         </div>
@@ -366,6 +393,7 @@ const router = useRouter()
 const PLACEHOLDER = '--'
 
 const waterTemp    = ref(PLACEHOLDER) // DS18B20 水温 (°C)
+const waterQuality = ref(PLACEHOLDER) // TDS ADC 浊度 (NTU)
 const airTemp      = ref(PLACEHOLDER) // SHT30 空气温度 (°C)
 const airHumidity  = ref(PLACEHOLDER) // SHT30 空气湿度 (%RH)
 const soilMoisture = ref(PLACEHOLDER) // ADC 土壤湿度 (%)
@@ -381,34 +409,32 @@ const waterTempFSub = computed(() => {
   return `/${waterTempF.value}°F`
 })
 
-const robotUseDirectBridge = ref(import.meta.env.VITE_ROBOT_CAMERA_DIRECT === 'true')
-const robotCameraMode = ref('rgb')
 const robotCameraKey = ref(Date.now())
-const robotVideoConnected = ref(false)
 const robotStreamMounted = ref(true)
-const robotSwitching = ref(false)
 let robotCameraKeySeed = Date.now()
-let robotVideoPendingTimer = null
-let robotSwitchTimer = null
-const robotDirectBridgeUrl = computed(() => {
-  const base = import.meta.env.VITE_AQUA_BRIDGE_BASE || 'http://10.116.177.50:18080'
-  return `${base.replace(/\/$/, '')}/video/${robotCameraMode.value}.mjpg`
-})
 const robotCameraSrc = computed(() => {
-  const src = robotUseDirectBridge.value ? robotDirectBridgeUrl.value : apiUrl(`/api/aqua/video/${robotCameraMode.value}`)
+  const src = apiUrl('/api/video/raspberry-pi')
   return `${src}${src.includes('?') ? '&' : '?'}v=${robotCameraKey.value}`
 })
 const robotCameraImgSrc = computed(() => (showLiveVideos.value && robotStreamMounted.value ? robotCameraSrc.value : ''))
-const robotCameraImgKey = computed(() => `${robotCameraMode.value}-${robotCameraKey.value}`)
-const robotCameraLabel = computed(() => robotCameraMode.value === 'depth' ? 'Depth' : 'RGB')
+const robotCameraImgKey = computed(() => `raspberry-pi-${robotCameraKey.value}`)
 const tankCameraKey = ref(Date.now())
 const tankCameraSrc = computed(() => {
   const src = apiUrl('/api/video/tank')
   return `${src}${src.includes('?') ? '&' : '?'}v=${tankCameraKey.value}`
 })
 const tankCameraImgKey = computed(() => `tank-${tankCameraKey.value}`)
-const tankStatus = reactive({ hasFrame: false, seq: 0, bytes: 0, updatedAt: 0, detectionCount: 0 })
-const aquaStatus = reactive({ connected: false, hasRgb: false, hasDepth: false, rgbError: '', depthError: '', lastError: '' })
+const tankStatus = reactive({
+  hasFrame: false,
+  seq: 0,
+  bytes: 0,
+  updatedAt: 0,
+  detectionCount: 0,
+  source: 'none',
+  captureConnected: false,
+  captureError: '',
+})
+const raspberryStatus = reactive({ configured: true, connected: false, lastError: '' })
 const robotVideoError = ref('')
 const tankVideoError = ref('')
 
@@ -417,21 +443,25 @@ const showLiveVideos = ref(true)
 
 const robotVideoReady = computed(() => {
   if (robotVideoError.value) return false
-  if (robotVideoConnected.value) return true
-  if (robotUseDirectBridge.value) return true
-  return robotCameraMode.value === 'depth' ? aquaStatus.hasDepth : aquaStatus.hasRgb
+  return raspberryStatus.connected
 })
 const tankVideoReady = computed(() => tankStatus.hasFrame && !tankVideoError.value)
+const tankSourceLabel = computed(() => {
+  if (!tankStatus.hasFrame) return 'Waiting for USB'
+  if (tankStatus.source === 'usb') return 'USB Live'
+  return tankStatus.source === 'serial' ? 'Serial JPEG' : 'Live'
+})
 const robotVideoMessage = computed(() => {
   if (!showLiveVideos.value) return ''
-  if (robotVideoError.value) return `${robotVideoError.value}，请检查 /api/aqua/video/${robotCameraMode.value}`
-  if (!robotVideoReady.value) return '后端正在等待机械臂摄像头源'
+  if (robotVideoError.value) return `${robotVideoError.value}，请检查 /api/video/raspberry-pi`
+  if (!raspberryStatus.configured) return '树莓派视频源未配置'
+  if (!robotVideoReady.value) return raspberryStatus.lastError || '正在连接树莓派视频源'
   return ''
 })
 const tankVideoMessage = computed(() => {
   if (!showLiveVideos.value) return ''
   if (tankVideoError.value) return `${tankVideoError.value}，请检查 /api/video/tank`
-  if (!tankStatus.hasFrame) return '后端还没有收到鱼缸摄像头帧'
+  if (!tankStatus.hasFrame) return tankStatus.captureError || '正在等待电脑 USB 鱼缸摄像头'
   return ''
 })
 
@@ -440,59 +470,28 @@ function nextRobotCameraKey() {
   return robotCameraKeySeed
 }
 
-function scheduleRobotVideoReady(expectedKey) {
-  if (robotVideoPendingTimer) clearTimeout(robotVideoPendingTimer)
-  robotVideoPendingTimer = setTimeout(() => {
-    if (expectedKey === robotCameraImgKey.value && !robotVideoError.value && showLiveVideos.value) {
-      robotVideoConnected.value = true
-    }
-  }, 1200)
-}
-
 async function refreshRobotCameraStream() {
-  robotVideoConnected.value = false
   robotVideoError.value = ''
-  robotSwitching.value = true
   robotStreamMounted.value = false
   await nextTick()
   robotCameraKey.value = nextRobotCameraKey()
   requestAnimationFrame(() => {
     robotStreamMounted.value = true
-    scheduleRobotVideoReady(robotCameraImgKey.value)
-    if (robotSwitchTimer) clearTimeout(robotSwitchTimer)
-    robotSwitchTimer = setTimeout(() => {
-      robotSwitching.value = false
-    }, 300)
   })
 }
 
 function handleRobotVideoLoad(key) {
   if (key !== robotCameraImgKey.value) return
   robotVideoError.value = ''
-  robotVideoConnected.value = true
 }
 
 function handleRobotVideoError(key) {
   if (key !== robotCameraImgKey.value) return
-  robotVideoConnected.value = false
-  if (robotUseDirectBridge.value) {
-    robotUseDirectBridge.value = false
-    refreshRobotCameraStream()
-    return
-  }
-  robotVideoError.value = '机械臂视频流加载失败'
+  robotVideoError.value = '树莓派视频流加载失败'
 }
 
 function handleTankVideoError() {
   tankVideoError.value = '鱼缸视频流加载失败'
-}
-
-function setRobotCameraMode(mode) {
-  if (!['rgb', 'depth'].includes(mode) || robotCameraMode.value === mode || robotSwitching.value) return
-  robotCameraMode.value = mode
-  robotUseDirectBridge.value = import.meta.env.VITE_ROBOT_CAMERA_DIRECT === 'true'
-  refreshRobotCameraStream()
-  updateVideoStatus()
 }
 
 /** 与后端 SystemStateService.DEMO_SNAPSHOT 一致，用于首次请求失败时的可读默认展示 */
@@ -500,6 +499,7 @@ const STABLE_DEFAULTS = {
   water_temp: 24.5,
   air_temp: 26.0,
   air_humidity: 58.0,
+  wqi: 70.0,
   soil_moisture: 62.0,
 }
 
@@ -516,6 +516,7 @@ const aiInsight = reactive({
   llmOk: null,
   llmStatus: '',
   llmMessage: '',
+  sensorSource: '',
 })
 const aiMessages = ref([])
 const aiChatInput = ref('')
@@ -552,7 +553,8 @@ const aiLlmBanner = computed(() => {
 
 const aiSourceBadge = computed(() => {
   if (aiInsight.source === 'llm') {
-    if (aiInsight.provider === 'anthropic') return { label: 'DeepSeek', cls: 'badge-deepseek' }
+    if (aiInsight.model.toLowerCase().includes('kimi')) return { label: 'Kimi', cls: 'badge-kimi' }
+    if (aiInsight.provider === 'anthropic') return { label: 'Anthropic', cls: 'badge-llm' }
     if (aiInsight.provider === 'openai') return { label: 'OpenAI', cls: 'badge-openai' }
     return { label: 'LLM', cls: 'badge-llm' }
   }
@@ -560,10 +562,21 @@ const aiSourceBadge = computed(() => {
   return { label: '', cls: '' }
 })
 
+const aiSensorContextBadge = computed(() => {
+  if (aiInsight.sensorSource === 'hardware') {
+    return { label: '实时传感器', cls: 'is-live', icon: 'fas fa-broadcast-tower' }
+  }
+  if (aiInsight.sensorSource === 'demo') {
+    return { label: '演示基线', cls: 'is-demo', icon: 'fas fa-database' }
+  }
+  return { label: '', cls: '', icon: '' }
+})
+
 const HISTORY_LEN = 20
 const AI_HISTORY_CONTENT_MAX = 1200
 
 const waterTempHistory   = ref([])
+const waterQualityHistory = ref([])
 const airTempHistory     = ref([])
 const airHumidityHistory = ref([])
 const moistureHistory    = ref([])
@@ -580,6 +593,7 @@ function valueLooksLive(s) {
 
 const sensorHasLiveReading = computed(() =>
   valueLooksLive(waterTemp.value)
+  || valueLooksLive(waterQuality.value)
   || valueLooksLive(airTemp.value)
   || valueLooksLive(airHumidity.value)
   || valueLooksLive(soilMoisture.value))
@@ -608,10 +622,12 @@ function applyStableDisplayDefaults() {
   sensorDataSource.value = 'demo'
   sensorUpdatedAt.value = new Date().toLocaleTimeString('zh-CN')
   waterTemp.value = String(STABLE_DEFAULTS.water_temp)
+  waterQuality.value = String(STABLE_DEFAULTS.wqi)
   airTemp.value = String(STABLE_DEFAULTS.air_temp)
   airHumidity.value = String(STABLE_DEFAULTS.air_humidity)
   soilMoisture.value = String(STABLE_DEFAULTS.soil_moisture)
   pushHistory(waterTempHistory, STABLE_DEFAULTS.water_temp)
+  pushHistory(waterQualityHistory, STABLE_DEFAULTS.wqi)
   pushHistory(airTempHistory, STABLE_DEFAULTS.air_temp)
   pushHistory(airHumidityHistory, STABLE_DEFAULTS.air_humidity)
   pushHistory(moistureHistory, STABLE_DEFAULTS.soil_moisture)
@@ -653,6 +669,10 @@ async function updateSensorData() {
         waterTemp.value = String(d.water_temp)
         pushHistory(waterTempHistory, d.water_temp)
       }
+      if (d.wqi != null) {
+        waterQuality.value = String(d.wqi)
+        pushHistory(waterQualityHistory, d.wqi)
+      }
       if (d.air_temp != null) {
         airTemp.value = String(d.air_temp)
         pushHistory(airTempHistory, d.air_temp)
@@ -686,6 +706,9 @@ async function updateVideoStatus() {
     tankStatus.seq = Number(d.seq ?? 0)
     tankStatus.bytes = Number(d.bytes ?? 0)
     tankStatus.detectionCount = Number(d.detectionCount ?? 0)
+    tankStatus.source = String(d.source ?? 'none')
+    tankStatus.captureConnected = Boolean(d.capture?.connected)
+    tankStatus.captureError = d.capture?.lastError ? String(d.capture.lastError) : ''
     if (tankStatus.hasFrame) {
       tankVideoError.value = ''
       if (previousSeq === 0 && tankStatus.seq > 0) {
@@ -695,24 +718,21 @@ async function updateVideoStatus() {
   } catch {
     tankStatus.hasFrame = false
     tankStatus.detectionCount = 0
+    tankStatus.captureConnected = false
+    tankStatus.captureError = '无法获取 USB 摄像头状态'
   }
 
   try {
-    const r = await fetch(apiUrl('/api/aqua/status'), { headers: authHeaders() })
+    const r = await fetch(apiUrl('/api/video/raspberry-pi/status'))
     if (!r.ok) throw new Error(`HTTP ${r.status}`)
     const d = await r.json()
-    const camera = d.camera || {}
-    aquaStatus.connected = Boolean(d.connected ?? d.ok)
-    aquaStatus.hasRgb = Boolean(camera.hasRgb)
-    aquaStatus.hasDepth = Boolean(camera.hasDepth)
-    aquaStatus.rgbError = camera.rgb?.lastError ? String(camera.rgb.lastError) : ''
-    aquaStatus.depthError = camera.depth?.lastError ? String(camera.depth.lastError) : ''
-    aquaStatus.lastError = d.lastError ? String(d.lastError) : ''
+    raspberryStatus.configured = Boolean(d.configured)
+    raspberryStatus.connected = Boolean(d.connected)
+    raspberryStatus.lastError = d.lastError ? String(d.lastError) : ''
+    if (raspberryStatus.connected) robotVideoError.value = ''
   } catch (e) {
-    aquaStatus.connected = false
-    aquaStatus.hasRgb = false
-    aquaStatus.hasDepth = false
-    aquaStatus.lastError = `无法获取 Aqua Bridge 状态：${e.message || e}`
+    raspberryStatus.connected = false
+    raspberryStatus.lastError = `无法获取树莓派视频状态：${e.message || e}`
   }
 }
 
@@ -732,11 +752,13 @@ function onVideoVisibilityChange() {
 // ---- Sensor detail modal ----
 // 每项参数与 MCU 传感器规格一一对应：
 //   waterTemp   DS18B20   -55~125°C，显示范围 15~35°C
+//   waterQuality TDS ADC  标准曲线有效范围约 0~1400 NTU
 //   airTemp     SHT30     -40~125°C，推荐工作 5~60°C
 //   airHumidity SHT30     0~100%RH，推荐 20~80%
 //   moisture    ADC       0~100%
 const SENSOR_META = {
   waterTemp:   { title: '水温',          subtitle: 'Water Temperature (DS18B20)', unit: '°C',   icon: 'fas fa-thermometer-half',  iconClass: 'sensor-icon-temp',     color: '#f59e0b', rangeMin: 15,  rangeMax: 35,  statusText: '正常', statusClass: 'modal-status-normal' },
+  waterQuality:{ title: '水质浊度',       subtitle: 'Water Turbidity (TDS ADC)',    unit: 'NTU',  icon: 'fas fa-water',             iconClass: 'sensor-icon-quality',  color: '#14b8a6', rangeMin: 0,   rangeMax: 1400, statusText: '实时', statusClass: 'modal-status-normal' },
   airTemp:     { title: '空气温度',       subtitle: 'Air Temperature (SHT30)',     unit: '°C',   icon: 'fas fa-sun',               iconClass: 'sensor-icon-ph',       color: '#8b5cf6', rangeMin: 5,   rangeMax: 60,  statusText: '正常', statusClass: 'modal-status-optimal' },
   airHumidity: { title: '空气湿度',       subtitle: 'Air Humidity (SHT30)',        unit: '%RH',  icon: 'fas fa-cloud',             iconClass: 'sensor-icon-turbidity', color: '#06b6d4', rangeMin: 0,   rangeMax: 100, statusText: '正常', statusClass: 'modal-status-normal' },
   moisture:    { title: '土壤湿度',       subtitle: 'Soil Moisture (ADC)',         unit: '%',    icon: 'fas fa-tint',              iconClass: 'sensor-icon-moisture', color: '#3b82f6', rangeMin: 0,   rangeMax: 100, statusText: '湿润', statusClass: 'modal-status-wet' },
@@ -744,6 +766,7 @@ const SENSOR_META = {
 
 const historyMap = computed(() => ({
   waterTemp:   waterTempHistory.value,
+  waterQuality: waterQualityHistory.value,
   airTemp:     airTempHistory.value,
   airHumidity: airHumidityHistory.value,
   moisture:    moistureHistory.value,
@@ -751,6 +774,7 @@ const historyMap = computed(() => ({
 
 const currentMap = computed(() => ({
   waterTemp:   waterTemp.value,
+  waterQuality: waterQuality.value,
   airTemp:     airTemp.value,
   airHumidity: airHumidity.value,
   moisture:    soilMoisture.value,
@@ -819,6 +843,10 @@ function applySnapshot(d) {
     waterTemp.value = String(d.water_temp)
     pushHistory(waterTempHistory, d.water_temp)
   }
+  if (d.wqi != null) {
+    waterQuality.value = String(d.wqi)
+    pushHistory(waterQualityHistory, d.wqi)
+  }
   if (d.air_temp != null) {
     airTemp.value = String(d.air_temp)
     pushHistory(airTempHistory, d.air_temp)
@@ -854,6 +882,7 @@ async function requestAiAssistant(message, options = {}) {
   aiInsight.llmOk = null
   aiInsight.llmStatus = ''
   aiInsight.llmMessage = ''
+  aiInsight.sensorSource = ''
   const history = aiMessages.value
     .slice(-12)
     .map(({ role, content }) => ({ role, content: clampAiHistoryContent(content) }))
@@ -885,6 +914,7 @@ async function requestAiAssistant(message, options = {}) {
     aiInsight.source = d.source || ''
     aiInsight.provider = d.provider || ''
     aiInsight.model = d.model || ''
+    aiInsight.sensorSource = d.sensorSource || ''
     aiInsight.analysis = d.analysis != null ? String(d.analysis) : ''
     if (aiInsight.analysis) {
       appendAiMessage('assistant', aiInsight.analysis)
@@ -936,6 +966,7 @@ function clearAiChat() {
   aiInsight.model = ''
   aiInsight.llmStatus = ''
   aiInsight.llmMessage = ''
+  aiInsight.sensorSource = ''
 }
 
 function scrollAiChatToBottom() {
@@ -1002,7 +1033,6 @@ function connectWs() {
 onMounted(() => {
   showLiveVideos.value = !document.hidden
   robotStreamMounted.value = showLiveVideos.value
-  scheduleRobotVideoReady(robotCameraImgKey.value)
   updateSensorData()
   updateVideoStatus()
   sensorTimer = setInterval(updateSensorData, 5000)
@@ -1023,8 +1053,6 @@ onUnmounted(() => {
   document.removeEventListener('visibilitychange', onVideoVisibilityChange)
   if (sensorTimer) clearInterval(sensorTimer)
   if (videoStatusTimer) clearInterval(videoStatusTimer)
-  if (robotVideoPendingTimer) clearTimeout(robotVideoPendingTimer)
-  if (robotSwitchTimer) clearTimeout(robotSwitchTimer)
   robotStreamMounted.value = false
   if (ws) ws.close()
 })
@@ -1228,7 +1256,7 @@ onUnmounted(() => {
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
-.badge-deepseek {
+.badge-kimi {
   background: linear-gradient(135deg, rgba(45, 140, 255, 0.34), rgba(20, 184, 166, 0.2));
   color: #dff6ff;
   border: 1px solid rgba(56, 189, 248, 0.35);
@@ -1255,6 +1283,26 @@ onUnmounted(() => {
   background: rgba(0,0,0,0.35);
   color: #bae6fd;
   border: 1px solid rgba(56, 189, 248, 0.2);
+}
+.ai-context-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.ai-context-badge.is-live {
+  color: #86efac;
+  background: rgba(22, 163, 74, 0.14);
+  border: 1px solid rgba(74, 222, 128, 0.26);
+}
+.ai-context-badge.is-demo {
+  color: #fcd34d;
+  background: rgba(217, 119, 6, 0.13);
+  border: 1px solid rgba(251, 191, 36, 0.24);
 }
 .ai-chat-body {
   padding: 16px 18px 18px;
@@ -1375,36 +1423,28 @@ onUnmounted(() => {
   box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
 }
 
-.camera-mode-switch {
+.video-source-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px;
-  border-radius: 8px;
-  background: rgba(15, 23, 42, 0.66);
-  border: 1px solid rgba(255,255,255,0.08);
-}
-
-.camera-mode-btn {
-  height: 26px;
-  border: none;
+  gap: 6px;
+  min-height: 26px;
   border-radius: 6px;
-  padding: 0 10px;
-  cursor: pointer;
-  color: var(--text-secondary, #9ca3af);
-  background: transparent;
+  padding: 4px 9px;
+  color: #67e8f9;
+  background: rgba(8, 145, 178, 0.12);
+  border: 1px solid rgba(34, 211, 238, 0.2);
   font-size: 12px;
   font-weight: 700;
 }
 
-.camera-mode-btn.active {
-  color: #fff;
-  background: #0ea5e9;
+.video-source-chip-usb {
+  color: #86efac;
+  background: rgba(22, 163, 74, 0.11);
+  border-color: rgba(74, 222, 128, 0.2);
 }
 
-.camera-mode-btn:disabled {
-  cursor: wait;
-  opacity: 0.62;
+.video-source-chip i {
+  font-size: 11px;
 }
 
 .video-waiting {

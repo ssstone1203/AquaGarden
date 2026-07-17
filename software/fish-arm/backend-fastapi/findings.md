@@ -26,3 +26,9 @@
 - 新解析器 COM20 实测：sequence=136，MCU tick=9292698，水温17.7℃，土壤100%，TDS 0 NTU，泵60%，need_watering=true，alarm=0x44，air_retry=9121；CRC/无效帧均为0。
 - 登录接口与前端请求契约一致且服务可达；`admin/admin123` 返回 401 的根因是原库和运行库都不存在 admin，而 FastAPI 缺少 Spring `DataInitializer` 对应逻辑。
 - 当前两个数据库各有 1 个非 admin 用户，因此运行库复制没有丢失已有用户。
+- 雾化器权威下行命令为 CMD `0x09`、payload `[state]`，state 仅允许 0/1；开启完整帧 `5A A5 02 09 01 38 91`，关闭 `5A A5 02 09 00 F9 51`。
+- 雾化器实际状态由上行 payload[15] `atomizer_state` 回传；协议无 ACK，应使用后续 telemetry 确认。
+- front-vue 系统控制页为 `RobotView.vue`，已有水泵控制、JWT `apiFetch`、1.5 秒 `/api/aqua/status` 轮询与运行日志，适合在水泵面板内加入雾化器开关。
+- FastAPI 状态当前把完整 telemetry 放在 `serial.telemetry`，但顶层仅有 pump；将新增顶层 `atomizer` 状态以稳定前端契约。
+- 后端需要在发送 CMD 0x09 前记录帧计数，并等待更新后的 telemetry 匹配目标状态，避免用命令前的旧状态误判确认成功。
+- 前端目录为同级 `front-vue`，超出当前写根；将先用 `apply_patch` 生成受控补丁，再申请权限应用到目标文件。

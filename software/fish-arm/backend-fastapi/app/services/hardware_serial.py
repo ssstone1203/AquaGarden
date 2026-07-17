@@ -171,6 +171,10 @@ class HardwareSerialService:
         self._running = False
         self._thread: threading.Thread | None = None
         self._write_lock = threading.Lock()
+        self._atomizer_command_lock = threading.Lock()
+        self._usb_light_command_lock = threading.Lock()
+        self._telemetry_condition = threading.Condition()
+        self._telemetry_revision = 0
         self._last_error: str | None = None
         self._last_persist_error: str | None = None
         self._started_at = int(time.time() * 1000)
@@ -206,6 +210,8 @@ class HardwareSerialService:
         return bool(port and getattr(port, "is_open", False))
 
     def status(self, camera_status: dict | None = None) -> dict:
+        atomizer = self._atomizer_status()
+        usb_light = self._usb_light_status()
         return {
             "ok": self.is_connected(),
             "connected": self.is_connected(),
@@ -218,6 +224,8 @@ class HardwareSerialService:
             "serial": self.serial_status(),
             "camera": camera_status or {"hasRgb": bool(settings.camera_rgb_url), "hasDepth": bool(settings.camera_depth_url)},
             "pump": {"manualOn": self.pump_manual_on, "pwm": self.pump_pwm_ui if self.pump_manual_on else None},
+            "atomizer": atomizer,
+            "usbLight": usb_light,
         }
 
     def serial_status(self) -> dict:
@@ -307,6 +315,135 @@ class HardwareSerialService:
         threading.Thread(target=self._pulse_stop_later, args=(duration,), name="aquagarden-pump-pulse", daemon=True).start()
         return self._pump_response(SerialCommandResult(True, "pulse started"), {"seconds": duration, "pwmUi": ui})
 
+    def atomizer_set(self, state_value: bool, confirmation_timeout_ms: int = 1500) -> tuple[int, dict]:
+        target = 1 if state_value else 0
+        timeout_seconds = max(0, confirmation_timeout_ms) / 1000
+
+        with self._atomizer_command_lock:
+            with self._telemetry_condition:
+                initial_revision = self._telemetry_revision
+
+            result = self._write_downlink(pack_downlink_frame(0x09, bytes([target])))
+            if not result.ok:
+                return 502, {
+                    "ok": False,
+                    "confirmed": False,
+                    "state": self._current_atomizer_state(),
+                    "message": "atomizer command could not be sent",
+                }
+
+            deadline = time.monotonic() + timeout_seconds
+            with self._telemetry_condition:
+                while True:
+                    telemetry = self._last_telemetry
+                    if (
+                        self._telemetry_revision > initial_revision
+                        and telemetry is not None
+                        and telemetry.atomizer_state == target
+                    ):
+                        return 200, {
+                            "ok": True,
+                            "confirmed": True,
+                            "state": bool(target),
+                            "message": "atomizer state confirmed",
+                        }
+
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        return 504, {
+                            "ok": False,
+                            "confirmed": False,
+                            "state": self._current_atomizer_state_locked(),
+                            "message": "atomizer state confirmation timed out",
+                        }
+                    self._telemetry_condition.wait(timeout=remaining)
+
+    def _atomizer_status(self) -> dict[str, Any]:
+        with self._telemetry_condition:
+            telemetry = self._last_telemetry
+            return {
+                "state": None if telemetry is None else bool(telemetry.atomizer_state),
+                "available": telemetry is not None,
+                "fault": bool(telemetry and telemetry.alarm_flags & (1 << 10)),
+            }
+
+    def _current_atomizer_state(self) -> bool | None:
+        with self._telemetry_condition:
+            return self._current_atomizer_state_locked()
+
+    def _current_atomizer_state_locked(self) -> bool | None:
+        telemetry = self._last_telemetry
+        return None if telemetry is None else bool(telemetry.atomizer_state)
+
+    def usb_light_set(self, mode: int, confirmation_timeout_ms: int = 1500) -> tuple[int, dict]:
+        if isinstance(mode, bool) or not isinstance(mode, int) or not 0 <= mode <= 26:
+            return 400, {
+                "ok": False,
+                "confirmed": False,
+                "mode": self._current_usb_light_mode(),
+                "message": "usb light mode must be 0..26",
+            }
+
+        timeout_seconds = max(0, confirmation_timeout_ms) / 1000
+        with self._usb_light_command_lock:
+            with self._telemetry_condition:
+                initial_revision = self._telemetry_revision
+
+            result = self._write_downlink(pack_downlink_frame(0x08, bytes([mode])))
+            if not result.ok:
+                return 502, {
+                    "ok": False,
+                    "confirmed": False,
+                    "mode": self._current_usb_light_mode(),
+                    "message": "usb light command could not be sent",
+                }
+
+            deadline = time.monotonic() + timeout_seconds
+            with self._telemetry_condition:
+                while True:
+                    telemetry = self._last_telemetry
+                    if (
+                        self._telemetry_revision > initial_revision
+                        and telemetry is not None
+                        and telemetry.usb_light_mode == mode
+                    ):
+                        return 200, {
+                            "ok": True,
+                            "confirmed": True,
+                            "mode": mode,
+                            "message": "usb light mode confirmed",
+                        }
+
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        return 504, {
+                            "ok": False,
+                            "confirmed": False,
+                            "mode": self._current_usb_light_mode_locked(),
+                            "message": "usb light mode confirmation timed out",
+                        }
+                    self._telemetry_condition.wait(timeout=remaining)
+
+    def _usb_light_status(self) -> dict[str, Any]:
+        with self._telemetry_condition:
+            telemetry = self._last_telemetry
+            mode = self._current_usb_light_mode_locked()
+            return {
+                "mode": mode,
+                "ready": mode is not None,
+                "fault": bool(telemetry and telemetry.alarm_flags & (1 << 9)),
+            }
+
+    def _current_usb_light_mode(self) -> int | None:
+        with self._telemetry_condition:
+            return self._current_usb_light_mode_locked()
+
+    def _current_usb_light_mode_locked(self) -> int | None:
+        telemetry = self._last_telemetry
+        if telemetry is None or telemetry.usb_light_mode == 0xFF:
+            return None
+        return telemetry.usb_light_mode
+
     def _pulse_stop_later(self, seconds: int) -> None:
         time.sleep(seconds)
         self._send_command("STOP", 0)
@@ -363,7 +500,7 @@ class HardwareSerialService:
                 if len(jpeg) > self.max_jpeg_bytes:
                     jpeg = None
                 elif prev == JPEG_EOI[0] and b == JPEG_EOI[1]:
-                    tank_video.update_frame(bytes(jpeg))
+                    tank_video.update_frame(bytes(jpeg), source="serial")
                     jpeg = None
                 prev = b
                 continue
@@ -402,7 +539,10 @@ class HardwareSerialService:
         return None
 
     def _handle_telemetry(self, telemetry: AquaTelemetry) -> None:
-        self._last_telemetry = telemetry
+        with self._telemetry_condition:
+            self._last_telemetry = telemetry
+            self._telemetry_revision += 1
+            self._telemetry_condition.notify_all()
         self.pump_pwm_ui = telemetry.pump_pwm
         snapshot = SensorSnapshot(
             water_temp=telemetry.water_temp,
@@ -421,7 +561,7 @@ class HardwareSerialService:
             return
         frame = _decode_text_jpeg(text)
         if frame:
-            tank_video.update_frame(frame)
+            tank_video.update_frame(frame, source="serial")
             return
         values = _parse_text_sensor_line(text)
         if not values:
@@ -465,12 +605,21 @@ class HardwareSerialService:
         if not frames:
             self._last_error = "unknown pump action"
             return SerialCommandResult(False, self._last_error)
+        for frame in frames:
+            result = self._write_downlink(frame)
+            if not result.ok:
+                return result
+        return SerialCommandResult(True, "ok")
+
+    def _write_downlink(self, frame: bytes) -> SerialCommandResult:
+        port = self._serial
+        if port is None or not self.is_connected():
+            self._last_error = "serial port is not open"
+            return SerialCommandResult(False, self._last_error)
         try:
             with self._write_lock:
-                for frame in frames:
-                    port.write(frame)
-                    port.flush()
-                    time.sleep(0.02)
+                port.write(frame)
+                port.flush()
             self._last_error = None
             return SerialCommandResult(True, "ok")
         except Exception as exc:

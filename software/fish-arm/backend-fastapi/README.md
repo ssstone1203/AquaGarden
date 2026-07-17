@@ -88,13 +88,26 @@ python main.py
 
 `wqi` 暂时保留为旧前端/数据库兼容字段；实际硬件水质字段以 `tds_ntu` 为准。
 
+## 仪表板双视频流
+
+- 左侧树莓派视频：FastAPI 固定代理 `AQUAGARDEN_RASPBERRY_PI_CAMERA_URL`，默认
+  `http://10.213.133.50:18080/video/rgb.mjpg`，前端访问 `/api/video/raspberry-pi`。
+- 右侧鱼缸视频：FastAPI 启动时直接打开电脑 USB 摄像头，前端访问 `/api/video/tank`。
+  后端使用 `model/yolo_fish/runs/yolo11n_fish_new/weights/best.pt` 对 USB 画面进行金鱼实时识别，
+  并把检测框和置信度叠加到 MJPEG 视频中。采集与检测状态位于 `/api/video/tank/status`。
+- 可通过 `AQUAGARDEN_TANK_USB_CAMERA_INDEX`、`AQUAGARDEN_TANK_USB_CAMERA_WIDTH`、
+  `AQUAGARDEN_TANK_USB_CAMERA_HEIGHT`、`AQUAGARDEN_TANK_USB_CAMERA_FPS` 调整 USB 采集参数。
+- 可通过 `AQUAGARDEN_TANK_YOLO_CONFIDENCE`、`AQUAGARDEN_TANK_YOLO_IMAGE_SIZE`、
+  `AQUAGARDEN_TANK_YOLO_EVERY_N_FRAMES` 调整识别阈值、输入尺寸和推理间隔。
+- 如果 USB 摄像头已被微信、浏览器或其他采集程序占用，先关闭占用程序再启动 FastAPI。
+
 ## 已迁移接口
 
 - 认证：`POST /api/register`、`POST /api/login`
 - 用户：`GET /api/users/me`（已登录用户）、`GET /api/users`（仅管理员）
 - 传感器：`GET /api/sensors`、`GET /api/sensor/latest`、`GET /api/sensors/history`、`POST /api/sensors/ingest`、`POST /api/sensor/upload`
 - 机器人与模式：`/api/robot/*`、`/api/mode`
-- Aqua 控制：`/api/aqua/*`、`/api/control/pump`
+- Aqua 控制：`/api/aqua/*`、`POST /api/aqua/atomizer`、`/api/control/pump`
 - MCU 水泵队列：`/api/mcu/pump*`
 - 视频：`/api/video/robot`、`/api/video/tank`、`/api/video/tank/snapshot`、`/api/video/tank/status`、`/api/video/tank/detections`、`/api/video/tank/ingest`
 - AI：`/api/ai/ecosystem-analysis`、`/api/ai/chat`
@@ -110,6 +123,14 @@ python main.py
 - 现有 SQLite 里的 `users.created_at` 和 `sensor_readings.recorded_at` 兼容整数毫秒时间戳，不需要先清库。
 - LLM 未配置 API Key 或调用失败时，会返回规则引擎回退结果，保持前端功能可用。
 
+## 传感器上下文 AI 问答
+
+- `POST /api/ai/chat` 接收用户问题和最多 12 条最近对话，必须携带 JWT。
+- FastAPI 从服务端状态读取新鲜的 MCU 传感器快照，并按水温、空气温湿度、TDS 浊度（NTU）和土壤湿度构造模型上下文；浏览器不提交传感器真值。
+- API Key 只从 FastAPI 的 `.env` 或进程环境读取，不会出现在前端请求、响应或错误信息中。
+- 响应中的 `sensorSource` 为 `hardware` 或 `demo`，前端据此显示“实时传感器”或“演示基线”。
+- 模型未配置、返回为空或调用失败时，接口仍返回基于同一传感器快照的本地规则回复。
+
 ## 环境变量
 
 常用配置：
@@ -118,8 +139,14 @@ python main.py
 $env:AQUAGARDEN_FASTAPI_PORT="8090"
 $env:AQUAGARDEN_JWT_SECRET="change-me-to-a-long-random-secret"
 $env:AQUAGARDEN_DEVICE_UPLOAD_TOKEN="123456789"
-$env:ANTHROPIC_API_KEY="<optional>"
+$env:AQUAGARDEN_LLM_PROVIDER="anthropic"
+$env:AQUAGARDEN_LLM_BASE_URL="https://api.kimi.com/coding"
+$env:AQUAGARDEN_LLM_AUTH_MODE="bearer"
+$env:AQUAGARDEN_LLM_API_KEY="<backend-only-secret>"
+$env:AQUAGARDEN_LLM_MODEL="kimi-for-coding"
 ```
+
+`AQUAGARDEN_LLM_API_KEY` 也兼容 `ANTHROPIC_AUTH_TOKEN`、`ANTHROPIC_API_KEY` 和 `OPENAI_API_KEY`。Kimi Coding 使用默认的 `bearer`；直连 Anthropic Messages API 时将 `AQUAGARDEN_LLM_AUTH_MODE` 设为 `x-api-key`。
 
 ### 初始管理员
 

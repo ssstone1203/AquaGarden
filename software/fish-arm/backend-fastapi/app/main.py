@@ -11,6 +11,7 @@ from app.db.session import init_db
 from app.services.hardware_serial import hardware_serial
 from app.services.logs import hub
 from app.services.user_bootstrap import ensure_initial_admin
+from app.services.video import usb_camera
 
 
 @asynccontextmanager
@@ -19,9 +20,11 @@ async def lifespan(_: FastAPI):
     ensure_initial_admin()
     hub.bind_loop(asyncio.get_running_loop())
     hardware_serial.start()
+    usb_camera.start()
     try:
         yield
     finally:
+        usb_camera.stop()
         hardware_serial.stop()
         hub.unbind_loop()
 

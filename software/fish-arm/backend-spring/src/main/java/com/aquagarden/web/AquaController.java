@@ -210,11 +210,11 @@ public class AquaController {
             try {
                 position = Integer.parseInt(String.valueOf(value));
             } catch (NumberFormatException e) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "position must be 0..4000");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "position must be 0..5200");
             }
         }
-        if (position < 0 || position > 4000) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "position must be 0..4000");
+        if (position < 0 || position > 5200) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "position must be 0..5200");
         }
         return position;
     }

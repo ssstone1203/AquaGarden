@@ -36,3 +36,14 @@
 - 新增注册后登录集成测试，全量 17 passed，compileall 与 git diff --check 通过。
 - JWT 无效凭据错误已与 front-vue 自动清理逻辑对齐；全量 18 passed。
 - 最终服务 PID 42156：admin 登录、管理员角色、无效 token 401 和 COM20 实时收帧均验收通过。
+
+## 2026-07-16
+- 开始实现 front-vue 系统控制页雾化器开关、FastAPI CMD 0x09 下行和 telemetry 状态确认。
+- 已审查 RobotView、水泵交互、状态轮询与后端串口服务，确定复用执行器面板和 telemetry 确认模型。
+- 已添加 CMD 0x09 HEX、后续 telemetry 确认、JWT 鉴权和严格布尔请求测试。
+- 已完成雾化器 FastAPI 控制、前端卡片交互以及桌面/移动端验收。
+- 已实现仪表板树莓派 MJPEG 代理与电脑 USB 摄像头采集，并由 FastAPI 生命周期统一管理。
+- 已加载 `model/yolo_fish/runs/yolo11n_fish_new/weights/best.pt`，每 3 帧执行一次金鱼识别并在 USB MJPEG 中叠加检测框与置信度。
+- 已审计水泵、机械臂任务和滑轨控制：水泵使用本机串口服务，机械臂与滑轨代理树莓派 Bridge；Bridge 默认地址更新为 `10.213.133.50:18080`。
+- 已修复本机串口启用时丢失 Bridge 运动状态的问题，状态接口现在合并机械臂/滑轨与水泵/雾化器状态。
+- 最终验收：后端 36 项测试通过，前端生产构建通过；真实 USB 视频持续出帧，YOLO 模型加载并连续推理，视频快照返回 200。

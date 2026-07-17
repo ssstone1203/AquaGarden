@@ -1,0 +1,71 @@
+- generic [ref=f2e10]:
+  - generic [ref=f2e12]:
+    - generic [ref=f2e13]: 
+    - heading "AquaGarden" [level=1] [ref=f2e17]
+    - paragraph [ref=f2e18]: 智能水族箱管理系统
+    - generic [ref=f2e19]:
+      - generic [ref=f2e20]:
+        - generic [ref=f2e21]: 
+        - generic [ref=f2e23]:
+          - heading "双摄像头实时监控" [level=3] [ref=f2e24]
+          - paragraph [ref=f2e25]: 高清视频流，随时掌握水族箱状态
+      - generic [ref=f2e26]:
+        - generic [ref=f2e27]: 
+        - generic [ref=f2e29]:
+          - heading "智能数据分析" [level=3] [ref=f2e30]
+          - paragraph [ref=f2e31]: 实时监测水质，历史数据可视化
+      - generic [ref=f2e32]:
+        - generic [ref=f2e33]: 
+        - generic [ref=f2e35]:
+          - heading "自动化控制" [level=3] [ref=f2e36]
+          - paragraph [ref=f2e37]: 智能机械臂，精准喂食与清洁
+  - generic [ref=f2e38]:
+    - generic [ref=f2e39]:
+      - generic [ref=f2e40]:
+        - heading "欢迎回来" [level=2] [ref=f2e41]
+        - paragraph [ref=f2e42]: 登录以访问您的控制面板
+      - generic [ref=f2e43]:
+        - generic [ref=f2e44]:
+          - generic [ref=f2e45]:
+            - generic [ref=f2e46]: 
+            - text: 账号
+          - textbox " 账号" [ref=f2e48]:
+            - /placeholder: 请输入账号
+        - generic [ref=f2e49]:
+          - generic [ref=f2e50]:
+            - generic [ref=f2e51]: 
+            - text: 密码
+          - generic [ref=f2e52]:
+            - textbox " 密码" [ref=f2e53]:
+              - /placeholder: 请输入密码
+            - button "" [ref=f2e54] [cursor=pointer]
+        - generic [ref=f2e56]:
+          - generic [ref=f2e57] [cursor=pointer]:
+            - checkbox "记住我" [ref=f2e58]
+            - generic [ref=f2e59]: 记住我
+          - link "忘记密码？" [ref=f2e60] [cursor=pointer]:
+            - /url: "#"
+        - button "登录系统 " [ref=f2e61] [cursor=pointer]:
+          - generic [ref=f2e62]: 登录系统
+          - generic [ref=f2e63]: 
+      - generic [ref=f2e64]:
+        - generic [ref=f2e65]:
+          - generic [ref=f2e66]: 
+          - generic [ref=f2e67]: 演示账号信息
+        - generic [ref=f2e68]:
+          - generic [ref=f2e69]:
+            - generic [ref=f2e70]: 
+            - generic [ref=f2e71]:
+              - text: 账号：
+              - strong [ref=f2e72]: admin
+          - generic [ref=f2e73]:
+            - generic [ref=f2e74]: 
+            - generic [ref=f2e75]:
+              - text: 密码：
+              - strong [ref=f2e76]: admin123
+    - generic [ref=f2e77]:
+      - paragraph [ref=f2e78]: © 2024 AquaGarden. 保留所有权利.
+      - paragraph [ref=f2e79]:
+        - text: 没有账号？
+        - link "立即注册" [ref=f2e80] [cursor=pointer]:
+          - /url: /register

@@ -447,7 +447,7 @@ body {
 /* ===== SENSOR ROW ===== */
 .sensor-row {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -502,6 +502,7 @@ body {
 .sensor-icon-temp { background: rgba(239,68,68,0.12); color: #ef4444; }
 .sensor-icon-ph { background: rgba(99,102,241,0.12); color: #6366f1; }
 .sensor-icon-turbidity { background: rgba(245,158,11,0.12); color: #f59e0b; }
+.sensor-icon-quality { background: rgba(20,184,166,0.12); color: #2dd4bf; }
 .sensor-icon-oxygen { background: rgba(34,197,94,0.12); color: #22c55e; }
 .sensor-icon-moisture { background: rgba(59,130,246,0.12); color: #3b82f6; }
 
@@ -1046,7 +1047,7 @@ body {
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1280px) {
   .sensor-row {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -1074,7 +1075,7 @@ body {
 @media (max-width: 768px) {
   :root { --sidebar-w: 0px; }
 
-  .sidebar { transform: translateX(-100%); }
+  .sidebar { display: none; }
 
   .status-bar { left: 0; }
 
@@ -1083,4 +1084,12 @@ body {
   .sensor-row { grid-template-columns: 1fr 1fr; }
 
   .content-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 520px) {
+  .sensor-row { grid-template-columns: 1fr; }
+  .status-bar { padding: 0 12px; }
+  .status-item { gap: 4px; font-size: 11px; }
+  .status-item:nth-child(2),
+  .status-cn { display: none; }
 }

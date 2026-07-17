@@ -1,0 +1,199 @@
+- generic [ref=f3e2]:
+  - complementary [ref=f3e3]:
+    - generic [ref=f3e4]:
+      - generic [ref=f3e5]: 
+      - generic [ref=f3e7]: AQUATECH
+    - navigation [ref=f3e8]:
+      - link " Dashboard 仪表板" [ref=f3e9] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f3e10]: 
+        - generic [ref=f3e12]:
+          - generic [ref=f3e13]: Dashboard
+          - generic [ref=f3e14]: 仪表板
+      - link " Control 系统控制" [ref=f3e15] [cursor=pointer]:
+        - /url: /robot
+        - generic [ref=f3e16]: 
+        - generic [ref=f3e18]:
+          - generic [ref=f3e19]: Control
+          - generic [ref=f3e20]: 系统控制
+      - link " History 历史记录" [ref=f3e21] [cursor=pointer]:
+        - /url: /history
+        - generic [ref=f3e22]: 
+        - generic [ref=f3e24]:
+          - generic [ref=f3e25]: History
+          - generic [ref=f3e26]: 历史记录
+  - main [ref=f3e27]:
+    - generic [ref=f3e28]:
+      - generic [ref=f3e29]:
+        - heading "System Control" [level=1] [ref=f3e30]
+        - paragraph [ref=f3e31]: 系统控制台
+      - generic [ref=f3e32]:
+        - generic [ref=f3e33]:
+          - generic [ref=f3e34]: 
+          - generic [ref=f3e35]: Jul 17, 2026, 00:07
+        - button "" [ref=f3e36] [cursor=pointer]
+    - generic [ref=f3e39]:
+      - generic [ref=f3e40]:
+        - generic [ref=f3e41]:
+          - generic [ref=f3e42]:
+            - generic [ref=f3e43]:
+              - generic [ref=f3e44]:
+                - generic [ref=f3e45]: 
+                - text: 机械臂与滑轨
+              - generic [ref=f3e46]: 喂食、裁剪、松土和滑轨绝对位置控制
+            - generic [ref=f3e47]: Bridge 在线
+          - generic [ref=f3e48]:
+            - button " 喂食" [ref=f3e49] [cursor=pointer]:
+              - generic [ref=f3e50]: 
+              - generic [ref=f3e51]: 喂食
+            - button " 裁剪黄色叶子" [ref=f3e52] [cursor=pointer]:
+              - generic [ref=f3e53]: 
+              - generic [ref=f3e54]: 裁剪黄色叶子
+            - button " 松土" [ref=f3e55] [cursor=pointer]:
+              - generic [ref=f3e56]: 
+              - generic [ref=f3e57]: 松土
+            - button " 停止" [ref=f3e58] [cursor=pointer]:
+              - generic [ref=f3e59]: 
+              - generic [ref=f3e60]: 停止
+          - generic [ref=f3e61]:
+            - generic [ref=f3e62]:
+              - generic [ref=f3e63]:
+                - generic [ref=f3e64]: 
+                - text: 滑轨移动（0-4000）
+              - generic [ref=f3e65]: 当前位置：--
+            - generic [ref=f3e66]:
+              - button "回到 0" [ref=f3e67] [cursor=pointer]
+              - spinbutton [ref=f3e68]: "0"
+              - button "到 4000" [ref=f3e69] [cursor=pointer]
+              - button "移动滑轨" [ref=f3e70] [cursor=pointer]
+        - generic [ref=f3e71]:
+          - generic [ref=f3e72]:
+            - generic [ref=f3e73]:
+              - generic [ref=f3e74]:
+                - generic [ref=f3e75]: 
+                - text: 水泵控制
+              - generic [ref=f3e76]: 手动启停、PWM 调节和自动模式
+            - generic [ref=f3e77]:
+              - generic [ref=f3e78]: 自动
+              - generic [ref=f3e79]: 80%
+          - generic [ref=f3e80]:
+            - generic [ref=f3e81]:
+              - slider [ref=f3e82]: "80"
+              - generic [ref=f3e83]:
+                - generic [ref=f3e84]: "0"
+                - generic [ref=f3e85]: "50"
+                - generic [ref=f3e86]: "100"
+            - generic [ref=f3e87]:
+              - spinbutton [ref=f3e88]: "80"
+              - button "开泵" [ref=f3e89] [cursor=pointer]
+              - button "更新 PWM" [ref=f3e90] [cursor=pointer]
+              - button "自动模式" [ref=f3e91] [cursor=pointer]
+              - button "关泵" [ref=f3e92] [cursor=pointer]
+            - generic [ref=f3e94]:
+              - generic [ref=f3e95]: 
+              - text: 下游 HTTP Bridge 控制
+        - generic [ref=f3e96]:
+          - generic [ref=f3e97]:
+            - generic [ref=f3e98]:
+              - generic [ref=f3e99]: 
+              - generic [ref=f3e101]:
+                - strong [ref=f3e102]: USB 报警灯
+                - generic [ref=f3e103]: USB HS · CH340 声光控制
+            - generic [ref=f3e104]: 待初始化
+          - generic [ref=f3e105]:
+            - generic [ref=f3e106]:
+              - generic [ref=f3e107]: 当前模式
+              - strong [ref=f3e108]: 等待模式确认
+              - generic [ref=f3e109]: 尚未收到已确认的灯光模式
+            - generic [ref=f3e110]:
+              - generic [ref=f3e111]: 报警模式
+              - generic [ref=f3e112]:
+                - combobox "报警模式" [ref=f3e113]:
+                  - option "红灯常亮"
+                  - option "黄灯常亮"
+                  - option "绿灯常亮"
+                  - option "红灯 + 喇叭"
+                  - option "白灯常亮"
+                  - option "青灯常亮"
+                  - option "紫灯常亮"
+                  - option "蓝灯常亮"
+                  - option "红灯慢闪"
+                  - option "黄灯慢闪"
+                  - option "绿灯慢闪"
+                  - option "红灯慢闪 + 喇叭"
+                  - option "白灯慢闪"
+                  - option "青灯慢闪"
+                  - option "紫灯慢闪"
+                  - option "蓝灯慢闪"
+                  - option "红灯快闪"
+                  - option "黄灯快闪"
+                  - option "绿灯快闪"
+                  - option "红灯快闪 + 喇叭" [selected]
+                  - option "白灯快闪"
+                  - option "青灯快闪"
+                  - option "紫灯快闪"
+                  - option "蓝灯快闪"
+                  - option "仅开喇叭"
+                  - option "关闭喇叭"
+                  - option "全部关闭"
+                - button "关闭灯光与喇叭" [ref=f3e114] [cursor=pointer]:
+                  - generic [ref=f3e115]: 
+                - button " 应用模式" [ref=f3e116] [cursor=pointer]:
+                  - generic [ref=f3e117]: 
+                  - text: 应用模式
+              - generic [ref=f3e118]: 最高优先级声光报警
+        - button "开启雾化器" [ref=f3e119] [cursor=pointer]:
+          - generic [ref=f3e120]: 
+          - generic [ref=f3e122]:
+            - strong [ref=f3e123]: 雾化器
+            - generic [ref=f3e124]: 等待 MCU 状态 · GPIO P402
+          - generic [ref=f3e125]: 状态未知
+      - generic [ref=f3e130]:
+        - generic [ref=f3e131]:
+          - generic [ref=f3e132]:
+            - generic [ref=f3e133]: 
+            - text: 终端运行状态
+          - generic [ref=f3e134]: 链路正常
+        - generic [ref=f3e137]:
+          - generic [ref=f3e138]:
+            - generic [ref=f3e139]: 当前任务
+            - generic [ref=f3e140]: 待命
+          - generic [ref=f3e141]:
+            - generic [ref=f3e142]: 链路
+            - generic [ref=f3e143]: idle
+          - generic [ref=f3e144]:
+            - generic [ref=f3e145]: 滑轨
+            - generic [ref=f3e146]: "--"
+          - generic [ref=f3e147]:
+            - generic [ref=f3e148]: 运行
+            - generic [ref=f3e149]: 00:00:00
+          - generic [ref=f3e150]:
+            - generic [ref=f3e151]: RGB
+            - generic [ref=f3e152]: "--"
+          - generic [ref=f3e153]:
+            - generic [ref=f3e154]: Depth
+            - generic [ref=f3e155]: "--"
+        - generic [ref=f3e156]:
+          - generic [ref=f3e157]:
+            - generic [ref=f3e158]: 
+            - text: 运行日志
+            - button "清空" [ref=f3e159] [cursor=pointer]
+          - generic [ref=f3e160]:
+            - generic [ref=f3e161]:
+              - generic [ref=f3e162]: 00:07:52
+              - generic [ref=f3e163]: system
+              - generic [ref=f3e164]: 机械臂控制台已加载
+            - generic [ref=f3e165]:
+              - generic [ref=f3e166]: 00:07:52
+              - generic [ref=f3e167]: system
+              - generic [ref=f3e168]: 已切换为绝对位置控制模式（禁用点按增量移动）
+    - generic [ref=f3e169]:
+      - generic [ref=f3e170]:
+        - generic [ref=f3e172]:
+          - text: "Status:"
+          - strong [ref=f3e173]: CONNECTED
+        - generic [ref=f3e174]: 连接正常
+      - generic [ref=f3e175]: "Active Units: Filter, Light, Feeder"
+      - generic [ref=f3e176]:
+        - text: "System Time:"
+        - strong [ref=f3e177]: 00:07:52

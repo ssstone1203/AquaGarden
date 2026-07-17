@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictBool, StrictInt
 
 
 class SensorSnapshot(BaseModel):
@@ -15,6 +15,14 @@ class RobotControlRequest(BaseModel):
 
 class ModeRequest(BaseModel):
     mode: str = Field(min_length=1)
+
+
+class AtomizerControlRequest(BaseModel):
+    state: StrictBool
+
+
+class UsbLightControlRequest(BaseModel):
+    mode: StrictInt = Field(ge=0, le=26)
 
 
 class AiChatMessage(BaseModel):
