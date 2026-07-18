@@ -1147,7 +1147,7 @@
       <property id="module.driver.adc.virtual_channel_36_input_mode" value=""/>
       <property id="module.driver.adc.virtual_channel_36_data_is_unsigned" value="module.driver.adc.virtual_channel_36_data_is_unsigned.signed"/>
       <property id="module.driver.adc.virtual_channel_36_data_sign_setting" value=""/>
-      <property id="module.driver.adc.scan_group_0_enable" value="module.driver.adc.scan_group_0_enable.disable"/>
+      <property id="module.driver.adc.scan_group_0_enable" value="module.driver.adc.scan_group_0_enable.enable"/>
       <property id="module.driver.adc.scan_group_0_converter_selection" value="module.driver.adc.scan_group_0_converter_selection.adc_0"/>
       <property id="module.driver.adc.scan_group_0_start_trigger_delay" value="0"/>
       <property id="module.driver.adc.scan_group_0_self_diag_voltage" value="Disabled"/>

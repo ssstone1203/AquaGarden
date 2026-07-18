@@ -89,8 +89,15 @@ async def _call_openai(system: str, user: str, history: list[dict[str, str]]) ->
     endpoint = settings.llm_base_url.rstrip("/") + "/chat/completions"
     messages = [{"role": "system", "content": system}] + history + [{"role": "user", "content": user}]
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {_llm_api_key()}"}
+    body = {
+        "model": settings.llm_model,
+        "messages": messages,
+        "temperature": 0.45,
+        "max_tokens": settings.llm_max_tokens,
+        "stream": False,
+    }
     async with httpx.AsyncClient(timeout=45.0) as client:
-        response = await client.post(endpoint, json={"model": settings.llm_model, "temperature": 0.45, "messages": messages}, headers=headers)
+        response = await client.post(endpoint, json=body, headers=headers)
     response.raise_for_status()
     return response.json().get("choices", [{}])[0].get("message", {}).get("content", "")
 

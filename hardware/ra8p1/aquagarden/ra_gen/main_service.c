@@ -2575,12 +2575,12 @@ const adc_b_virtual_channel_cfg_t *const g_adc0_group_8_virtual_channels[] = {
                                   };
                                   #endif
 
-                     #if (0) // Define Scan Group 0 if it's enabled
+                     #if (1) // Define Scan Group 0 if it's enabled
                      const adc_b_group_cfg_t g_adc0_group_0_cfg =
                      {
                          .scan_group_id                   = ADC_GROUP_ID_0,
                          .converter_selection             = (adc_b_unit_id_t)(0),
-                         .scan_group_enable               = (0),
+                         .scan_group_enable               = (1),
                          .scan_end_interrupt_enable       = (1),
                          .external_trigger_enable_mask    = ( ADC_B_EXTERNAL_TRIGGER_NONE),
                          .elc_trigger_enable_mask         = (elc_peripheral_t)( 0x00),
@@ -2799,9 +2799,9 @@ const adc_b_virtual_channel_cfg_t *const g_adc0_group_8_virtual_channels[] = {
                          #endif
                      };
                      #endif
-#if ((0)||(0)||(0)||(0)||(0)||(0)||(0)||(0)||(0))
+#if ((1)||(0)||(0)||(0)||(0)||(0)||(0)||(0)||(0))
 const adc_b_group_cfg_t * const g_adc0_scan_cfg_groups[] = {
-                           #if (0 != (0))
+                           #if (0 != (1))
                            &g_adc0_group_0_cfg,
                            #endif
 
@@ -2842,8 +2842,8 @@ const adc_b_group_cfg_t * const g_adc0_scan_cfg_groups[] = {
                        const adc_b_scan_cfg_t g_adc0_scan_cfg =
                        {
                        .group_count = ( 0 +
-                       (0 != (0)) + (0 != (0)) + (0 != (0)) + (0 != (0)) + (0 != (0)) + (0 != (0)) + (0 != (0)) + (0 != (0)) + (0 != (0))),
-#if ((0 != (0))||(0 != (0))||(0 != (0))||(0 != (0))||(0 != (0))||(0 != (0))||(0 != (0))||(0 != (0))||(0 != (0)))
+                       (0 != (1)) + (0 != (0)) + (0 != (0)) + (0 != (0)) + (0 != (0)) + (0 != (0)) + (0 != (0)) + (0 != (0)) + (0 != (0))),
+#if ((0 != (1))||(0 != (0))||(0 != (0))||(0 != (0))||(0 != (0))||(0 != (0))||(0 != (0))||(0 != (0))||(0 != (0)))
                        .p_adc_groups = (adc_b_group_cfg_t**)g_adc0_scan_cfg_groups,
                        #else
                        .p_adc_groups = NULL,

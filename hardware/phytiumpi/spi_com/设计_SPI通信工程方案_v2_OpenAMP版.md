@@ -4,16 +4,16 @@
 > 上位机：飞腾派 Linux 主核（业务层）+ 飞腾派裸机从核（OpenAMP remote core，SPI Master 物理驱动）
 > 下位机：RA6E2 + FreeRTOS + Renesas FSP（SPI Slave）
 > 物理层：4 线 SPI（SCK / MOSI / MISO / CS），全双工，64 字节定长帧
->
+> 
 > 本文档是 **v2**：严格遵循 `任务_功能实现_SPI通信.md` §一所要求的"PhytiumPi 跑在 OpenAMP 裸机核（remote core）"架构。
->
+> 
 > **协议层（帧格式 / CRC / 命令表）与 v1 完全一致**，唯一差别是飞腾派端 SPI Master 的实现位置：
->
+> 
 > - **v1**（`设计_SPI通信工程方案.md`，已落地工作）：Linux 用户态 daemon `aqua_spid` 直接用 spidev 驱动 SPI0
 > - **v2**（本文档）：Linux 业务进程通过 RPMsg 把命令交给裸机从核固件 `openamp_spi_core0.elf`，由从核驱动 SPI0
->
+> 
 > 两版**协议字节流完全二进制兼容**——RA6E2 一份固件可同时配 v1 / v2 主机端，不需要任何改动。
->
+> 
 > v1 不会被废弃，作为 v2 的 fallback 路径保留（详见 §8）。
 
 ---
@@ -76,29 +76,30 @@
 
 ### 0.1 三层职责
 
-| 层 | 跑在哪 | 是否解析业务语义 | 修改方式 | 重新部署成本 |
-|----|--------|-----------------|---------|-------------|
-| 业务进程 / CLI | Linux 用户态 | 是（最终决策者） | 改 Python/C 代码 | 重启进程，秒级 |
-| `aqua_rpmsgd` | Linux 用户态 | 仅做 IPC ↔ RPMsg 转发 + CMD 帧打包 + RSP 帧解包 | 改 C 代码 | systemd 重启，秒级 |
-| 裸机从核固件 `openamp_spi_core0.elf` | 飞腾派 core0 | **否**（仅做 RPMsg ↔ SPI 字节透传 + 时序控制） | 改 SDK 例程 + 重新编译 | 替换 `/lib/firmware/openamp_spi_core0.elf` + remoteproc restart，分钟级 |
-| RA6E2 Communicate_Task | RA6E2 大核 | 是（最终执行 + 状态机） | 改 e2studio 工程 | OTA / J-Link 重烧，分钟级 |
+| 层                              | 跑在哪       | 是否解析业务语义                              | 修改方式            | 重新部署成本                                                            |
+| ------------------------------ | --------- | ------------------------------------- | --------------- | ----------------------------------------------------------------- |
+| 业务进程 / CLI                     | Linux 用户态 | 是（最终决策者）                              | 改 Python/C 代码   | 重启进程，秒级                                                           |
+| `aqua_rpmsgd`                  | Linux 用户态 | 仅做 IPC ↔ RPMsg 转发 + CMD 帧打包 + RSP 帧解包 | 改 C 代码          | systemd 重启，秒级                                                     |
+| 裸机从核固件 `openamp_spi_core0.elf` | 飞腾派 core0 | **否**（仅做 RPMsg ↔ SPI 字节透传 + 时序控制）     | 改 SDK 例程 + 重新编译 | 替换 `/lib/firmware/openamp_spi_core0.elf` + remoteproc restart，分钟级 |
+| RA6E2 Communicate_Task         | RA6E2 大核  | 是（最终执行 + 状态机）                         | 改 e2studio 工程   | OTA / J-Link 重烧，分钟级                                               |
 
 > **设计原则：** 裸机核固件**对协议语义无感知**，只搬字节。任何业务命令的新增 / 修改都不需要重烧裸机核固件 —— 只改 Linux 端 + RA6E2 端。这是把"实时 + 物理控制"和"业务逻辑 + 调试便利"同时做到的关键。
 
 ### 0.2 与 v1 的关系
 
-| 维度 | v1 | v2 (本文档) |
-|------|----|-----------|
-| SPI Master 实现位置 | Linux spidev 内核驱动 | 飞腾派裸机核 fspim 驱动 |
-| 调度抖动来源 | Linux 用户态 → ioctl → 内核 → 控制器；250 ms 周期下 < 10 µs | 裸机核（无抢占，无中断风暴）；< 1 µs |
-| 调试难度 | 低（`spi_scope_demo.c` 直接验证） | 中（需 console + remoteproc 日志） |
-| 任务文档符合度 | ✗（任务文档明确要求 OpenAMP） | ✅ |
-| RA6E2 端固件 | 完全一致 | 完全一致（**0 修改**） |
-| 协议字节流 | v1 协议（SPI_PROTO_VERSION=0x01） | v1 协议（SPI_PROTO_VERSION=0x01，**100% 兼容**） |
-| Linux 端 daemon | `aqua_spid`（持有 spidev） | `aqua_rpmsgd`（持有 rpmsg），共享同一份 `aqua_ipc.h` 协议 |
-| 客户端 / CLI | 不需要任何改动（连同一个 `/tmp/aqua_spi.sock`） | 不需要任何改动 |
+| 维度              | v1                                              | v2 (本文档)                                      |
+| --------------- | ----------------------------------------------- | --------------------------------------------- |
+| SPI Master 实现位置 | Linux spidev 内核驱动                               | 飞腾派裸机核 fspim 驱动                               |
+| 调度抖动来源          | Linux 用户态 → ioctl → 内核 → 控制器；250 ms 周期下 < 10 µs | 裸机核（无抢占，无中断风暴）；< 1 µs                         |
+| 调试难度            | 低（`spi_scope_demo.c` 直接验证）                      | 中（需 console + remoteproc 日志）                  |
+| 任务文档符合度         | ✗（任务文档明确要求 OpenAMP）                             | ✅                                             |
+| RA6E2 端固件       | 完全一致                                            | 完全一致（**0 修改**）                                |
+| 协议字节流           | v1 协议（SPI_PROTO_VERSION=0x01）                   | v1 协议（SPI_PROTO_VERSION=0x01，**100% 兼容**）     |
+| Linux 端 daemon  | `aqua_spid`（持有 spidev）                          | `aqua_rpmsgd`（持有 rpmsg），共享同一份 `aqua_ipc.h` 协议 |
+| 客户端 / CLI       | 不需要任何改动（连同一个 `/tmp/aqua_spi.sock`）              | 不需要任何改动                                       |
 
 **关键不变量：**
+
 - `include/spi_protocol.h` 完全复用，**v2 不引入任何协议层改动**
 - `linux/libaqua_spi/spi_codec.{h,c}`（CRC + 帧打包/校验）完全复用
 - `linux/libaqua_spi/aqua_ipc.h`（IPC 协议）完全复用
@@ -112,40 +113,41 @@
 
 飞腾派（PE2204）SoC 内有 4 个独立 SPI Master 控制器（FSPI0..FSPI3，参见 SDK `soc/pe220x/fparameters_comm.h`）：
 
-| ID | 基地址 | IRQ | 引脚（飞腾派排针） | 用途 |
-|----|--------|-----|-------------------|------|
+| ID        | 基地址          | IRQ     | 引脚（飞腾派排针）                                        | 用途        |
+| --------- | ------------ | ------- | ------------------------------------------------ | --------- |
 | **FSPI0** | `0x2803A000` | **191** | **SPI0_SCK / MOSI / MISO / CSN0**（板载已 IOPad mux） | **本方案使用** |
-| FSPI1 | `0x2803B000` | 192 | 未引出到排针 | — |
-| FSPI2 | `0x2803C000` | 193 | 未引出到排针 | — |
-| FSPI3 | `0x2803D000` | 194 | 未引出到排针 | — |
+| FSPI1     | `0x2803B000` | 192     | 未引出到排针                                           | —         |
+| FSPI2     | `0x2803C000` | 193     | 未引出到排针                                           | —         |
+| FSPI3     | `0x2803D000` | 194     | 未引出到排针                                           | —         |
 
 **选 FSPI0 的理由：**
+
 1. **就是 v1 用的同一个控制器**——飞腾派 spidev 节点 `/dev/spidev0.0` 就是 FSPI0 (`0x2803A000`)。物理走线完全复用，不需要重新接线
 2. SDK 板级 `board/phytiumpi_firefly/fio_mux.c::FIOPadSetSpimMux(FSPI0_ID)` 已经把 SCLK/TXD/RXD/CSN0 的 IOPad 复用配置好（FUNC2），调用一次即可
 3. 其他 SPI 控制器在飞腾派板上未引出，配置成本高且无法验证
 
 ### 1.2 配置参数表
 
-| 配置项 | 选择 | 理由 |
-|-------|------|------|
-| SPI 模式 | **Mode 1**（CPOL=0, CPHA=1） | 与 v1 一致；RA6E2 FSP 的 SPI Slave 不支持 CPHA=0；裸机核 FSPIM 用 `FSPIM_CPOL_LOW` + `FSPIM_CPHA_2_EDGE` 配置 |
-| 通信速率 | **1 MHz**（首发），可调 4 MHz | 64 字节单帧 0.5 ms，对 250 ms 周期空载 < 1%；飞腾派排针无屏蔽，1 MHz 给信号完整性留够裕度。SDK `FSPI_DEFAULT_SCLK = 5 MHz` 太高，必须显式设 1 MHz |
-| 数据位宽 | **8 bit**（`FSPIM_1_BYTE`） | 协议按字节流设计；与 RA6E2 双 DMAC 1-Byte 配置一致；避免 16-bit 模式的 endian/对齐 bug |
-| 传输方式 | **Polling（`TRANS_WAY_POLL`）→ Interrupt 升级路径** | v2 首发用 polling 简化裸机核（64 B / 1 MHz = 0.5 ms 阻塞，对 250 ms 周期可忽略）；后续如要降低 CPU 占用，改 `TRANS_WAY_INTERRUPT`，回调里给信号量再唤醒 RPMsg 端口任务 |
-| DMA | **不使用**（v2 首发） | 64 字节单帧太短，DMAC 描述符建立开销 > 数据搬运时间。v3 如要并发处理多 client，可启 `TRANS_WAY_DDMA` |
-| CS 管理 | **裸机核显式 `FSpimSetChipSelection(spim, TRUE/FALSE)`**（每帧一次） | 与 v1 spidev `SPI_IOC_MESSAGE` 自动管理 CS 等价；CS 上升沿是 RA6E2 DMAC "帧结束 + 复位"信号，是抗错位最关键的一招 |
-| 字节序 | **小端 LE** | 飞腾 ARMv8 + RA6E2 ARMv7 默认皆 LE；不做转换 |
-| 位序 | **MSB First** | 行业默认；RA6E2 已配 `SPI_BIT_ORDER_MSB_FIRST` |
+| 配置项    | 选择                                                        | 理由                                                                                                                        |
+| ------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| SPI 模式 | **Mode 1**（CPOL=0, CPHA=1）                                | 与 v1 一致；RA6E2 FSP 的 SPI Slave 不支持 CPHA=0；裸机核 FSPIM 用 `FSPIM_CPOL_LOW` + `FSPIM_CPHA_2_EDGE` 配置                            |
+| 通信速率   | **1 MHz**（首发），可调 4 MHz                                    | 64 字节单帧 0.5 ms，对 250 ms 周期空载 < 1%；飞腾派排针无屏蔽，1 MHz 给信号完整性留够裕度。SDK `FSPI_DEFAULT_SCLK = 5 MHz` 太高，必须显式设 1 MHz                |
+| 数据位宽   | **8 bit**（`FSPIM_1_BYTE`）                                 | 协议按字节流设计；与 RA6E2 双 DMAC 1-Byte 配置一致；避免 16-bit 模式的 endian/对齐 bug                                                           |
+| 传输方式   | **Polling（`TRANS_WAY_POLL`）→ Interrupt 升级路径**             | v2 首发用 polling 简化裸机核（64 B / 1 MHz = 0.5 ms 阻塞，对 250 ms 周期可忽略）；后续如要降低 CPU 占用，改 `TRANS_WAY_INTERRUPT`，回调里给信号量再唤醒 RPMsg 端口任务 |
+| DMA    | **不使用**（v2 首发）                                            | 64 字节单帧太短，DMAC 描述符建立开销 > 数据搬运时间。v3 如要并发处理多 client，可启 `TRANS_WAY_DDMA`                                                     |
+| CS 管理  | **裸机核显式 `FSpimSetChipSelection(spim, TRUE/FALSE)`**（每帧一次） | 与 v1 spidev `SPI_IOC_MESSAGE` 自动管理 CS 等价；CS 上升沿是 RA6E2 DMAC "帧结束 + 复位"信号，是抗错位最关键的一招                                       |
+| 字节序    | **小端 LE**                                                 | 飞腾 ARMv8 + RA6E2 ARMv7 默认皆 LE；不做转换                                                                                        |
+| 位序     | **MSB First**                                             | 行业默认；RA6E2 已配 `SPI_BIT_ORDER_MSB_FIRST`                                                                                   |
 
 ### 1.3 引脚映射（与 v1 完全一致）
 
-| 信号 | 飞腾派排针 | 裸机核 FIOPad（SDK 已实现） | RA6E2 |
-|-----|-----------|---------------------------|-------|
+| 信号   | 飞腾派排针       | 裸机核 FIOPad（SDK 已实现）            | RA6E2         |
+| ---- | ----------- | ------------------------------ | ------------- |
 | SCK  | `SPI0_SCK`  | `FIOPAD_W55_REG0_OFFSET` FUNC2 | P102 (RSPCK1) |
-| MOSI | `SPI0_MOSI` | `FIOPAD_W53_REG0_OFFSET` FUNC2 | P101 (MOSI1) |
-| MISO | `SPI0_MISO` | `FIOPAD_U55_REG0_OFFSET` FUNC2 | P100 (MISO1) |
-| CS   | `SPI0_CSN0` | `FIOPAD_U53_REG0_OFFSET` FUNC2 | P103 (SSL10) |
-| GND  | 任一 GND     | — | GND |
+| MOSI | `SPI0_MOSI` | `FIOPAD_W53_REG0_OFFSET` FUNC2 | P101 (MOSI1)  |
+| MISO | `SPI0_MISO` | `FIOPAD_U55_REG0_OFFSET` FUNC2 | P100 (MISO1)  |
+| CS   | `SPI0_CSN0` | `FIOPAD_U53_REG0_OFFSET` FUNC2 | P103 (SSL10)  |
+| GND  | 任一 GND      | —                              | GND           |
 
 接线 < 15 cm，必须共地。
 
@@ -220,13 +222,13 @@ int aqua_spi_xfer_64(const uint8_t *tx, uint8_t *rx)
 
 ### 2.3 v2 引入的 RPMsg 服务名
 
-| 服务名 (`RPMSG_SERVICE_NAME`) | 用途 |
-|-----------------------------|------|
-| `"aqua-spi"` | AquaGarden SPI 透传通道（Linux ↔ 裸机核） |
+| 服务名 (`RPMSG_SERVICE_NAME`) | 用途                               |
+| -------------------------- | -------------------------------- |
+| `"aqua-spi"`               | AquaGarden SPI 透传通道（Linux ↔ 裸机核） |
 
 > Linux 端通过 `RPMSG_CREATE_EPT_IOCTL` 用同名 endpoint 名 `"aqua-spi"` 与裸机核协商。
 > 与 SDK 自带例程的 `RPMSG_SERVICE_NAME` 不同名，避免冲突。
->
+> 
 > **设备节点动态发现：** Linux 内核 `rpmsg_char` 驱动会按 endpoint 注册顺序分配 `/dev/rpmsg0`、`/dev/rpmsg1`...
 > 编号不是固定的（如果系统里还跑别的 RPMsg 服务，编号会漂移）。daemon 实际不写死路径，
 > 而是先 `RPMSG_CREATE_EPT_IOCTL` 注册端点，然后扫描 `/sys/class/rpmsg/` 下所有 `rpmsgN`，
@@ -276,14 +278,14 @@ Linux 业务进程 → aqua_rpmsgd → RPMsg → 裸机核 → SPI 总线 → RA
 
 下表是简表，详见 v1 设计文档：
 
-| DEV ID | 名称 | CMD ID 范围 | 主要命令 |
-|--------|------|------------|---------|
-| `0x00` | `SPI_DEV_SYSTEM` | `0x00..0x05` | NOP, PING, GET_VERSION, GET_UPTIME, RESET_ALARM, HELLO |
-| `0x01` | `SPI_DEV_PUMP` | `0x01..0x20` | START, STOP, SET_PWM, SET_AUTO/MANUAL, SET_CYCLE_CFG/CTRL, GET_STATUS |
-| `0x02` | `SPI_DEV_SENSOR` | `0x10..0x14` | POLL_ALL, POLL_AIR/WATER/SOIL/PRESSURE |
-| `0x03` | `SPI_DEV_LINKAGE` | `0x01..0x02` | SET_SOIL_CFG, SET_RULE |
-| `0x04..0xEF` | 预留 | — | 未来扩展 |
-| `0xF0..0xFF` | 厂商自定义 | — | OEM 扩展 |
+| DEV ID       | 名称                | CMD ID 范围    | 主要命令                                                                  |
+| ------------ | ----------------- | ------------ | --------------------------------------------------------------------- |
+| `0x00`       | `SPI_DEV_SYSTEM`  | `0x00..0x05` | NOP, PING, GET_VERSION, GET_UPTIME, RESET_ALARM, HELLO                |
+| `0x01`       | `SPI_DEV_PUMP`    | `0x01..0x20` | START, STOP, SET_PWM, SET_AUTO/MANUAL, SET_CYCLE_CFG/CTRL, GET_STATUS |
+| `0x02`       | `SPI_DEV_SENSOR`  | `0x10..0x14` | POLL_ALL, POLL_AIR/WATER/SOIL/PRESSURE                                |
+| `0x03`       | `SPI_DEV_LINKAGE` | `0x01..0x02` | SET_SOIL_CFG, SET_RULE                                                |
+| `0x04..0xEF` | 预留                | —            | 未来扩展                                                                  |
+| `0xF0..0xFF` | 厂商自定义             | —            | OEM 扩展                                                                |
 
 > **重要：** v2 不允许在文档里另立命令编号。任何新增 DEV/CMD 必须改 `include/spi_protocol.h`，然后 `bash ra6e2_patch/sync_from_canonical.sh` 同步到 RA6E2。裸机核固件**不需要重烧**——它对 DEV/CMD 完全无感知，只搬 64 字节。
 
@@ -293,20 +295,20 @@ Linux 业务进程 → aqua_rpmsgd → RPMsg → 裸机核 → SPI 总线 → RA
 
 ### 4.1 总体节拍
 
-| 节拍 | 周期 / 阈值 | 说明 |
-|------|-----------|------|
-| 主机周期 SENSOR_POLL_ALL | 250 ms | 与 RA6E2 `Communicate_Task` 节拍对齐；与 v1 一致 |
-| RPMsg 单次往返延迟 | < 1 ms（aarch64 + IPI） | libmetal 实测，不含 SPI 物理传输 |
-| SPI CMD 帧 | 64 B / 1 MHz = 512 µs + CS 切换 | 与 v1 一致 |
-| CMD ↔ NOP 间隔 | **5 ms** | 留给 RA6E2 ISR + memcpy 装 RSP |
-| Linux 端 IPC SEND_CMD 总耗 | < 7 ms | RPMsg 1 ms + SPI 6 ms |
-| 单命令 CPU 占用（裸机核）| 占用 6 ms / 250 ms ≈ 2.4% | 周期负载 < 3% |
+| 节拍                      | 周期 / 阈值                       | 说明                                      |
+| ----------------------- | ----------------------------- | --------------------------------------- |
+| 主机周期 SENSOR_POLL_ALL    | 250 ms                        | 与 RA6E2 `Communicate_Task` 节拍对齐；与 v1 一致 |
+| RPMsg 单次往返延迟            | < 1 ms（aarch64 + IPI）         | libmetal 实测，不含 SPI 物理传输                 |
+| SPI CMD 帧               | 64 B / 1 MHz = 512 µs + CS 切换 | 与 v1 一致                                 |
+| CMD ↔ NOP 间隔            | **5 ms**                      | 留给 RA6E2 ISR + memcpy 装 RSP             |
+| Linux 端 IPC SEND_CMD 总耗 | < 7 ms                        | RPMsg 1 ms + SPI 6 ms                   |
+| 单命令 CPU 占用（裸机核）         | 占用 6 ms / 250 ms ≈ 2.4%       | 周期负载 < 3%                               |
 
 ### 4.2 单命令完整时序图
 
 ```
 时间轴 →
-                                                                                          
+
 Linux 业务进程  ─►SEND_CMD                                                       ◄─返回
                        │                                                              ▲
                        ▼                                                              │
@@ -332,17 +334,17 @@ RPMsg/IPI       ──────►SGI 中断到 core0──────►   
 
 ### 4.3 时间预算
 
-| 阶段 | 时间 |
-|------|------|
-| Linux IPC accept + 包打包 | ~50 µs |
-| RPMsg write → SGI → 裸机回调 | ~500 µs |
-| 裸机核 SPI 事务 #1（CMD） | 512 µs SCLK + 5 µs CS |
-| 等 RA6E2 装好 RSP | 5 ms |
-| 裸机核 SPI 事务 #2（NOP_READ） | 512 µs SCLK + 5 µs CS |
-| RPMsg send → SGI → Linux 唤醒 | ~500 µs |
-| daemon 解析 RSP + 填 IPC | ~100 µs |
-| **单命令端到端** | **~7 ms** |
-| 周期 250 ms 利用率 | < 3% |
+| 阶段                          | 时间                    |
+| --------------------------- | --------------------- |
+| Linux IPC accept + 包打包      | ~50 µs                |
+| RPMsg write → SGI → 裸机回调    | ~500 µs               |
+| 裸机核 SPI 事务 #1（CMD）          | 512 µs SCLK + 5 µs CS |
+| 等 RA6E2 装好 RSP              | 5 ms                  |
+| 裸机核 SPI 事务 #2（NOP_READ）     | 512 µs SCLK + 5 µs CS |
+| RPMsg send → SGI → Linux 唤醒 | ~500 µs               |
+| daemon 解析 RSP + 填 IPC       | ~100 µs               |
+| **单命令端到端**                  | **~7 ms**             |
+| 周期 250 ms 利用率               | < 3%                  |
 
 ### 4.4 主机端状态机（aqua_rpmsgd 主循环，伪码）
 
@@ -710,6 +712,7 @@ const aqua_backend_ops_t aqua_backend_rpmsg_ops = {
 ```
 
 > **稳健性细节：**
+> 
 > 1. `rpmsg_pick_latest_dev` 解决了 RPMsg 设备号漂移问题 —
 >    系统里只要还有别的 RPMsg 服务（如 SDK 自带 echo demo），编号就不固定。
 > 2. `op_xfer` 用 `poll` 设了 100 ms 默认超时，比裸机核挂死时 `read` 永久阻塞要好。
@@ -853,29 +856,29 @@ int main(void)
 
 ### 6.1 校验失败
 
-| 端 | 处理 |
-|----|------|
+| 端                         | 处理                                                                                                        |
+| ------------------------- | --------------------------------------------------------------------------------------------------------- |
 | Linux daemon 收到 RSP CRC 错 | `stats.rx_crc_err_count++`；不重传命令；连续 5 次错 → 触发后端 `reset()`（v2 = remoteproc restart；v1 = close+open spidev） |
-| 裸机核收到非 64 B 长度 RPMsg 包 | 丢弃 + 日志，不发 SPI |
-| 裸机核 SPI 控制器返回错误 | 给 Linux 回 STATUS=BUSY 的伪 RSP（防 Linux 阻塞），同时 `stats.spi_err++` |
-| RA6E2 收到 CMD CRC 错 | 不执行命令；返回 `STATUS_CRC_ERR`；置 `g_alarm_flags |= COMM_RX_ERROR` |
+| 裸机核收到非 64 B 长度 RPMsg 包    | 丢弃 + 日志，不发 SPI                                                                                            |
+| 裸机核 SPI 控制器返回错误           | 给 Linux 回 STATUS=BUSY 的伪 RSP（防 Linux 阻塞），同时 `stats.spi_err++`                                             |
+| RA6E2 收到 CMD CRC 错        | 不执行命令；返回 `STATUS_CRC_ERR`；置 `g_alarm_flags                                                                |
 
 ### 6.2 超时
 
-| 场景 | 阈值 | 行为 |
-|------|------|------|
-| Linux：`read(rpmsg_fd)` | 100 ms（用 `poll()` 设超时） | 视为裸机核挂死，触发 remoteproc restart 自愈 |
-| Linux：客户端 SEND_CMD 等响应 | 默认 200 ms | 单线程同步执行，几乎不会超时 |
-| 裸机核：`FSpimTransferPollFifo` | SDK 内部超时 | 错误返回 → 装 STATUS_BUSY 伪 RSP 回 Linux |
-| RA6E2：`xSemaphoreTake(spi_done_sem)` | 1000 ms | close + open `g_com_spi` 重置 SPI Slave |
+| 场景                                   | 阈值                     | 行为                                    |
+| ------------------------------------ | ---------------------- | ------------------------------------- |
+| Linux：`read(rpmsg_fd)`               | 100 ms（用 `poll()` 设超时） | 视为裸机核挂死，触发 remoteproc restart 自愈      |
+| Linux：客户端 SEND_CMD 等响应               | 默认 200 ms              | 单线程同步执行，几乎不会超时                        |
+| 裸机核：`FSpimTransferPollFifo`          | SDK 内部超时               | 错误返回 → 装 STATUS_BUSY 伪 RSP 回 Linux    |
+| RA6E2：`xSemaphoreTake(spi_done_sem)` | 1000 ms                | close + open `g_com_spi` 重置 SPI Slave |
 
 ### 6.3 裸机核 OpenAMP 异常
 
-| 场景 | 处理 |
-|------|------|
+| 场景                                    | 处理                                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------- |
 | RPMsg endpoint unbind（Linux 关 daemon） | 设 `s_shutdown = 1`，跳出主循环，`platform_cleanup()` + `FPsciCpuOff()`，等 Linux remoteproc 重新 start |
-| RPMsg `rpmsg_send` 失败 | 日志一行，不重试（业务进程会因超时重发） |
-| `platform_create_rpmsg_vdev` 失败 | 启动失败，远程核 panic 退出，remoteproc state 变 crashed，Linux daemon 自动 fallback 到 v1 |
+| RPMsg `rpmsg_send` 失败                 | 日志一行，不重试（业务进程会因超时重发）                                                                        |
+| `platform_create_rpmsg_vdev` 失败       | 启动失败，远程核 panic 退出，remoteproc state 变 crashed，Linux daemon 自动 fallback 到 v1                  |
 
 ### 6.4 未知设备 / 命令 / SPI 错位
 
@@ -887,11 +890,11 @@ int main(void)
 
 ### 6.6 日志通道
 
-| 端 | 通道 |
-|----|------|
-| Linux daemon | `journalctl -u aqua-rpmsgd -f` |
-| 裸机核 | UART1 串口（飞腾派 `ttyAMA1`），115200 8N1。SDK 默认 `CONFIG_DEFAULT_DEBUG_PRINT_UART1=y` 已选 |
-| RA6E2 | 板载 USB-CDC，与 v1 一致 |
+| 端            | 通道                                                                                |
+| ------------ | --------------------------------------------------------------------------------- |
+| Linux daemon | `journalctl -u aqua-rpmsgd -f`                                                    |
+| 裸机核          | UART1 串口（飞腾派 `ttyAMA1`），115200 8N1。SDK 默认 `CONFIG_DEFAULT_DEBUG_PRINT_UART1=y` 已选 |
+| RA6E2        | 板载 USB-CDC，与 v1 一致                                                                |
 
 ---
 
@@ -1077,10 +1080,10 @@ ExecStart=/opt/aqua/bin/aqua_rpmsgd -f -B auto -p 250
 Restart=on-failure
 ```
 
-| 部署模式 | 启用的 service |
-|---------|-------------|
-| **v2 OpenAMP** | `aqua-openamp-load.service`（自动被 Requires 拉起） + `aqua-rpmsgd.service` |
-| **v1 fallback** | （手动）`overlay/install_spidev_overlay.sh apply` + `aqua-spid.service` |
+| 部署模式            | 启用的 service                                                          |
+| --------------- | -------------------------------------------------------------------- |
+| **v2 OpenAMP**  | `aqua-openamp-load.service`（自动被 Requires 拉起） + `aqua-rpmsgd.service` |
+| **v1 fallback** | （手动）`overlay/install_spidev_overlay.sh apply` + `aqua-spid.service`  |
 
 ### 8.4 切换脚本
 
@@ -1137,51 +1140,51 @@ systemctl restart aqua-spid.service
 
 ### 9.1 OpenAMP / RPMsg
 
-| API | 头文件 | 用途 | 在本工程位置 |
-|-----|-------|------|------------|
-| `platform_create_proc` | `helper.h` | 创建 remoteproc 实例 | `aqua_spi_slave_run()` |
-| `platform_setup_src_table` | `helper.h` | 注册 resource table | 同上 |
-| `platform_setup_share_mems` | `helper.h` | 申请共享内存 | 同上 |
-| `platform_create_rpmsg_vdev` | `helper.h` | 创建 RPMsg virtio device | 同上 |
-| `rpmsg_create_ept` | `openamp/rpmsg.h` | 注册 endpoint + name service | 同上，service = `"aqua-spi"` |
-| `rpmsg_send` | `openamp/rpmsg.h` | 发包到对端 | `aqua_rpmsg_cb()` |
-| `platform_poll` | `helper.h` | 主循环驱动（处理 IPI / virtio） | 主循环 |
-| `rproc_get_stop_flag` | `helper.h` | 检查是否被 Linux remoteproc stop | 主循环 |
+| API                          | 头文件               | 用途                          | 在本工程位置                    |
+| ---------------------------- | ----------------- | --------------------------- | ------------------------- |
+| `platform_create_proc`       | `helper.h`        | 创建 remoteproc 实例            | `aqua_spi_slave_run()`    |
+| `platform_setup_src_table`   | `helper.h`        | 注册 resource table           | 同上                        |
+| `platform_setup_share_mems`  | `helper.h`        | 申请共享内存                      | 同上                        |
+| `platform_create_rpmsg_vdev` | `helper.h`        | 创建 RPMsg virtio device      | 同上                        |
+| `rpmsg_create_ept`           | `openamp/rpmsg.h` | 注册 endpoint + name service  | 同上，service = `"aqua-spi"` |
+| `rpmsg_send`                 | `openamp/rpmsg.h` | 发包到对端                       | `aqua_rpmsg_cb()`         |
+| `platform_poll`              | `helper.h`        | 主循环驱动（处理 IPI / virtio）      | 主循环                       |
+| `rproc_get_stop_flag`        | `helper.h`        | 检查是否被 Linux remoteproc stop | 主循环                       |
 
 ### 9.2 SPI Master (FSPIM)
 
-| API | 头文件 | 用途 |
-|-----|-------|------|
-| `FSpimLookupConfig(FSPI0_ID)` | `fspim.h` | 取默认配置（base_addr/irq） |
-| `FSpimCfgInitialize` | `fspim.h` | 初始化实例 |
-| `FSpimSetChipSelection(spim, on)` | `fspim.h` | 主动控 CS（E2000 系列） |
-| `FSpimTransferPollFifo(spim, tx, rx, len)` | `fspim.h` | 阻塞收发，本工程主用 |
-| `FSpimDeInitialize` | `fspim.h` | 去初始化 |
-| `FSpimSetOption(spim, FSPIM_FREQUENCY_OPTION, hz)` | `fspim.h` | 运行时改速率 |
+| API                                                | 头文件       | 用途                   |
+| -------------------------------------------------- | --------- | -------------------- |
+| `FSpimLookupConfig(FSPI0_ID)`                      | `fspim.h` | 取默认配置（base_addr/irq） |
+| `FSpimCfgInitialize`                               | `fspim.h` | 初始化实例                |
+| `FSpimSetChipSelection(spim, on)`                  | `fspim.h` | 主动控 CS（E2000 系列）     |
+| `FSpimTransferPollFifo(spim, tx, rx, len)`         | `fspim.h` | 阻塞收发，本工程主用           |
+| `FSpimDeInitialize`                                | `fspim.h` | 去初始化                 |
+| `FSpimSetOption(spim, FSPIM_FREQUENCY_OPTION, hz)` | `fspim.h` | 运行时改速率               |
 
 ### 9.3 IO 引脚 mux
 
-| API | 头文件 | 用途 |
-|-----|-------|------|
-| `FIOMuxInit()` | `fio_mux.h` | 初始化 IOPad 控制器 |
+| API                          | 头文件         | 用途                                         |
+| ---------------------------- | ----------- | ------------------------------------------ |
+| `FIOMuxInit()`               | `fio_mux.h` | 初始化 IOPad 控制器                              |
 | `FIOPadSetSpimMux(FSPI0_ID)` | `fio_mux.h` | 一次性配好 SCK/MOSI/MISO/CSN0 复用为 SPI 功能（板级已实现） |
 
 ### 9.4 关键 SDK kconfig（v2 必启）
 
-| KConfig | 取值 | 作用 |
-|---------|------|------|
-| `CONFIG_PHYTIUMPI_FIREFLY_BOARD` | `y` | 选板 |
-| `CONFIG_TARGET_PE2204` | `y` | 选 SoC |
-| `CONFIG_ARCH_ARMV8_AARCH64` | `y` | 与 Linux 5.10 一致；4.19 内核需切 aarch32 |
-| `CONFIG_INTERRUPT_ROLE_SLAVE` | `y` | 远程核做 SGI 接收方 |
-| `CONFIG_USE_AMP=y` + `CONFIG_USE_LIBMETAL=y` + `CONFIG_USE_OPENAMP=y` | `y` | 启用 OpenAMP |
-| `CONFIG_USE_OPENAMP_IPI=y` | `y` | 用 SGI IPI 触发（不是轮询） |
-| `CONFIG_SKIP_SHBUF_IO_WRITE=y` | `y` | Linux 主核管 vring；裸机不写自己的 shbuf 区描述 |
-| `CONFIG_USE_MASTER_VRING_DEFINE=y` | `y` | vring 地址由 Linux 决定 |
-| `CONFIG_USE_CACHE_COHERENCY=y` | `y` | 共享内存走 normal cacheable，依赖 Linux 在 reserved-memory 配 cacheable |
-| `CONFIG_USE_SPI=y` + `CONFIG_USE_FSPIM=y` | `y` | **新增**：启用 FSPIM 驱动 |
-| `CONFIG_USE_IOMUX=y` + `CONFIG_ENABLE_IOPAD=y` | `y` | 配 SPI 引脚复用 |
-| `CONFIG_IMAGE_LOAD_ADDRESS=0xb0100000` | `0xb0100000` | 与 SDK 模板对齐；与 SLAVE00_SHARE_MEM_ADDR (0xC000_0000) 不冲突 |
+| KConfig                                                               | 取值           | 作用                                                            |
+| --------------------------------------------------------------------- | ------------ | ------------------------------------------------------------- |
+| `CONFIG_PHYTIUMPI_FIREFLY_BOARD`                                      | `y`          | 选板                                                            |
+| `CONFIG_TARGET_PE2204`                                                | `y`          | 选 SoC                                                         |
+| `CONFIG_ARCH_ARMV8_AARCH64`                                           | `y`          | 与 Linux 5.10 一致；4.19 内核需切 aarch32                             |
+| `CONFIG_INTERRUPT_ROLE_SLAVE`                                         | `y`          | 远程核做 SGI 接收方                                                  |
+| `CONFIG_USE_AMP=y` + `CONFIG_USE_LIBMETAL=y` + `CONFIG_USE_OPENAMP=y` | `y`          | 启用 OpenAMP                                                    |
+| `CONFIG_USE_OPENAMP_IPI=y`                                            | `y`          | 用 SGI IPI 触发（不是轮询）                                            |
+| `CONFIG_SKIP_SHBUF_IO_WRITE=y`                                        | `y`          | Linux 主核管 vring；裸机不写自己的 shbuf 区描述                             |
+| `CONFIG_USE_MASTER_VRING_DEFINE=y`                                    | `y`          | vring 地址由 Linux 决定                                            |
+| `CONFIG_USE_CACHE_COHERENCY=y`                                        | `y`          | 共享内存走 normal cacheable，依赖 Linux 在 reserved-memory 配 cacheable |
+| `CONFIG_USE_SPI=y` + `CONFIG_USE_FSPIM=y`                             | `y`          | **新增**：启用 FSPIM 驱动                                            |
+| `CONFIG_USE_IOMUX=y` + `CONFIG_ENABLE_IOPAD=y`                        | `y`          | 配 SPI 引脚复用                                                    |
+| `CONFIG_IMAGE_LOAD_ADDRESS=0xb0100000`                                | `0xb0100000` | 与 SDK 模板对齐；与 SLAVE00_SHARE_MEM_ADDR (0xC000_0000) 不冲突         |
 
 ---
 
@@ -1189,12 +1192,12 @@ systemctl restart aqua-spid.service
 
 ### 10.1 飞腾派 Linux 内核要求
 
-| Kconfig | 状态 | 备注 |
-|---------|------|------|
-| `CONFIG_REMOTEPROC=y` | 必须 | 提供 `/sys/class/remoteproc/` |
-| `CONFIG_PHYTIUM_REMOTEPROC=y` | 必须 | 飞腾远程核驱动（buildroot `openamp_*.config` 已含） |
-| `CONFIG_RPMSG=y` + `CONFIG_RPMSG_VIRTIO=y` + `CONFIG_RPMSG_CHAR=y` | 必须 | 提供 `/dev/rpmsg_ctrl0` `/dev/rpmsg0` |
-| `CONFIG_OF_RESERVED_MEM=y` | 必须 | 远程核内存窗口 |
+| Kconfig                                                            | 状态  | 备注                                       |
+| ------------------------------------------------------------------ | --- | ---------------------------------------- |
+| `CONFIG_REMOTEPROC=y`                                              | 必须  | 提供 `/sys/class/remoteproc/`              |
+| `CONFIG_PHYTIUM_REMOTEPROC=y`                                      | 必须  | 飞腾远程核驱动（buildroot `openamp_*.config` 已含） |
+| `CONFIG_RPMSG=y` + `CONFIG_RPMSG_VIRTIO=y` + `CONFIG_RPMSG_CHAR=y` | 必须  | 提供 `/dev/rpmsg_ctrl0` `/dev/rpmsg0`      |
+| `CONFIG_OF_RESERVED_MEM=y`                                         | 必须  | 远程核内存窗口                                  |
 
 > 检查方法：飞腾派上 `zcat /proc/config.gz | grep -E 'REMOTEPROC|RPMSG'`
 > 如果缺，在 buildroot 用 `phytium_ubuntu_defconfig + openamp_*.config` 重编内核（参见 `hardware/phytiumpi/README.md` 中"openamp_xxx.config" 一节）。
@@ -1239,6 +1242,7 @@ systemctl restart aqua-spid.service
 
 工程的 `openamp_core/makefile` 已经做过两处适配，**不再需要** `source set_toolchain.sh` 或
 `install.py`：
+
 - `SDK_DIR ?= $(CURDIR)/../../../../../phytium-standalone-sdk` — 默认就指到用户家目录的 SDK；
 - `TOOL_CHAIN_PREFIX ?= aarch64-none-elf-` — 直接用 `PATH` 里的 Linaro/官方 bare-metal 编译器
   （Ubuntu 上 `apt install gcc-aarch64-none-elf` 即可），无需 export 任何环境变量。
@@ -1370,37 +1374,37 @@ sudo /opt/aqua/bin/aqua_rpmsgd -f -v -B rpmsg     # -B rpmsg 强制走 v2 不退
 
 > 在 v1 已有的 9 个决策（Q1..Q9）基础上追加。
 
-| ID | 问题 | 选择 | 理由 |
-|----|------|------|------|
-| Q10 | 是否真要按任务文档实现 OpenAMP？ | **是**（用户决定） | 任务文档明确要求 OpenAMP 路径；即便 v1 已工作也要给出符合任务定义的 v2 |
-| Q11 | v1 是否废弃？ | **保留为 fallback** | 已稳定工作；v2 发布初期可能有未知问题；运行时自动检测后端 |
-| Q12 | 远程核运行时 | **纯裸机（baremetal）** | 任务文档原话；FreeRTOS 引入额外调度复杂度，无收益（裸机核任务单一） |
-| Q13 | 远程核加载方式 | **Linux remoteproc**（不是 U-Boot bootelf） | 用户选；运行时可热启停，便于调试与升级；与 SDK `openamp_for_linux` 例程方向一致 |
-| Q14 | RPMsg 包大小 vs SPI 帧 | **1 RPMsg 包 = 1 SPI 帧 (64 B)** | RPMsg vring buffer 默认 512 B 远超 64 B，永不分片；语义清晰 |
-| Q15 | CMD + NOP_READ 两次事务在哪一端发？ | **裸机核内部完成** | 一次 RPMsg 往返抵两次 SPI 事务，对 Linux 透明；避免 RPMsg 延迟翻倍 |
-| Q16 | 裸机核是否解析协议字段 | **不解析，纯透传** | 业务命令新增时无需重烧裸机固件；与"任意业务进程通过共享 daemon 访问"目标一致 |
-| Q17 | FSPIM 传输方式 | **POLL（首发）** | 64 B / 1 MHz 仅 0.5 ms，poll 阻塞代价可忽略；裸机核反正没别的事干。后续 INTERRUPT/DMA 升级路径预留 |
-| Q18 | RPMsg endpoint 服务名 | **`"aqua-spi"`** | 与 SDK 例程默认服务名不冲突；命名清晰 |
-| Q19 | v1/v2 切换粒度 | **每次部署选其一**（互斥） | 同一 SPI0 控制器不能同时被 spidev 内核驱动和裸机核占用；用 systemd Conflicts 强制互斥 |
-| Q20 | Linux 端代码组织 | **抽 `aqua_backend_ops_t` 接口** | v1/v2 daemon 共享 95% 代码；上层 IPC + CLI 完全不动 |
-| Q21 | RPMsg 设备节点编号 | **不写死 `/dev/rpmsg0`，按 service name 扫描 `/sys/class/rpmsg/`** | 系统里其它 RPMsg 服务（如 SDK echo demo）会改变编号；扫描法 robust |
-| Q22 | 裸机核 `rpmsg_send` 用什么缓冲 | **本端 alloc 的 `s_rsp_frame`**，不直接用回调入参 `data` | `data` 是 vring RX buffer；rpmsg_send 内部走 TX vring，复用同块内存会污染 RX |
-| Q23 | SPI 出错时怎么应对 Linux 端 | **裸机核回 STATUS=BUSY 伪 RSP**（非"什么都不发"） | Linux 端 `read(rpmsg_fd)` 设了 100 ms poll 超时；不发包会让 daemon 累计 timeout |
-| Q24 | 远程核 stop 后能不能马上 start | **不能。** 当前 phytium-remoteproc 驱动有 BSP 级 bug | `aqua-openamp-load.service` 用幂等检测代替 stop/start；stop 时只恢复 firmware 名 |
-| Q25 | 出 `/dev/rpmsgN` 需要做什么 | **必须 `modprobe rpmsg_char` + 写 `driver_override=rpmsg_chrdev` + bind** | BSP 默认不自动绑定。`aqua-openamp-load.service` ExecStart 已包含 |
+| ID  | 问题                        | 选择                                                                     | 理由                                                                    |
+| --- | ------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Q10 | 是否真要按任务文档实现 OpenAMP？      | **是**（用户决定）                                                            | 任务文档明确要求 OpenAMP 路径；即便 v1 已工作也要给出符合任务定义的 v2                           |
+| Q11 | v1 是否废弃？                  | **保留为 fallback**                                                       | 已稳定工作；v2 发布初期可能有未知问题；运行时自动检测后端                                        |
+| Q12 | 远程核运行时                    | **纯裸机（baremetal）**                                                     | 任务文档原话；FreeRTOS 引入额外调度复杂度，无收益（裸机核任务单一）                                |
+| Q13 | 远程核加载方式                   | **Linux remoteproc**（不是 U-Boot bootelf）                                | 用户选；运行时可热启停，便于调试与升级；与 SDK `openamp_for_linux` 例程方向一致                  |
+| Q14 | RPMsg 包大小 vs SPI 帧        | **1 RPMsg 包 = 1 SPI 帧 (64 B)**                                         | RPMsg vring buffer 默认 512 B 远超 64 B，永不分片；语义清晰                         |
+| Q15 | CMD + NOP_READ 两次事务在哪一端发？ | **裸机核内部完成**                                                            | 一次 RPMsg 往返抵两次 SPI 事务，对 Linux 透明；避免 RPMsg 延迟翻倍                        |
+| Q16 | 裸机核是否解析协议字段               | **不解析，纯透传**                                                            | 业务命令新增时无需重烧裸机固件；与"任意业务进程通过共享 daemon 访问"目标一致                           |
+| Q17 | FSPIM 传输方式                | **POLL（首发）**                                                           | 64 B / 1 MHz 仅 0.5 ms，poll 阻塞代价可忽略；裸机核反正没别的事干。后续 INTERRUPT/DMA 升级路径预留 |
+| Q18 | RPMsg endpoint 服务名        | **`"aqua-spi"`**                                                       | 与 SDK 例程默认服务名不冲突；命名清晰                                                 |
+| Q19 | v1/v2 切换粒度                | **每次部署选其一**（互斥）                                                        | 同一 SPI0 控制器不能同时被 spidev 内核驱动和裸机核占用；用 systemd Conflicts 强制互斥           |
+| Q20 | Linux 端代码组织               | **抽 `aqua_backend_ops_t` 接口**                                          | v1/v2 daemon 共享 95% 代码；上层 IPC + CLI 完全不动                              |
+| Q21 | RPMsg 设备节点编号              | **不写死 `/dev/rpmsg0`，按 service name 扫描 `/sys/class/rpmsg/`**            | 系统里其它 RPMsg 服务（如 SDK echo demo）会改变编号；扫描法 robust                       |
+| Q22 | 裸机核 `rpmsg_send` 用什么缓冲    | **本端 alloc 的 `s_rsp_frame`**，不直接用回调入参 `data`                           | `data` 是 vring RX buffer；rpmsg_send 内部走 TX vring，复用同块内存会污染 RX         |
+| Q23 | SPI 出错时怎么应对 Linux 端       | **裸机核回 STATUS=BUSY 伪 RSP**（非"什么都不发"）                                   | Linux 端 `read(rpmsg_fd)` 设了 100 ms poll 超时；不发包会让 daemon 累计 timeout    |
+| Q24 | 远程核 stop 后能不能马上 start     | **不能。** 当前 phytium-remoteproc 驱动有 BSP 级 bug                            | `aqua-openamp-load.service` 用幂等检测代替 stop/start；stop 时只恢复 firmware 名   |
+| Q25 | 出 `/dev/rpmsgN` 需要做什么     | **必须 `modprobe rpmsg_char` + 写 `driver_override=rpmsg_chrdev` + bind** | BSP 默认不自动绑定。`aqua-openamp-load.service` ExecStart 已包含                 |
 
 ---
 
 ## 附录 A：内存布局
 
-| 范围 | 用途 | 来源 |
-|------|------|------|
-| `0x8000_0000 ~ 0xAFFF_FFFF` | Linux 主核内核 / 用户态（512 MB-） | 内核默认 |
+| 范围                              | 用途                        | 来源                                                           |
+| ------------------------------- | ------------------------- | ------------------------------------------------------------ |
+| `0x8000_0000 ~ 0xAFFF_FFFF`     | Linux 主核内核 / 用户态（512 MB-） | 内核默认                                                         |
 | **`0xB010_0000 ~ 0xB0FF_FFFF`** | **裸机固件 image 区**（约 15 MB） | `CONFIG_IMAGE_LOAD_ADDRESS=0xb0100000`（与 SDK PHYTIUMPI 模板对齐） |
-| **`0xC000_0000 ~ 0xC0FF_FFFF`** | **OpenAMP 共享内存区**（16 MB） | `SLAVE00_SHARE_MEM_ADDR`（与 SDK 例程对齐） |
-| `0xC022_4000` | Kick / IPI mailbox 寄存器影子区 | `SLAVE00_KICK_IO_ADDR` |
-| `0x2803_A000` | FSPI0 控制器寄存器（裸机核独占） | `FSPI0_BASE_ADDR` |
-| `9`（SGI 编号） | Linux ↔ 裸机核 IPI | `SLAVE_00_SGI = KICK_SGI_NUM_9`（`common/libmetal_configs.h`） |
+| **`0xC000_0000 ~ 0xC0FF_FFFF`** | **OpenAMP 共享内存区**（16 MB）  | `SLAVE00_SHARE_MEM_ADDR`（与 SDK 例程对齐）                         |
+| `0xC022_4000`                   | Kick / IPI mailbox 寄存器影子区 | `SLAVE00_KICK_IO_ADDR`                                       |
+| `0x2803_A000`                   | FSPI0 控制器寄存器（裸机核独占）       | `FSPI0_BASE_ADDR`                                            |
+| `9`（SGI 编号）                     | Linux ↔ 裸机核 IPI           | `SLAVE_00_SGI = KICK_SGI_NUM_9`（`common/libmetal_configs.h`） |
 
 > **关于 SGI 编号：** 早期 SDK 例程文档曾写 `0x2F (47)`，但当前 standalone-sdk 的
 > `openamp_for_linux` 例程统一用 SGI 9（`KICK_SGI_NUM_9`），飞腾官方
@@ -1408,27 +1412,27 @@ sudo /opt/aqua/bin/aqua_rpmsgd -f -v -B rpmsg     # -B rpmsg 强制走 v2 不退
 > **本工程跟 SDK 例程保持一致用 9**。如果你的 DTB 用了别的 SGI 号，
 > 联调时表现是"远程核启动正常但 Linux 收不到任何 RPMsg 回包"——
 > 改 `common/libmetal_configs.h::SLAVE_00_SGI` 重编固件即可。
->
+> 
 > 实际地址必须与飞腾派 device-tree reserved-memory 一致，详见 §10.2。
 
 ---
 
 ## 附录 B：参考文件索引
 
-| 文件 | 用途 |
-|------|------|
-| `任务_功能实现_SPI通信.md` | 顶层任务定义（v1/v2 共同遵循） |
-| `设计_SPI通信工程方案.md` | v1 spidev 直驱方案（已落地） |
-| **本文档** | v2 OpenAMP 方案 |
-| `设计_SPI通信工程方案_v0_RPMsg版.md.bak` | 早期 v0 RPMsg 设想（与 v2 思路相近，但裸机核细节未对齐 SDK） |
-| `~/phytium-standalone-sdk/example/system/amp/openamp_for_linux/` | **直接对标的 SDK 例程**——v2 远程核基于此改造 |
-| `~/phytium-standalone-sdk/example/peripherals/spi/src/spim_polled_loopback_mode_example.c` | FSPIM polling 模式参考代码 |
-| `~/phytium-standalone-sdk/board/phytiumpi_firefly/fio_mux.c` | 板级 SPI IOPad 配置实现 |
-| `~/phytium-standalone-sdk/soc/pe220x/fparameters_comm.h` | FSPI0..3 基地址 / IRQ |
-| `~/phytium-standalone-sdk/example/system/amp/README.md` | 多元异构（MSDF）部署框架说明 |
-| `hardware/phytiumpi/openamp/demo/rpmsg-demo-single.c` | Linux 端 RPMsg 客户端参考实现 |
-| `hardware/phytiumpi/spi0_scope_demo/spi_scope_demo.c` | SPI 物理链路验证（v1 也用） |
-| `hardware/demo_wyr/FreeRTOS drive/data_merge/ra_gen/Communicate_Task.c` | RA6E2 SPI Slave + DMAC 现有 FSP 配置（v1/v2 共用） |
+| 文件                                                                                         | 用途                                         |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------ |
+| `任务_功能实现_SPI通信.md`                                                                         | 顶层任务定义（v1/v2 共同遵循）                         |
+| `设计_SPI通信工程方案.md`                                                                          | v1 spidev 直驱方案（已落地）                        |
+| **本文档**                                                                                    | v2 OpenAMP 方案                              |
+| `设计_SPI通信工程方案_v0_RPMsg版.md.bak`                                                            | 早期 v0 RPMsg 设想（与 v2 思路相近，但裸机核细节未对齐 SDK）    |
+| `~/phytium-standalone-sdk/example/system/amp/openamp_for_linux/`                           | **直接对标的 SDK 例程**——v2 远程核基于此改造              |
+| `~/phytium-standalone-sdk/example/peripherals/spi/src/spim_polled_loopback_mode_example.c` | FSPIM polling 模式参考代码                       |
+| `~/phytium-standalone-sdk/board/phytiumpi_firefly/fio_mux.c`                               | 板级 SPI IOPad 配置实现                          |
+| `~/phytium-standalone-sdk/soc/pe220x/fparameters_comm.h`                                   | FSPI0..3 基地址 / IRQ                         |
+| `~/phytium-standalone-sdk/example/system/amp/README.md`                                    | 多元异构（MSDF）部署框架说明                           |
+| `hardware/phytiumpi/openamp/demo/rpmsg-demo-single.c`                                      | Linux 端 RPMsg 客户端参考实现                      |
+| `hardware/phytiumpi/spi0_scope_demo/spi_scope_demo.c`                                      | SPI 物理链路验证（v1 也用）                          |
+| `hardware/demo_wyr/FreeRTOS drive/data_merge/ra_gen/Communicate_Task.c`                    | RA6E2 SPI Slave + DMAC 现有 FSP 配置（v1/v2 共用） |
 
 ---
 
@@ -1437,12 +1441,19 @@ sudo /opt/aqua/bin/aqua_rpmsgd -f -v -B rpmsg     # -B rpmsg 强制走 v2 不退
 切到 v2 前确认：
 
 - [ ] `~/phytium-standalone-sdk` 已就位且能编 `openamp_for_linux` 例程
+
 - [ ] 飞腾派内核 `zcat /proc/config.gz | grep -E 'REMOTEPROC|RPMSG'` 全 `=y`
+
 - [ ] **DTB 已切到 OpenAMP 版**（验证：`ls /sys/firmware/devicetree/base/reserved-memory/rproc@b0100000`）
+  
       没切的话：`sudo ln -snf phytium-pi-board-v3-openamp.dtb /boot/phytium-pi-board.dtb && sudo reboot`
+
 - [ ] `/lib/firmware/openamp_spi_core0.elf` 已部署（注意 SDK 产物名不同，scp 时务必改名 — 见 §10.3）
+
 - [ ] **spidev overlay 已 remove**（`overlay/install_spidev_overlay.sh status` 应为未挂载）
+
 - [ ] `/opt/aqua/bin/aqua_rpmsgd` 与 `/opt/aqua/bin/aqua_spi_cli` 已部署并可执行
+
 - [ ] 三个 service 已 `cp /etc/systemd/system/` + `systemctl daemon-reload`
 
 切到 v2:`sudo /opt/aqua/spi_com/deploy/scripts/switch_to_v2.sh`(脚本内会再次自动检查所有前置条件)。
@@ -1455,19 +1466,19 @@ sudo /opt/aqua/bin/aqua_rpmsgd -f -v -B rpmsg     # -B rpmsg 强制走 v2 不退
 
 设计 → 实现 → 联调三阶段都已完成,本节做最后一次状态对账,后续维护者可从这里入手:
 
-| 阶段 | 工作项 | 状态 | 落地位置 |
-|------|-------|------|---------|
-| 实现 | 抽 `aqua_backend.h` 接口,v1 daemon 拆成 backend + core | ✅ | `linux/aqua_backend*.{h,c}` + `linux/aqua_daemon_core.{h,c}` |
-| 实现 | 新增 v2 daemon `aqua_rpmsgd`(`-B auto/rpmsg/spidev`) | ✅ | `linux/aqua_rpmsgd.c` |
-| 实现 | 裸机核工程 `openamp_core/`(基于 SDK echo 例程改) | ✅ | `openamp_core/{main.c, src/, common/, configs/}` |
-| 实现 | x86 主机交叉编译路径(`SDK_DIR` 自动识别 + PATH 工具链) | ✅ | `openamp_core/makefile` |
-| 部署 | `systemd` 三件套 + Conflicts 互斥 | ✅ | `deploy/systemd/` |
-| 部署 | v2 reserved-memory overlay(fallback,优先用官方 v3-openamp DTB) | ✅ | `deploy/overlay/` |
-| 部署 | 一键切换脚本(含前置检查) | ✅ | `deploy/scripts/switch_to_v{1,2}.sh` |
-| 文档 | 顶层 README 加 v1/v2 章节 | ✅ | `README.md` |
-| 文档 | x86 编译交接(`HANDOFF_x86_build.md`) | ✅ | 工程根目录 |
-| 文档 | 飞腾派开机准备 + 日常使用流程 | ✅ | `使用说明.md` |
-| 联调 | 全链路(Linux daemon → 裸机核 → SPI → RA6E2) | ⏳ 待飞腾派部署 | — |
+| 阶段  | 工作项                                                       | 状态       | 落地位置                                                         |
+| --- | --------------------------------------------------------- | -------- | ------------------------------------------------------------ |
+| 实现  | 抽 `aqua_backend.h` 接口,v1 daemon 拆成 backend + core         | ✅        | `linux/aqua_backend*.{h,c}` + `linux/aqua_daemon_core.{h,c}` |
+| 实现  | 新增 v2 daemon `aqua_rpmsgd`(`-B auto/rpmsg/spidev`)        | ✅        | `linux/aqua_rpmsgd.c`                                        |
+| 实现  | 裸机核工程 `openamp_core/`(基于 SDK echo 例程改)                    | ✅        | `openamp_core/{main.c, src/, common/, configs/}`             |
+| 实现  | x86 主机交叉编译路径(`SDK_DIR` 自动识别 + PATH 工具链)                   | ✅        | `openamp_core/makefile`                                      |
+| 部署  | `systemd` 三件套 + Conflicts 互斥                              | ✅        | `deploy/systemd/`                                            |
+| 部署  | v2 reserved-memory overlay(fallback,优先用官方 v3-openamp DTB) | ✅        | `deploy/overlay/`                                            |
+| 部署  | 一键切换脚本(含前置检查)                                             | ✅        | `deploy/scripts/switch_to_v{1,2}.sh`                         |
+| 文档  | 顶层 README 加 v1/v2 章节                                      | ✅        | `README.md`                                                  |
+| 文档  | x86 编译交接(`HANDOFF_x86_build.md`)                          | ✅        | 工程根目录                                                        |
+| 文档  | 飞腾派开机准备 + 日常使用流程                                          | ✅        | `使用说明.md`                                                    |
+| 联调  | 全链路(Linux daemon → 裸机核 → SPI → RA6E2)                     | ⏳ 待飞腾派部署 | —                                                            |
 
 > **下一步**(已超出本设计文档范围,详见 `使用说明.md`):
 > 飞腾派开机后按"开机准备清单"过一遍 → `switch_to_v2.sh` → CLI 验证。
