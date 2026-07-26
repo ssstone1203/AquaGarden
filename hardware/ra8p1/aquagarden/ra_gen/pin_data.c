@@ -18,13 +18,15 @@ const ioport_pin_cfg_t g_bsp_pin_cfg_data[] = {
     },
     
     {
+        /* DRV8870 IN1: idle brake needs HIGH (with IN2 also HIGH). */
         .pin = BSP_IO_PORT_01_PIN_04,
         .pin_cfg = ((uint32_t) IOPORT_CFG_PORT_DIRECTION_OUTPUT | (uint32_t) IOPORT_CFG_PORT_OUTPUT_HIGH)
     },
     
     {
+        /* DRV8870 IN2: boot as GPIO HIGH for brake. Driver remuxes to GPT only when pumping. */
         .pin = BSP_IO_PORT_01_PIN_05,
-        .pin_cfg = ((uint32_t) IOPORT_CFG_PERIPHERAL_PIN | (uint32_t) IOPORT_PERIPHERAL_GPT1)
+        .pin_cfg = ((uint32_t) IOPORT_CFG_PORT_DIRECTION_OUTPUT | (uint32_t) IOPORT_CFG_PORT_OUTPUT_HIGH)
     },
     
     {

@@ -46,6 +46,14 @@ void R_BSP_WarmStart (bsp_warm_start_event_t event)
         /* Configure pins. */
         R_IOPORT_Open(&IOPORT_CFG_CTRL, &IOPORT_CFG_NAME);
 
+        /* Reinforce DRV8870 brake (IN1=1, IN2=1) immediately after pin init. */
+        (void) R_IOPORT_PinCfg(&IOPORT_CFG_CTRL,
+                               BSP_IO_PORT_01_PIN_05,
+                               IOPORT_CFG_PORT_DIRECTION_OUTPUT | IOPORT_CFG_PORT_OUTPUT_HIGH);
+        (void) R_IOPORT_PinCfg(&IOPORT_CFG_CTRL,
+                               BSP_IO_PORT_01_PIN_04,
+                               IOPORT_CFG_PORT_DIRECTION_OUTPUT | IOPORT_CFG_PORT_OUTPUT_HIGH);
+
 #if BSP_CFG_SDRAM_ENABLED
 
         /* Setup SDRAM and initialize it. Must configure pins first. */

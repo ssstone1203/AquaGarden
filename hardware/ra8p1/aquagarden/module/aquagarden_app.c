@@ -21,6 +21,8 @@ static aqua_snapshot_t s_snapshot;
 
 static uint8_t  s_pump_manual_mode;
 static uint8_t  s_pump_manual_pwm  = AQUA_DEFAULT_PUMP_PWM;
+/* 0 until host sends a pump command; stay in brake until then. */
+static uint8_t  s_pump_host_armed;
 static uint8_t  s_soil_threshold   = AQUA_DEFAULT_SOIL_TH;
 static uint8_t  s_soil_hysteresis  = AQUA_DEFAULT_SOIL_HYS;
 static uint8_t  s_enable_soil       = 1U;
@@ -37,6 +39,11 @@ static bool     s_tds_valid;
 static bool     s_water_temp_high;
 static bool     s_tds_low;
 static uint32_t s_tick_10ms;
+
+static void pump_arm_from_host(void)
+{
+    s_pump_host_armed = 1U;
+}
 
 static uint8_t clamp_u8_percent(uint8_t value)
 {
@@ -141,6 +148,14 @@ static void app_apply_control(void)
     s_tds_low = out.tds_low;
     s_snapshot.need_watering = out.need_watering;
 
+    if (0U == s_pump_host_armed)
+    {
+        /* Boot / idle: keep DRV8870 brake until a host pump command arrives. */
+        (void) dev_pump_brake();
+        s_snapshot.pump_pwm_pct = 0U;
+        return;
+    }
+
     target = (0U != s_pump_manual_mode) ? s_pump_manual_pwm : out.auto_pump_pwm;
 
     (void) dev_pump_set_pwm(target);
@@ -243,12 +258,14 @@ void aqua_app_note_comm_error(void)
 
 void aqua_app_set_pump_manual(uint8_t manual_mode, uint8_t pwm_percent)
 {
+    pump_arm_from_host();
     s_pump_manual_mode = (0U == manual_mode) ? 0U : 1U;
     s_pump_manual_pwm = clamp_u8_percent(pwm_percent);
 }
 
 void aqua_app_pump_start(bool has_pwm, uint8_t pwm_percent)
 {
+    pump_arm_from_host();
     s_pump_manual_mode = 1U;
     if (has_pwm)
     {
@@ -262,18 +279,21 @@ void aqua_app_pump_start(bool has_pwm, uint8_t pwm_percent)
 
 void aqua_app_pump_stop(void)
 {
+    pump_arm_from_host();
     s_pump_manual_mode = 1U;
     s_pump_manual_pwm = 0U;
 }
 
 void aqua_app_set_pump_pwm(uint8_t pwm_percent)
 {
+    pump_arm_from_host();
     s_pump_manual_mode = 1U;
     s_pump_manual_pwm = clamp_u8_percent(pwm_percent);
 }
 
 void aqua_app_set_pump_auto(void)
 {
+    pump_arm_from_host();
     s_pump_manual_mode = 0U;
 }
 

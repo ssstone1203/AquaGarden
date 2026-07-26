@@ -5,6 +5,7 @@
 #include "bsp_api.h"
 
 void dev_pump_init(void);
+fsp_err_t dev_pump_brake(void);
 fsp_err_t dev_pump_set_pwm(uint8_t pwm_percent);
 uint8_t dev_pump_get_pwm(void);
 
