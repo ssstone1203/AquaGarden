@@ -114,7 +114,7 @@
             #define USB_CFG_PARAM_CHECKING_ENABLE (BSP_CFG_PARAM_CHECKING_ENABLE)
             #define USB_CFG_CLKSEL (USB_CFG_24MHZ)
             #define USB_CFG_BUSWAIT (USB_CFG_BUSWAIT_7)
-            #define USB_CFG_BC (USB_CFG_DISABLE)
+            #define USB_CFG_BC (USB_CFG_ENABLE)
             #define USB_CFG_VBUS (USB_CFG_HIGH)
             #define USB_CFG_DCP (USB_CFG_DISABLE)
             #define USB_CFG_CLASS_REQUEST (USB_CFG_ENABLE)
