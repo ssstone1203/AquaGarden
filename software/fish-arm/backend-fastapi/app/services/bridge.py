@@ -33,7 +33,7 @@ async def request_url(
 ) -> tuple[int, Any]:
     url = base_url + _normalize_path(path)
     try:
-        async with httpx.AsyncClient(timeout=timeout) as client:
+        async with httpx.AsyncClient(timeout=timeout, trust_env=False) as client:
             response = await client.request(method, url, json=json, headers=headers or {})
         try:
             body: Any = response.json()
@@ -73,7 +73,7 @@ def _normalize_path(path: str) -> str:
 
 
 async def proxy_stream(url: str):
-    async with httpx.AsyncClient(timeout=None) as client:
+    async with httpx.AsyncClient(timeout=None, trust_env=False) as client:
         async with client.stream("GET", url, headers=_headers()) as response:
             response.raise_for_status()
             async for chunk in response.aiter_bytes():

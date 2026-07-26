@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     sensor_readings_max_pages: int = Field(default=100, alias="AQUAGARDEN_SENSOR_READINGS_MAX_PAGES")
     sensor_readings_page_size: int = Field(default=20, alias="AQUAGARDEN_SENSOR_READINGS_PAGE_SIZE")
 
-    bridge_base_url: str = Field(default="http://10.213.133.50:18080", alias="AQUAGARDEN_BRIDGE_BASE_URL")
+    bridge_base_url: str = Field(default="http://10.126.83.50:18080", alias="AQUAGARDEN_BRIDGE_BASE_URL")
     bridge_auth_header_name: str = Field(default="", alias="AQUAGARDEN_BRIDGE_AUTH_HEADER_NAME")
     bridge_auth_header_value: str = Field(default="", alias="AQUAGARDEN_BRIDGE_AUTH_HEADER_VALUE")
     serial_pump_enabled: bool = Field(default=False, alias="AQUAGARDEN_SERIAL_PUMP_ENABLED")
@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     camera_rgb_url: str = Field(default="", alias="AQUAGARDEN_CAMERA_RGB_URL")
     camera_depth_url: str = Field(default="", alias="AQUAGARDEN_CAMERA_DEPTH_URL")
     raspberry_pi_camera_url: str = Field(
-        default="http://10.213.133.50:18080/video/rgb.mjpg",
+        default="http://10.126.83.50:18080/video/rgb.mjpg",
         alias="AQUAGARDEN_RASPBERRY_PI_CAMERA_URL",
     )
     raspberry_pi_camera_connect_timeout_seconds: float = Field(

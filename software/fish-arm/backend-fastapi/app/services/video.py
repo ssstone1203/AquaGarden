@@ -318,7 +318,11 @@ class RaspberryPiVideoProxy:
         timeout = httpx.Timeout(None, connect=self.connect_timeout_seconds)
         while True:
             try:
-                async with self.client_factory(timeout=timeout, follow_redirects=False) as client:
+                async with self.client_factory(
+                    timeout=timeout,
+                    follow_redirects=False,
+                    trust_env=False,
+                ) as client:
                     async with client.stream("GET", self.source_url) as response:
                         response.raise_for_status()
                         self._set_status(True, None)
