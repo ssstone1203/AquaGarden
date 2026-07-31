@@ -98,7 +98,7 @@ package-lock.json
 yarn.lock
 pnpm-lock.yaml
 *.class
-
+.pytest_cache/
 
 # ================================================================
 #  后端 Python (FastAPI / Flask / Django)
