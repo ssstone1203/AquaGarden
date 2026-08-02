@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import List, Literal
 
-from pydantic import AliasChoices, Field, SecretStr
+from pydantic import AliasChoices, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     sensor_readings_max_pages: int = Field(default=100, alias="AQUAGARDEN_SENSOR_READINGS_MAX_PAGES")
     sensor_readings_page_size: int = Field(default=20, alias="AQUAGARDEN_SENSOR_READINGS_PAGE_SIZE")
 
-    bridge_base_url: str = Field(default="http://10.126.83.50:18080", alias="AQUAGARDEN_BRIDGE_BASE_URL")
+    bridge_base_url: str = Field(default="", alias="AQUAGARDEN_BRIDGE_BASE_URL")
     bridge_auth_header_name: str = Field(default="", alias="AQUAGARDEN_BRIDGE_AUTH_HEADER_NAME")
     bridge_auth_header_value: str = Field(default="", alias="AQUAGARDEN_BRIDGE_AUTH_HEADER_VALUE")
     serial_pump_enabled: bool = Field(default=False, alias="AQUAGARDEN_SERIAL_PUMP_ENABLED")
@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     camera_rgb_url: str = Field(default="", alias="AQUAGARDEN_CAMERA_RGB_URL")
     camera_depth_url: str = Field(default="", alias="AQUAGARDEN_CAMERA_DEPTH_URL")
     raspberry_pi_camera_url: str = Field(
-        default="http://10.126.83.50:18080/video/rgb.mjpg",
+        default="",
         alias="AQUAGARDEN_RASPBERRY_PI_CAMERA_URL",
     )
     raspberry_pi_camera_connect_timeout_seconds: float = Field(
@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     tank_yolo_device: str = Field(default="", alias="AQUAGARDEN_TANK_YOLO_DEVICE")
 
     hardware_serial_enabled: bool = Field(default=True, alias="AQUAGARDEN_HARDWARE_SERIAL_ENABLED")
-    hardware_serial_port: str = Field(default="COM20", alias="AQUAGARDEN_HARDWARE_SERIAL_PORT")
+    hardware_serial_port: str = Field(default="", alias="AQUAGARDEN_HARDWARE_SERIAL_PORT")
     hardware_serial_baud: int = Field(default=115200, alias="AQUAGARDEN_HARDWARE_SERIAL_BAUD")
     hardware_serial_max_jpeg_bytes: int = Field(default=524288, alias="AQUAGARDEN_HARDWARE_SERIAL_MAX_JPEG_BYTES")
     hardware_serial_persist_interval_ms: int = Field(default=1000, alias="AQUAGARDEN_HARDWARE_SERIAL_PERSIST_INTERVAL_MS")
@@ -97,6 +97,13 @@ class Settings(BaseSettings):
     llm_model: str = Field(default="kimi-for-coding", alias="AQUAGARDEN_LLM_MODEL")
     llm_max_tokens: int = Field(default=768, alias="AQUAGARDEN_LLM_MAX_TOKENS")
     llm_anthropic_version: str = Field(default="2023-06-01", alias="AQUAGARDEN_LLM_ANTHROPIC_VERSION")
+
+    @model_validator(mode='after')
+    def derive_camera_url(self) -> 'Settings':
+        """Auto-derive raspberry_pi_camera_url from bridge_base_url if not explicitly set."""
+        if not self.raspberry_pi_camera_url and self.bridge_base_url:
+            self.raspberry_pi_camera_url = self.bridge_base_url.rstrip('/') + '/video/rgb.mjpg'
+        return self
 
 
 @lru_cache

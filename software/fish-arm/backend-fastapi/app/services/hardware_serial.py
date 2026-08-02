@@ -47,6 +47,21 @@ ALARM_NAMES = {
 logger = logging.getLogger(__name__)
 
 
+def _auto_detect_serial_port() -> str | None:
+    """Return the single USB serial port found on this machine, or None if zero or multiple."""
+    try:
+        from serial.tools.list_ports import comports
+        candidates = [p for p in comports() if p.hwid and p.hwid.upper() != "N/A"]
+        if len(candidates) == 1:
+            return candidates[0].device
+        usb = [p for p in candidates if "USB" in (p.description or "").upper() or "USB" in (p.hwid or "").upper()]
+        if len(usb) == 1:
+            return usb[0].device
+    except Exception:
+        pass
+    return None
+
+
 @dataclass
 class SerialCommandResult:
     ok: bool
@@ -162,7 +177,19 @@ def decode_uplink_frame(frame: bytes) -> AquaTelemetry:
 class HardwareSerialService:
     def __init__(self) -> None:
         self.enabled = settings.hardware_serial_enabled
-        self.port_name = settings.hardware_serial_port
+        port_name = settings.hardware_serial_port
+        if not port_name and self.enabled:
+            detected = _auto_detect_serial_port()
+            if detected:
+                logger.info("Auto-detected serial port: %s", detected)
+                port_name = detected
+            else:
+                logger.warning(
+                    "AQUAGARDEN_HARDWARE_SERIAL_PORT not set and auto-detection found no unique USB serial port; "
+                    "serial hardware disabled. Set the port manually in backend-fastapi/.env to enable it."
+                )
+                self.enabled = False
+        self.port_name = port_name
         self.baud = settings.hardware_serial_baud
         self.max_jpeg_bytes = max(64 * 1024, settings.hardware_serial_max_jpeg_bytes)
         self.persist_interval_ms = max(250, settings.hardware_serial_persist_interval_ms)

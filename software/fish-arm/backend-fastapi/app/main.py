@@ -16,6 +16,11 @@ from app.services.video import usb_camera
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    if not settings.bridge_base_url:
+        raise RuntimeError(
+            "AQUAGARDEN_BRIDGE_BASE_URL is not set. "
+            "Add it to backend-fastapi/.env, e.g.: AQUAGARDEN_BRIDGE_BASE_URL=http://192.168.1.x:18080"
+        )
     init_db()
     ensure_initial_admin()
     hub.bind_loop(asyncio.get_running_loop())
