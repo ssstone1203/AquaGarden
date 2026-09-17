@@ -33,6 +33,8 @@ UPLINK_VERSION = 0x02
 EXPECTED_PAYLOAD_LEN = 30
 UPLINK_FRAME_LEN = 38
 UPLINK_PAYLOAD_STRUCT = struct.Struct("<IhhhBHBBBB3xIHHH")
+USB_LIGHT_CONFIRMATION_TIMEOUT_MS = 5000
+USB_LIGHT_RETRY_INTERVAL_MS = 500
 ALARM_NAMES = {
     0: "soil_sensor_fault",
     2: "air_read_fail",
@@ -402,7 +404,11 @@ class HardwareSerialService:
         telemetry = self._last_telemetry
         return None if telemetry is None else bool(telemetry.atomizer_state)
 
-    def usb_light_set(self, mode: int, confirmation_timeout_ms: int = 1500) -> tuple[int, dict]:
+    def usb_light_set(
+        self,
+        mode: int,
+        confirmation_timeout_ms: int = USB_LIGHT_CONFIRMATION_TIMEOUT_MS,
+    ) -> tuple[int, dict]:
         if isinstance(mode, bool) or not isinstance(mode, int) or not 0 <= mode <= 26:
             return 400, {
                 "ok": False,
@@ -415,8 +421,20 @@ class HardwareSerialService:
         with self._usb_light_command_lock:
             with self._telemetry_condition:
                 initial_revision = self._telemetry_revision
+                current_mode = self._current_usb_light_mode_locked()
 
-            result = self._write_downlink(pack_downlink_frame(0x08, bytes([mode])))
+            # Setting the already active mode is idempotent. Do not wait for a
+            # fresh frame that may be delayed while the USB host is busy.
+            if current_mode == mode:
+                return 200, {
+                    "ok": True,
+                    "confirmed": True,
+                    "mode": mode,
+                    "message": "usb light mode already confirmed",
+                }
+
+            frame = pack_downlink_frame(0x08, bytes([mode]))
+            result = self._write_downlink(frame)
             if not result.ok:
                 return 502, {
                     "ok": False,
@@ -426,8 +444,9 @@ class HardwareSerialService:
                 }
 
             deadline = time.monotonic() + timeout_seconds
-            with self._telemetry_condition:
-                while True:
+            next_retry = time.monotonic() + USB_LIGHT_RETRY_INTERVAL_MS / 1000
+            while True:
+                with self._telemetry_condition:
                     telemetry = self._last_telemetry
                     if (
                         self._telemetry_revision > initial_revision
@@ -441,15 +460,41 @@ class HardwareSerialService:
                             "message": "usb light mode confirmed",
                         }
 
-                    remaining = deadline - time.monotonic()
+                    now = time.monotonic()
+                    remaining = deadline - now
                     if remaining <= 0:
+                        current_mode = self._current_usb_light_mode_locked()
+                        hardware_fault = bool(
+                            telemetry and telemetry.alarm_flags & (1 << 9)
+                        )
                         return 504, {
                             "ok": False,
                             "confirmed": False,
-                            "mode": self._current_usb_light_mode_locked(),
-                            "message": "usb light mode confirmation timed out",
+                            "mode": current_mode,
+                            "fault": hardware_fault,
+                            "telemetryMode": None if telemetry is None else telemetry.usb_light_mode,
+                            "message": (
+                                "usb light hardware fault reported by MCU"
+                                if hardware_fault
+                                else "usb light mode confirmation timed out"
+                            ),
                         }
-                    self._telemetry_condition.wait(timeout=remaining)
+                    wait_for = min(remaining, max(0.0, next_retry - now))
+                    if wait_for > 0:
+                        self._telemetry_condition.wait(timeout=wait_for)
+                        continue
+
+                # The MCU may still be completing USB enumeration when the
+                # first command arrives. Retry within the same bounded window.
+                retry_result = self._write_downlink(frame)
+                if not retry_result.ok:
+                    return 502, {
+                        "ok": False,
+                        "confirmed": False,
+                        "mode": self._current_usb_light_mode(),
+                        "message": "usb light command could not be sent",
+                    }
+                next_retry = time.monotonic() + USB_LIGHT_RETRY_INTERVAL_MS / 1000
 
     def _usb_light_status(self) -> dict[str, Any]:
         with self._telemetry_condition:

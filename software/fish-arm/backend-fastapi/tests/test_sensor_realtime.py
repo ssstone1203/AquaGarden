@@ -430,3 +430,155 @@ def test_usb_light_set_confirms_mode_from_subsequent_telemetry() -> None:
             },
         )
     ]
+
+
+def test_usb_light_set_retries_until_delayed_telemetry_confirmation() -> None:
+    class RecordingSerial:
+        def __init__(self) -> None:
+            self.is_open = True
+            self.frames: list[bytes] = []
+            self.second_write = threading.Event()
+
+        def write(self, frame: bytes) -> int:
+            self.frames.append(frame)
+            if len(self.frames) >= 2:
+                self.second_write.set()
+            return len(frame)
+
+        def flush(self) -> None:
+            return None
+
+    def telemetry(usb_light_mode: int, sequence: int) -> AquaTelemetry:
+        return AquaTelemetry(
+            sequence=sequence,
+            timestamp_ms=sequence * 250,
+            air_temp=20.0,
+            air_humidity=60.0,
+            water_temp=18.0,
+            soil_moisture=50,
+            tds_ntu=300,
+            pump_pwm=0,
+            need_watering=False,
+            atomizer_state=0,
+            usb_light_mode=usb_light_mode,
+            alarm_flags=0,
+            air_retry_count=0,
+            tds_retry_count=0,
+            uwt_retry_count=0,
+        )
+
+    # Arrange
+    service = HardwareSerialService()
+    serial_port = RecordingSerial()
+    service._serial = serial_port
+
+    with patch.object(service, "_publish_snapshot"), patch(
+        "app.services.hardware_serial.USB_LIGHT_RETRY_INTERVAL_MS", 5
+    ):
+        service._handle_telemetry(telemetry(usb_light_mode=0xFF, sequence=1))
+
+        # Act
+        worker = threading.Thread(
+            target=lambda: service.usb_light_set(19, confirmation_timeout_ms=100),
+        )
+        worker.start()
+        assert serial_port.second_write.wait(timeout=1)
+        service._handle_telemetry(telemetry(usb_light_mode=19, sequence=2))
+        worker.join(timeout=1)
+
+    # Assert
+    assert not worker.is_alive()
+    assert len(serial_port.frames) >= 2
+
+
+def test_usb_light_set_same_mode_is_idempotently_confirmed_without_write() -> None:
+    class RecordingSerial:
+        is_open = True
+
+        def __init__(self) -> None:
+            self.frames: list[bytes] = []
+
+        def write(self, frame: bytes) -> int:
+            self.frames.append(frame)
+            return len(frame)
+
+        def flush(self) -> None:
+            return None
+
+    # Arrange
+    service = HardwareSerialService()
+    serial_port = RecordingSerial()
+    service._serial = serial_port
+    telemetry = AquaTelemetry(
+        sequence=1,
+        timestamp_ms=250,
+        air_temp=20.0,
+        air_humidity=60.0,
+        water_temp=18.0,
+        soil_moisture=50,
+        tds_ntu=300,
+        pump_pwm=0,
+        need_watering=False,
+        atomizer_state=0,
+        usb_light_mode=19,
+        alarm_flags=0,
+        air_retry_count=0,
+        tds_retry_count=0,
+        uwt_retry_count=0,
+    )
+
+    with patch.object(service, "_publish_snapshot"):
+        service._handle_telemetry(telemetry)
+
+        # Act
+        status_code, response = service.usb_light_set(19, confirmation_timeout_ms=0)
+
+    # Assert
+    assert status_code == 200
+    assert response["confirmed"] is True
+    assert response["mode"] == 19
+    assert serial_port.frames == []
+
+
+def test_usb_light_set_reports_mcu_fault_when_confirmation_is_unavailable() -> None:
+    class RecordingSerial:
+        is_open = True
+
+        def write(self, frame: bytes) -> int:
+            return len(frame)
+
+        def flush(self) -> None:
+            return None
+
+    # Arrange
+    service = HardwareSerialService()
+    service._serial = RecordingSerial()
+    telemetry = AquaTelemetry(
+        sequence=1,
+        timestamp_ms=250,
+        air_temp=20.0,
+        air_humidity=60.0,
+        water_temp=18.0,
+        soil_moisture=50,
+        tds_ntu=300,
+        pump_pwm=0,
+        need_watering=False,
+        atomizer_state=0,
+        usb_light_mode=0xFF,
+        alarm_flags=1 << 9,
+        air_retry_count=0,
+        tds_retry_count=0,
+        uwt_retry_count=0,
+    )
+
+    with patch.object(service, "_publish_snapshot"):
+        service._handle_telemetry(telemetry)
+
+        # Act
+        status_code, response = service.usb_light_set(19, confirmation_timeout_ms=0)
+
+    # Assert
+    assert status_code == 504
+    assert response["fault"] is True
+    assert response["telemetryMode"] == 0xFF
+    assert response["message"] == "usb light hardware fault reported by MCU"

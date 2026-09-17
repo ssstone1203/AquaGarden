@@ -498,7 +498,13 @@ async function applyUsbLightMode(requestedMode = usbLightSelectedMode.value) {
     usbLightSelectionTouched.value = false
     addLog(`USB 报警灯已切换：${targetMode.label}（MCU 状态已确认）`, 'task')
   } catch (e) {
-    addLog(e.message || 'USB 报警灯控制失败', 'error')
+    const message = e?.message || 'USB 报警灯控制失败'
+    addLog(
+      message === 'usb light hardware fault reported by MCU'
+        ? 'USB 报警灯硬件未就绪，MCU 上报 USB 灯故障'
+        : message,
+      'error',
+    )
   } finally {
     usbLightBusy.value = false
     fetchStatus()
